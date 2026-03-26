@@ -12,6 +12,7 @@ explainr build netlify [out]          # build for Netlify
 explainr -t                           # start dev server with built-in demo content
 explainr --live                       # start live server (native Python, file uploads)
 explainr -t --live                    # live server with demo content
+explainr --guide                      # open this documentation in your browser
 ```
 
 ## Building a static site
@@ -65,14 +66,22 @@ Generates a `netlify.toml` with the build command and publish directory configur
 
 ## Live server mode
 
-Use `explainr --live` to run explainr with native Python execution. In this mode, Python code blocks run on your machine via subprocess rather than in the browser via Pyodide. This removes Pyodide's limitations (no C extensions, memory constraints) and enables server-side features.
+Use `explainr --live` to run explainr with native Python execution. In this mode, Python code blocks run on your machine via [uv](https://docs.astral.sh/uv/) rather than in the browser via Pyodide. This removes Pyodide's limitations (no C extensions, memory constraints) and enables server-side features.
 
 Key details:
 
-- **Native Python** -- code runs on your machine, not in the browser. Any packages installed locally are available.
-- **File uploads** -- a button in the bottom-right corner lets readers upload files. Uploaded files are saved to `.explainr/files/` inside the content directory.
+- **Native Python via uv** -- code runs on your machine using `uv run`. Dependencies are auto-detected from import statements and installed on the fly — no `pip install` needed. For example, a code block with `import matplotlib` will automatically run via `uv run --with matplotlib`.
+- **PEP 723 override** -- for packages where the import name differs from the PyPI name (e.g. `import cv2` needs `opencv-python`), add [PEP 723](https://peps.python.org/pep-0723/) inline script metadata and it takes precedence over auto-detection:
+  ```python
+  # /// script
+  # dependencies = ["opencv-python"]
+  # ///
+  import cv2
+  ```
+- **Files panel** -- at the bottom of the sidebar, a files panel lists everything in `.explainr/files/` and lets readers upload new files.
+- **Pre-seeded data files** -- place CSVs, JSON, or other data in `.explainr/files/` before starting the server. Code blocks can read them with standard `open()` or `pandas.read_csv()`.
 - **Inline images** -- generated images (e.g., matplotlib plots) display inline below the code block that produced them.
-- **Requires Python 3** -- Python 3 must be installed and available on your `PATH`.
+- **Requires uv and Python 3** -- [uv](https://docs.astral.sh/uv/) and Python 3 must be installed and available on your `PATH`.
 
 Live server mode is intended for local use or deployment on a server that supports persistent processes. It is not compatible with static hosts like GitHub Pages.
 

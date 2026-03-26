@@ -7,23 +7,35 @@ import { build, type Platform } from "./build";
 const args = process.argv.slice(2);
 const testMode = args.includes("-t");
 const liveMode = args.includes("--live");
+const guideMode = args.includes("--guide");
 const baseFlagIndex = args.indexOf("--base");
 const basePath = baseFlagIndex !== -1 ? args[baseFlagIndex + 1] : undefined;
 const filteredArgs = args.filter(
-  (a, i) => a !== "-t" && a !== "--live" && a !== "--base" && i !== baseFlagIndex + 1
+  (a, i) => a !== "-t" && a !== "--live" && a !== "--guide" && a !== "--base" && i !== baseFlagIndex + 1
 );
-const command = filteredArgs[0] ?? "dev";
+const command = guideMode ? "dev" : (filteredArgs[0] ?? "dev");
 
-const demoDir = resolve(import.meta.dirname, "..", "explainr-demo");
-const contentDir = testMode ? demoDir : resolve(process.cwd());
+const demoName = testMode && liveMode ? "explainr-demo-live" : "explainr-demo";
+const demoDir = resolve(import.meta.dirname, "..", demoName);
+const guideDir = resolve(import.meta.dirname, "..", "docs");
+const contentDir = guideMode ? guideDir : testMode ? demoDir : resolve(process.cwd());
+
+function openBrowser(url: string) {
+  const cmd = process.platform === "darwin" ? "open"
+    : process.platform === "win32" ? "start"
+    : "xdg-open";
+  Bun.spawn([cmd, url], { stdout: "ignore", stderr: "ignore" });
+}
 
 const platforms = ["github", "vercel", "netlify"] as const;
 
 switch (command) {
   case "dev": {
     const port = Number(filteredArgs[1]) || 3001;
-    if (testMode) console.log(`Using built-in demo: ${demoDir}`);
+    if (guideMode) console.log(`Opening explainr guide...`);
+    else if (testMode) console.log(`Using built-in demo: ${demoDir}`);
     await startServer(contentDir, port, liveMode);
+    if (guideMode) openBrowser(`http://localhost:${port}`);
     break;
   }
   case "build": {
@@ -49,7 +61,9 @@ Usage:
 
 Options:
   -t                              Use built-in demo content for testing
+  -t --live                       Use live demo (includes .explainr/files/ with sample data)
   --live                          Enable live server mode (native Python execution, file uploads)
+  --guide                         Open the explainr documentation in your browser
   --base <path>                   Set base path for GitHub Pages project sites
                                   (e.g., --base /my-repo/)`);
 }

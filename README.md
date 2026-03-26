@@ -4,10 +4,17 @@ Turn folders of Markdown into interactive websites with executable Python code b
 
 Write your content in `.md` files, organize them in folders, and explainr renders them as a navigable site where readers can run Python code inline. No config files, no frontmatter, no special setup -- just Markdown.
 
+## Install
+
+Requires [Bun](https://bun.sh).
+
+```bash
+bun install -g github:EdwardAstill/explainr
+```
+
 ## Quick start
 
 ```bash
-bun install -g explainr    # install globally
 cd your-markdown-folder
 explainr                    # start dev server on localhost:3001
 explainr -t                 # try the built-in demo

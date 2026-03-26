@@ -7,19 +7,23 @@ const settingsIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none
   <circle cx="12" cy="12" r="3" />
 </svg>`;
 
-const uploadIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-  <polyline points="17 8 12 3 7 8"/>
-  <line x1="12" y1="3" x2="12" y2="15"/>
+const filesIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
 </svg>`;
 
-function fileUploadHtml(liveMode: boolean): string {
+function filesPanelHtml(liveMode: boolean): string {
   if (!liveMode) return "";
   return `
-  <div class="file-upload" id="file-upload">
-    <button class="file-upload__btn" id="file-upload-btn" aria-label="Upload file" title="Upload file">${uploadIcon}</button>
-    <input type="file" id="file-upload-input" style="display:none">
-    <div class="file-upload__status" id="file-upload-status"></div>
+  <div class="files-panel" id="files-panel">
+    <button class="files-panel__toggle" id="files-toggle" aria-label="Files" title="Files">${filesIcon} Files</button>
+    <div class="files-panel__dropdown" id="files-dropdown">
+      <div class="files-panel__header">Files</div>
+      <div class="files-panel__list" id="files-list">
+        <div class="files-panel__empty">Loading...</div>
+      </div>
+      <button class="files-panel__add-btn" id="files-add-btn">+ Add file</button>
+    </div>
+    <input type="file" id="files-input" style="display:none">
   </div>`;
 }
 
@@ -64,13 +68,13 @@ export function htmlPage(nav: string, content: string, title: string, basePath?:
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-title">explainr</div>
     ${nav}
+${filesPanelHtml(liveMode)}
   </aside>
   <main class="main" id="main-content">
     <article class="markdown-body">
       ${content}
     </article>
   </main>
-${fileUploadHtml(liveMode)}
 ${settingsHtml}
 ${executionScript}
 ${settingsScript}

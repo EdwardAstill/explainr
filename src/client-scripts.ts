@@ -122,40 +122,77 @@ sys.stderr = sys.__stderr__
       return d.innerHTML;
     }
 
-    // File upload handler (live mode only)
+    // Files panel (live mode only)
     if (isLiveMode) {
-      const uploadBtn = document.getElementById("file-upload-btn");
-      const uploadInput = document.getElementById("file-upload-input");
-      const uploadStatus = document.getElementById("file-upload-status");
+      const filesToggle = document.getElementById("files-toggle");
+      const filesDropdown = document.getElementById("files-dropdown");
+      const filesList = document.getElementById("files-list");
+      const filesAddBtn = document.getElementById("files-add-btn");
+      const filesInput = document.getElementById("files-input");
 
-      if (uploadBtn && uploadInput) {
-        uploadBtn.addEventListener("click", () => uploadInput.click());
+      const fileIcon = \`<svg class="files-panel__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>\`;
 
-        uploadInput.addEventListener("change", async () => {
-          const file = uploadInput.files[0];
+      function formatSize(bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      }
+
+      async function loadFiles() {
+        try {
+          const res = await fetch("/api/files");
+          const data = await res.json();
+          if (!data.files || data.files.length === 0) {
+            filesList.innerHTML = \`<div class="files-panel__empty">No files yet</div>\`;
+            return;
+          }
+          filesList.innerHTML = data.files.map(f =>
+            \`<div class="files-panel__item">
+              \${fileIcon}
+              <span class="files-panel__item-name" title="\${escapeHtml(f.name)}">\${escapeHtml(f.name)}</span>
+              <span class="files-panel__item-size">\${formatSize(f.size)}</span>
+            </div>\`
+          ).join("");
+        } catch {
+          filesList.innerHTML = \`<div class="files-panel__empty">Failed to load files</div>\`;
+        }
+      }
+
+      if (filesToggle && filesDropdown) {
+        filesToggle.addEventListener("click", () => {
+          const isOpen = filesDropdown.classList.toggle("open");
+          if (isOpen) loadFiles();
+        });
+      }
+
+      if (filesAddBtn && filesInput) {
+        filesAddBtn.addEventListener("click", () => filesInput.click());
+
+        filesInput.addEventListener("change", async () => {
+          const file = filesInput.files[0];
           if (!file) return;
 
-          uploadStatus.textContent = "Uploading...";
-          uploadStatus.style.display = "block";
+          filesAddBtn.textContent = "Uploading...";
+          filesAddBtn.disabled = true;
 
           try {
             const formData = new FormData();
             formData.append("file", file);
-
             const res = await fetch("/api/upload", { method: "POST", body: formData });
             const data = await res.json();
 
             if (data.ok) {
-              uploadStatus.textContent = \`Uploaded: \${data.name}\`;
+              await loadFiles();
             } else {
-              uploadStatus.textContent = \`Error: \${data.error}\`;
+              filesList.innerHTML = \`<div class="files-panel__empty">Error: \${escapeHtml(data.error)}</div>\`;
             }
           } catch (err) {
-            uploadStatus.textContent = \`Upload failed: \${err.message}\`;
+            filesList.innerHTML = \`<div class="files-panel__empty">Upload failed</div>\`;
           }
 
-          setTimeout(() => { uploadStatus.style.display = "none"; }, 3000);
-          uploadInput.value = "";
+          filesAddBtn.textContent = "+ Add file";
+          filesAddBtn.disabled = false;
+          filesInput.value = "";
         });
       }
     }

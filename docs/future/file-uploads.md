@@ -8,7 +8,11 @@ Allow readers to upload their own data files (CSV, JSON, etc.) that executable c
 
 ## Live server mode (implemented)
 
-File uploads are available in live server mode (`explainr --live`). A button in the bottom-right corner lets readers upload files, which are saved to `.explainr/files/` inside the content directory. Python code blocks running natively can then read those files with standard `open()` or `pandas.read_csv()` calls.
+In live server mode (`explainr --live`), files are managed via a panel at the bottom of the sidebar:
+
+- **Pre-seeded files** -- authors can place data files in `.explainr/files/` before starting the server. These appear in the files panel immediately (e.g. the live demo includes `sales_data.csv`).
+- **Upload** -- readers can add new files via the "+ Add file" button in the panel. Uploaded files are saved to `.explainr/files/`.
+- **File list** -- the panel shows all files with their sizes. Code blocks can read any listed file with standard `open()` or `pandas.read_csv()` calls.
 
 ## Static mode (planned)
 
