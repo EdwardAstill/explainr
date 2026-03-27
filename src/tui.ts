@@ -56,7 +56,7 @@ function readKey(): Promise<string> {
 
 const LOGO = `${CYAN}${BOLD}
   ╔═══════════════════════════════╗
-  ║         ${WHITE}e x p l a i n r${CYAN}         ║
+  ║        ${WHITE}e x p l a i n r${CYAN}        ║
   ╚═══════════════════════════════╝${RESET}
   ${DIM}Turn Markdown into interactive websites${RESET}
 `;
@@ -188,7 +188,7 @@ async function confirmPrompt(label: string, defaultYes: boolean, row: number): P
 // --- TUI Flows ---
 
 export interface TuiResult {
-  command: "dev" | "build" | "guide" | "quit";
+  command: "dev" | "build" | "guide" | "update" | "quit";
   contentDir: string;
   port?: number;
   liveMode?: boolean;
@@ -211,10 +211,12 @@ export async function runTui(): Promise<TuiResult> {
   write(`  ${BOLD}What would you like to do?${RESET}`);
 
   const mainChoice = await selectMenu("", [
-    { label: "🖥  Dev Server", description: "Start a local development server", value: "dev" },
+    { label: "🌐 View", description: "Serve your site in the browser (no file access)", value: "view" },
+    { label: "🖥  Live Server", description: "Dev server with native code execution + file uploads", value: "live" },
     { label: "📦 Build", description: "Build a static site for deployment", value: "build" },
     { label: "📖 Guide", description: "Open the explainr documentation", value: "guide" },
     { label: "🧪 Demo", description: "Launch with built-in demo content", value: "demo" },
+    { label: "🔄 Update", description: "Install/update dependencies", value: "update" },
   ], 9);
 
   if (mainChoice === "quit") return cleanup({ command: "quit", contentDir: cwd });
@@ -223,12 +225,20 @@ export async function runTui(): Promise<TuiResult> {
     return cleanup({ command: "guide", contentDir: cwd });
   }
 
+  if (mainChoice === "update") {
+    return cleanup({ command: "update", contentDir: cwd });
+  }
+
   if (mainChoice === "demo") {
     return await demoFlow(cwd);
   }
 
-  if (mainChoice === "dev") {
-    return await devFlow(cwd);
+  if (mainChoice === "view") {
+    return await devFlow(cwd, false);
+  }
+
+  if (mainChoice === "live") {
+    return await devFlow(cwd, true);
   }
 
   if (mainChoice === "build") {
@@ -238,11 +248,12 @@ export async function runTui(): Promise<TuiResult> {
   return cleanup({ command: "quit", contentDir: cwd });
 }
 
-async function devFlow(cwd: string): Promise<TuiResult> {
+async function devFlow(cwd: string, liveMode: boolean): Promise<TuiResult> {
   clearScreen();
   write(LOGO);
   moveTo(7, 3);
-  write(`  ${BOLD}${GREEN}Dev Server Setup${RESET}`);
+  const title = liveMode ? `${BOLD}${GREEN}Live Server Setup${RESET}` : `${BOLD}${CYAN}View Setup${RESET}`;
+  write(`  ${title}`);
 
   // Content directory
   const contentDir = await promptInput("Content directory", cwd, 9);
@@ -253,17 +264,11 @@ async function devFlow(cwd: string): Promise<TuiResult> {
   if (portStr === "quit") return cleanup({ command: "quit", contentDir: cwd });
   const port = Number(portStr) || 3001;
 
-  // Live mode
-  moveTo(13, 3);
-  write(`  ${DIM}Live mode enables native Python execution and file uploads${RESET}`);
-  const live = await confirmPrompt("Enable live mode?", false, 14);
-  if (live === "quit") return cleanup({ command: "quit", contentDir: cwd });
-
   return cleanup({
     command: "dev",
     contentDir: resolve(contentDir),
     port,
-    liveMode: live,
+    liveMode,
   });
 }
 

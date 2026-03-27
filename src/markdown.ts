@@ -1,6 +1,12 @@
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
-import markdownItKatex from "@vscode/markdown-it-katex";
+
+let markdownItKatex: any;
+try {
+  markdownItKatex = (await import("@vscode/markdown-it-katex")).default;
+} catch {
+  // KaTeX plugin not installed — math rendering will be unavailable
+}
 
 const md = new MarkdownIt({
   html: true,
@@ -14,7 +20,9 @@ const md = new MarkdownIt({
   },
 });
 
-md.use(markdownItKatex, { throwOnError: false });
+if (markdownItKatex) {
+  md.use(markdownItKatex, { throwOnError: false });
+}
 
 // Custom rule: treat :::lang ... ::: as executable code blocks with a Run button
 md.block.ruler.before("fence", "exec_fence", (state, startLine, endLine, silent) => {

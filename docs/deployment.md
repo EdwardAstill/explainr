@@ -1,16 +1,25 @@
 # Deployment
 
+## Two ways to serve
+
+explainr has two serving modes:
+
+- **View** — serves your Markdown site in the browser. Code blocks run in-browser via [Pyodide](https://pyodide.org/) (WebAssembly). No access to your filesystem. Safe to share — behaves like a static site with interactive code.
+- **Live Server** — serves your site with native Python execution via [uv](https://docs.astral.sh/uv/). Code runs on your machine with full filesystem access, file uploads, and no Pyodide limitations. Intended for local authoring and development.
+
+Both are available from the interactive TUI (just run `explainr`) or via CLI flags.
+
 ## Usage
 
 ```bash
-explainr                              # start dev server (serves current directory)
-explainr dev [port]                   # start dev server on a specific port (default: 3001)
+explainr                              # launch interactive TUI
+explainr dev [port]                   # start view server (default: 3001)
+explainr dev --live [port]            # start live server (native Python, file uploads)
 explainr build [out]                  # build static site (default: ./dist)
 explainr build github [out]           # build for GitHub Pages
 explainr build vercel [out]           # build for Vercel
 explainr build netlify [out]          # build for Netlify
-explainr -t                           # start dev server with built-in demo content
-explainr --live                       # start live server (native Python, file uploads)
+explainr -t                           # view server with built-in demo content
 explainr -t --live                    # live server with demo content
 explainr --guide                      # open this documentation in your browser
 ```
