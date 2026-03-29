@@ -2,15 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a `--live` flag that starts explainr as a live server with native Python execution, file uploads, and inline image rendering.
+**Goal:** Add a `--live` flag that starts readrun as a live server with native Python execution, file uploads, and inline image rendering.
 
-**Architecture:** In live mode, the "Run" button POSTs code to `/api/run` on the server instead of using Pyodide. The server spawns `python3` as a subprocess with cwd set to `.explainr/files/`. After execution, the server checks for new image files and returns them as base64 alongside stdout/stderr. A file upload endpoint at `/api/upload` accepts files and writes them to `.explainr/files/`. The template detects live mode via a `data-live` attribute on `<body>` and switches execution strategy accordingly. Static/Pyodide mode remains the default.
+**Architecture:** In live mode, the "Run" button POSTs code to `/api/run` on the server instead of using Pyodide. The server spawns `python3` as a subprocess with cwd set to `.readrun/files/`. After execution, the server checks for new image files and returns them as base64 alongside stdout/stderr. A file upload endpoint at `/api/upload` accepts files and writes them to `.readrun/files/`. The template detects live mode via a `data-live` attribute on `<body>` and switches execution strategy accordingly. Static/Pyodide mode remains the default.
 
 **Tech Stack:** Bun (subprocess via `Bun.spawn`), native Python 3, existing markdown-it pipeline
 
 **Files overview:**
 - `src/cli.ts` — add `--live` flag parsing, pass to `startServer`
-- `src/server.ts` — add `--live` mode: `/api/run`, `/api/upload`, `/api/files/*` routes, `.explainr/files/` management
+- `src/server.ts` — add `--live` mode: `/api/run`, `/api/upload`, `/api/files/*` routes, `.readrun/files/` management
 - `src/template.ts` — add `data-live` attribute, live-mode execution JS, file upload UI, inline image rendering CSS
 - `src/markdown.ts` — no changes needed
 - `docs/deployment.md` — update CLI reference
@@ -80,10 +80,10 @@ Change the function signature:
 export function startServer(contentDir: string, port: number, liveMode = false) {
 ```
 
-Add `.explainr/files/` directory creation at the top of the function, after `normalizedContentDir`:
+Add `.readrun/files/` directory creation at the top of the function, after `normalizedContentDir`:
 
 ```typescript
-const filesDir = join(normalizedContentDir, ".explainr", "files");
+const filesDir = join(normalizedContentDir, ".readrun", "files");
 if (liveMode) {
   const { mkdirSync } = await import("fs");
   mkdirSync(filesDir, { recursive: true });
@@ -212,7 +212,7 @@ if (liveMode && pathname === "/api/upload" && req.method === "POST") {
 }
 ```
 
-- [ ] **Step 4: Add `/api/files/*` route to serve files from `.explainr/files/`**
+- [ ] **Step 4: Add `/api/files/*` route to serve files from `.readrun/files/`**
 
 Add this after the `/api/upload` block. This lets the browser render saved images:
 
@@ -513,13 +513,13 @@ git commit -m "feat: template support for live mode execution, file upload, and 
 - [ ] **Step 1: Verify static mode still works**
 
 ```bash
-bun src/cli.ts -t build /tmp/explainr-static-test
+bun src/cli.ts -t build /tmp/readrun-static-test
 ```
 
 Expected: builds 4 pages, no errors. Check that `data-live` is NOT in the output:
 
 ```bash
-grep -c 'data-live' /tmp/explainr-static-test/welcome/index.html
+grep -c 'data-live' /tmp/readrun-static-test/welcome/index.html
 ```
 
 Expected: `0`
@@ -549,7 +549,7 @@ Expected: `{"name":"test-upload.csv","size":...}`
 Then verify the file exists in the working directory:
 
 ```bash
-ls explainr-demo/.explainr/files/test-upload.csv
+ls readrun-demo/.readrun/files/test-upload.csv
 ```
 
 - [ ] **Step 4: Test Python can read the uploaded file**
@@ -584,7 +584,7 @@ Expected: `data-live="true"`
 
 ```bash
 kill %1 2>/dev/null
-rm -rf explainr-demo/.explainr
+rm -rf readrun-demo/.readrun
 ```
 
 - [ ] **Step 8: Commit (if any fixes were needed)**
@@ -604,8 +604,8 @@ rm -rf explainr-demo/.explainr
 Add `--live` to the usage section:
 
 ```markdown
-explainr --live                         # start live server (native Python, file uploads)
-explainr -t --live                      # live server with demo content
+readrun --live                         # start live server (native Python, file uploads)
+readrun -t --live                      # live server with demo content
 ```
 
 Add a new section after "Platform-specific builds":
@@ -613,16 +613,16 @@ Add a new section after "Platform-specific builds":
 ```markdown
 ## Live server mode
 
-Use `--live` to start explainr as a live server with native Python execution:
+Use `--live` to start readrun as a live server with native Python execution:
 
 \```bash
-explainr --live
+readrun --live
 \```
 
 In live mode:
 - Python code runs natively on your machine (not in the browser via Pyodide)
 - You can upload files using the upload button in the bottom-right corner
-- Uploaded files and code output go to `.explainr/files/` inside your content directory
+- Uploaded files and code output go to `.readrun/files/` inside your content directory
 - Generated images (e.g., from matplotlib) display inline below the code block
 
 Live mode requires Python 3 installed on your machine.

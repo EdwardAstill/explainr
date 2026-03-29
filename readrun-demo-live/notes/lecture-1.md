@@ -2,21 +2,13 @@
 
 This is a sample lesson with runnable code blocks. Click **Run** on any block to execute it in your browser — no Python installation required.
 
-If you haven't already, check out the [getting started tutorial](../tutorials/intro.md) to learn how explainr works.
+If you haven't already, check out the [getting started tutorial](../tutorials/intro.md) to learn how readrun works.
 
 ## Variables and types
 
 Python figures out types for you. Run the code below to see it in action:
 
-:::python
-x = 42
-name = "Alice"
-pi = 3.14159
-is_active = True
-
-for var_name, var_val in [("x", x), ("name", name), ("pi", pi), ("is_active", is_active)]:
-    print(f"{var_name} = {var_val} ({type(var_val).__name__})")
-:::
+:::variables.py
 
 ## Lists
 

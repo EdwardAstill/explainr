@@ -53,17 +53,16 @@ async function buildTree(dir: string, root: string): Promise<NavNode[]> {
 }
 
 export function renderNav(tree: NavNode[], currentPath: string): string {
-  return `<nav class="sidebar-nav">${renderNodes(tree, currentPath)}</nav>`;
+  return `<nav class="sidebar-nav nav-tree">${renderNodes(tree, currentPath)}</nav>`;
 }
 
 function renderNodes(nodes: NavNode[], currentPath: string): string {
   let html = "<ul>";
   for (const node of nodes) {
     if (node.isDir) {
-      const isOpen = currentPath.startsWith(node.path);
       html += `<li class="nav-dir">
-        <details${isOpen ? " open" : ""}>
-          <summary>${escapeHtml(node.name)}</summary>
+        <details open data-nav-path="${escapeHtml(node.path)}">
+          <summary>${escapeHtml(node.name)}/</summary>
           ${node.children ? renderNodes(node.children, currentPath) : ""}
         </details>
       </li>`;

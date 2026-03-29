@@ -1,5 +1,7 @@
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
+import { join } from "path";
+import { readFile, stat } from "fs/promises";
 
 let markdownItKatex: any;
 try {
@@ -96,6 +98,124 @@ md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
   }
   return defaultLinkOpen(tokens, idx, options, env, self);
 };
+
+// Add IDs to headings for TOC anchor links
+md.renderer.rules.heading_open = (tokens, idx, options, _env, self) => {
+  const token = tokens[idx];
+  // Get the text content from the inline token that follows
+  const inlineToken = tokens[idx + 1];
+  if (inlineToken && inlineToken.children) {
+    const text = inlineToken.children
+      .filter((t: any) => t.type === "text" || t.type === "code_inline")
+      .map((t: any) => t.content)
+      .join("");
+    const id = text.toLowerCase().replace(/[^\w]+/g, "-").replace(/^-|-$/g, "");
+    token.attrSet("id", id);
+  }
+  return self.renderToken(tokens, idx, options);
+};
+
+export interface TocEntry {
+  level: number;
+  text: string;
+  id: string;
+}
+
+export function extractToc(source: string): TocEntry[] {
+  // Strip fenced code blocks and inline code so we don't pick up # inside them
+  const stripped = source
+    .replace(/^```[\s\S]*?^```/gm, "")
+    .replace(/^~~~[\s\S]*?^~~~/gm, "")
+    .replace(/`[^`\n]+`/g, "");
+  const entries: TocEntry[] = [];
+  const headingRegex = /^(#{1,6})\s+(.+)$/gm;
+  let match;
+  while ((match = headingRegex.exec(stripped)) !== null) {
+    const level = match[1].length;
+    const text = match[2].replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[(.+?)\]\(.+?\)/g, "$1").replace(/`(.+?)`/g, "$1").trim();
+    const id = text.toLowerCase().replace(/[^\w]+/g, "-").replace(/^-|-$/g, "");
+    entries.push({ level, text, id });
+  }
+  return entries;
+}
+
+const EXT_TO_LANG: Record<string, string> = {
+  ".py": "python",
+  ".js": "javascript",
+  ".ts": "typescript",
+  ".rb": "ruby",
+  ".rs": "rust",
+  ".go": "go",
+  ".java": "java",
+  ".c": "c",
+  ".cpp": "cpp",
+  ".html": "html",
+  ".sh": "bash",
+  ".sql": "sql",
+  ".r": "r",
+  ".jl": "julia",
+  ".lua": "lua",
+  ".php": "php",
+  ".swift": "swift",
+  ".kt": "kotlin",
+  ".scala": "scala",
+};
+
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"]);
+
+const EXT_TO_MIME: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+};
+
+export async function resolveFileReferences(source: string, scriptsDir: string, imagesDir: string): Promise<string> {
+  const fileRefPattern = /^:::([\w.-]+\.\w+)\s*$/gm;
+  const matches = [...source.matchAll(fileRefPattern)];
+  if (matches.length === 0) return source;
+
+  let result = source;
+  // Process in reverse so indices stay valid
+  for (const match of matches.reverse()) {
+    const filename = match[1];
+    const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+
+    let replacement: string;
+
+    if (IMAGE_EXTENSIONS.has(ext)) {
+      // Image reference — resolve from .readrun/images/
+      const filePath = join(imagesDir, filename);
+      try {
+        const data = await readFile(filePath);
+        const mime = EXT_TO_MIME[ext] || "application/octet-stream";
+        const b64 = Buffer.from(data).toString("base64");
+        const alt = filename.replace(/\.\w+$/, "").replace(/[-_]/g, " ");
+        replacement = `<img src="data:${mime};base64,${b64}" alt="${alt}" class="readrun-img">`;
+      } catch {
+        replacement = `<p><em>Image not found: .readrun/images/${filename}</em></p>`;
+      }
+    } else {
+      // Code reference — resolve from .readrun/scripts/
+      const lang = EXT_TO_LANG[ext] || ext.slice(1);
+      const filePath = join(scriptsDir, filename);
+      try {
+        const content = await readFile(filePath, "utf-8");
+        replacement = `:::${lang}\n${content}\n:::`;
+      } catch {
+        replacement = `:::${lang}\n# Error: file not found: .readrun/scripts/${filename}\n:::`;
+      }
+    }
+
+    const start = match.index!;
+    const end = start + match[0].length;
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  return result;
+}
 
 export function renderMarkdown(source: string): string {
   execBlockId = 0;

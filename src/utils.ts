@@ -21,6 +21,10 @@ export function isPathWithin(child: string, parent: string): boolean {
 }
 
 export function findFirstFile(nodes: NavNode[]): string | null {
+  // Prefer welcome/index/README at the root level
+  const preferred = nodes.find(n => !n.isDir && /^\/(welcome|index|readme)$/i.test(n.path));
+  if (preferred) return preferred.path;
+
   for (const node of nodes) {
     if (!node.isDir) return node.path;
     if (node.children) {

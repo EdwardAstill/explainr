@@ -1,36 +1,21 @@
 import { escapeHtml as escape } from "./utils";
 import { styles } from "./styles";
 import { executionScript, settingsScript } from "./client-scripts";
-import { type ExplainrConfig, defaultConfig } from "./config";
+import { type ReadrunConfig, defaultConfig } from "./config";
+import { type TocEntry } from "./markdown";
 
-const settingsIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-  <circle cx="12" cy="12" r="3" />
-</svg>`;
-
-const filesIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-</svg>`;
-
-function filesPanelHtml(liveMode: boolean): string {
-  if (!liveMode) return "";
+function resourceSwitcherHtml(): string {
   return `
-  <div class="files-panel" id="files-panel">
-    <button class="files-panel__toggle" id="files-toggle" aria-label="Files" title="Files">${filesIcon} Files</button>
-    <div class="files-panel__dropdown" id="files-dropdown">
-      <div class="files-panel__header">Files</div>
-      <div class="files-panel__list" id="files-list">
-        <div class="files-panel__empty">Loading...</div>
-      </div>
-      <button class="files-panel__add-btn" id="files-add-btn">+ Add file</button>
-    </div>
-    <input type="file" id="files-input" style="display:none">
+  <div class="resource-switcher" id="resource-switcher">
+    <div class="resource-switcher__item resource-switcher__item--active" data-tab="content">content</div>
+    <div class="resource-switcher__item" data-tab="images">images</div>
+    <div class="resource-switcher__item" data-tab="files">files</div>
+    <div class="resource-switcher__item" data-tab="scripts">scripts</div>
   </div>`;
 }
 
 const settingsHtml = `
   <div class="settings" id="settings">
-    <button class="settings__toggle" id="settings-toggle" aria-label="Settings" title="Settings">${settingsIcon}</button>
     <div class="settings__panel" id="settings-panel">
       <div class="settings__section">
         <span class="settings__label">Font size</span>
@@ -146,7 +131,7 @@ function formatKey(binding: string): string {
   return binding.split(/(?:\s+)/).map(k => `<kbd>${escape(k)}</kbd>`).join(" ");
 }
 
-function shortcutsOverlay(config: ExplainrConfig): string {
+function shortcutsOverlay(config: ReadrunConfig): string {
   const s = config.shortcuts;
   const row = (label: string, binding: string) =>
     `<div class="shortcuts-grid__row"><span class="shortcuts-grid__label">${label}</span><span>${formatKey(binding)}</span></div>`;
@@ -184,6 +169,7 @@ function shortcutsOverlay(config: ExplainrConfig): string {
           <div class="shortcuts-grid__category">Actions</div>
           ${row("Search", s.search)}
           ${row("Show shortcuts", s.showShortcuts)}
+          ${row("Edit file", s.edit)}
           ${row("Close overlay", s.closeOverlay)}
         </div>
       </div>
@@ -191,12 +177,62 @@ function shortcutsOverlay(config: ExplainrConfig): string {
   </div>`;
 }
 
+interface TocNode {
+  entry: TocEntry;
+  children: TocNode[];
+}
+
+function buildTocTree(entries: TocEntry[]): TocNode[] {
+  const roots: TocNode[] = [];
+  const stack: TocNode[] = [];
+  for (const entry of entries) {
+    const node: TocNode = { entry, children: [] };
+    while (stack.length > 0 && stack[stack.length - 1].entry.level >= entry.level) {
+      stack.pop();
+    }
+    if (stack.length === 0) {
+      roots.push(node);
+    } else {
+      stack[stack.length - 1].children.push(node);
+    }
+    stack.push(node);
+  }
+  return roots;
+}
+
+function renderTocNodes(nodes: TocNode[]): string {
+  let html = "<ul>";
+  for (const node of nodes) {
+    if (node.children.length > 0) {
+      html += `<li><details open>
+        <summary><a class="toc-link" href="#${escape(node.entry.id)}">${escape(node.entry.text)}</a></summary>
+        ${renderTocNodes(node.children)}
+      </details></li>`;
+    } else {
+      html += `<li><a class="toc-link" href="#${escape(node.entry.id)}">${escape(node.entry.text)}</a></li>`;
+    }
+  }
+  html += "</ul>";
+  return html;
+}
+
+function tocSidebar(toc: TocEntry[]): string {
+  if (toc.length === 0) return "";
+  const tree = buildTocTree(toc);
+  return `
+  <aside class="toc-sidebar" id="toc-sidebar">
+    <nav class="nav-tree">
+      ${renderTocNodes(tree)}
+    </nav>
+  </aside>`;
+}
+
 export interface EmbeddedFile {
   name: string;
   data: string; // base64
 }
 
-export function htmlPage(nav: string, content: string, title: string, basePath?: string, liveMode = false, config: ExplainrConfig = defaultConfig, embeddedFiles: EmbeddedFile[] = []): string {
+export function htmlPage(nav: string, content: string, title: string, basePath?: string, liveMode = false, config: ReadrunConfig = defaultConfig, embeddedFiles: EmbeddedFile[] = [], toc: TocEntry[] = []): string {
   const baseTag = basePath ? `\n  <base href="${escape(basePath)}">` : "";
   const configJson = JSON.stringify(config.shortcuts);
   const filesJson = JSON.stringify(embeddedFiles);
@@ -205,26 +241,53 @@ export function htmlPage(nav: string, content: string, title: string, basePath?:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">${baseTag}
-  <title>${escape(title)} - explainr</title>
+  <title>${escape(title)} - readrun</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.43/dist/katex.min.css" crossorigin="anonymous">
   <style>${styles}</style>
 </head>
 <body${liveMode ? ' data-live="true"' : ''}>
-  <script id="explainr-shortcuts" type="application/json">${configJson}</script>
-  <script id="explainr-files" type="application/json">${filesJson}</script>
+  <script id="readrun-shortcuts" type="application/json">${configJson}</script>
+  <script id="readrun-files" type="application/json">${filesJson}</script>
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-title">explainr</div>
     ${nav}
-${filesPanelHtml(liveMode)}
+${resourceSwitcherHtml()}
   </aside>
+  <div class="resize-handle resize-handle--sidebar" id="resize-sidebar"></div>
+  <div class="editor-container" id="editor-container">
+    <div class="editor-toolbar" id="editor-toolbar">
+      <span class="editor-toolbar__path" id="editor-path"></span>
+      <div class="editor-toolbar__actions">
+        <button class="editor-toolbar__btn editor-toolbar__btn--save" id="editor-save">Save</button>
+        <button class="editor-toolbar__btn editor-toolbar__btn--cancel" id="editor-cancel">Cancel</button>
+      </div>
+    </div>
+    <div class="editor-area" id="editor-area"></div>
+  </div>
   <main class="main" id="main-content">
+    <div class="search-bar" id="search-bar">
+      <input class="search-bar__input" id="search-input" type="text" placeholder="Search this page...">
+      <span class="search-bar__count" id="search-count"></span>
+      <button class="search-bar__btn" id="search-prev" aria-label="Previous match">&#9650;</button>
+      <button class="search-bar__btn" id="search-next" aria-label="Next match">&#9660;</button>
+      <button class="search-bar__close" id="search-close" aria-label="Close search">&times;</button>
+    </div>
     <article class="markdown-body">
       ${content}
     </article>
   </main>
+  <div class="resize-handle resize-handle--toc" id="resize-toc"></div>
+${tocSidebar(toc)}
 ${settingsHtml}
 ${shortcutsOverlay(config)}
 ${themePickerOverlayHtml}
+  <div class="context-menu" id="context-menu">
+    <div class="context-menu__item" data-action="search">Search</div>
+    <div class="context-menu__sep"></div>
+    <div class="context-menu__item context-menu__item--live-only" data-action="edit">Edit</div>
+    <div class="context-menu__sep context-menu__item--live-only"></div>
+    <div class="context-menu__item" data-action="settings">Settings</div>
+  </div>
+  <div class="lightbox" id="lightbox"><img id="lightbox-img" alt=""></div>
 ${executionScript}
 ${settingsScript}
 </body>

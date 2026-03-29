@@ -1,10 +1,36 @@
 import { join, resolve, normalize } from "path";
 import { readFile, stat, mkdir, readdir, writeFile, unlink } from "fs/promises";
-import { renderMarkdown } from "./markdown";
+import { renderMarkdown, resolveFileReferences, extractToc } from "./markdown";
 import { buildNavTree, renderNav } from "./nav";
 import { htmlPage, type EmbeddedFile } from "./template";
 import { extractTitle, findFirstFile } from "./utils";
 import { loadConfig } from "./config";
+import { createServer } from "net";
+
+function findAvailablePort(preferred: number): Promise<number> {
+  return new Promise((resolve) => {
+    let port = preferred;
+    let attempts = 0;
+
+    function tryPort() {
+      if (attempts >= 20) {
+        resolve(port); // give up, let Bun.serve fail with its own error
+        return;
+      }
+      const srv = createServer();
+      srv.once("error", () => {
+        attempts++;
+        port++;
+        tryPort();
+      });
+      srv.listen(port, () => {
+        srv.close(() => resolve(port));
+      });
+    }
+
+    tryPort();
+  });
+}
 
 async function resolveMarkdownPath(contentDir: string, urlPath: string): Promise<string | null> {
   const candidates = [
@@ -43,6 +69,15 @@ function getMimeType(ext: string): string {
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
     ".webp": "image/webp",
+    ".css": "text/css",
+    ".js": "text/javascript",
+    ".ts": "text/typescript",
+    ".py": "text/x-python",
+    ".json": "application/json",
+    ".csv": "text/csv",
+    ".toml": "text/plain",
+    ".md": "text/markdown",
+    ".txt": "text/plain",
   };
   return mimeTypes[ext] || "application/octet-stream";
 }
@@ -136,16 +171,23 @@ async function loadEmbeddedFiles(filesDir: string): Promise<EmbeddedFile[]> {
 
 export async function startServer(contentDir: string, port: number, liveMode = false) {
   const normalizedContentDir = normalize(resolve(contentDir));
-  const filesDir = join(normalizedContentDir, ".explainr", "files");
-  const config = await loadConfig(normalizedContentDir);
+  const filesDir = join(normalizedContentDir, ".readrun", "files");
+  const scriptsDir = join(normalizedContentDir, ".readrun", "scripts");
+  const imagesDir = join(normalizedContentDir, ".readrun", "images");
+  const config = await loadConfig();
 
   if (liveMode) {
     await mkdir(filesDir, { recursive: true });
     console.log(`Live mode enabled. Files directory: ${filesDir}`);
   }
 
+  const availablePort = await findAvailablePort(port);
+  if (availablePort !== port) {
+    console.log(`Port ${port} in use, using ${availablePort}`);
+  }
+
   const server = Bun.serve({
-    port,
+    port: availablePort,
     async fetch(req) {
       const url = new URL(req.url);
       let pathname = decodeURIComponent(url.pathname);
@@ -165,7 +207,7 @@ export async function startServer(contentDir: string, port: number, liveMode = f
             const filesBefore = new Set(await readdir(filesDir).catch(() => [] as string[]));
 
             // Write code to a temp file for uv
-            const scriptName = `_explainr_run_${Date.now()}.py`;
+            const scriptName = `_readrun_run_${Date.now()}.py`;
             const scriptPath = join(filesDir, scriptName);
             await writeFile(scriptPath, code);
             filesBefore.add(scriptName);
@@ -277,6 +319,85 @@ export async function startServer(contentDir: string, port: number, liveMode = f
             return new Response("Not found", { status: 404 });
           }
         }
+
+        // GET /api/source/* — read raw file for editing
+        if (pathname.startsWith("/api/source/") && req.method === "GET") {
+          const requestedPath = decodeURIComponent(pathname.slice("/api/source/".length));
+          const filePath = normalize(resolve(normalizedContentDir, requestedPath));
+          if (!filePath.startsWith(normalizedContentDir)) {
+            return new Response("Forbidden", { status: 403 });
+          }
+          try {
+            const content = await readFile(filePath, "utf-8");
+            return new Response(content, {
+              headers: { "Content-Type": "text/plain; charset=utf-8" },
+            });
+          } catch {
+            return new Response("Not found", { status: 404 });
+          }
+        }
+
+        // POST /api/save — write file content
+        if (pathname === "/api/save" && req.method === "POST") {
+          try {
+            const body = await req.json() as { path: string; content: string };
+            if (typeof body.path !== "string" || typeof body.content !== "string") {
+              return Response.json({ error: "Missing path or content" }, { status: 400 });
+            }
+            const filePath = normalize(resolve(normalizedContentDir, body.path));
+            if (!filePath.startsWith(normalizedContentDir)) {
+              return Response.json({ error: "Path outside content directory" }, { status: 403 });
+            }
+            await writeFile(filePath, body.content);
+            return Response.json({ ok: true });
+          } catch (err) {
+            return Response.json({ error: String(err) }, { status: 500 });
+          }
+        }
+      }
+
+      // Resource browser API (works in both modes)
+      if (pathname.startsWith("/api/resources/") && req.method === "GET") {
+        const parts = pathname.slice("/api/resources/".length).split("/");
+        const tab = parts[0];
+        const tabDirs: Record<string, string> = {
+          images: imagesDir,
+          files: filesDir,
+          scripts: scriptsDir,
+        };
+        const dir = tabDirs[tab];
+        if (!dir) return Response.json({ error: "Invalid tab" }, { status: 400 });
+
+        if (parts.length === 1) {
+          try {
+            const entries = await readdir(dir).catch(() => [] as string[]);
+            const files: { name: string; size: number }[] = [];
+            for (const name of entries) {
+              const s = await stat(join(dir, name)).catch(() => null);
+              if (s && s.isFile()) {
+                files.push({ name, size: s.size });
+              }
+            }
+            return Response.json({ files });
+          } catch {
+            return Response.json({ files: [] });
+          }
+        } else {
+          const fileName = parts.slice(1).join("/");
+          const filePath = normalize(resolve(dir, fileName));
+          if (!filePath.startsWith(dir)) {
+            return new Response("Forbidden", { status: 403 });
+          }
+          try {
+            const fileData = await readFile(filePath);
+            const ext = filePath.substring(filePath.lastIndexOf(".")).toLowerCase();
+            return new Response(fileData, {
+              headers: { "Content-Type": getMimeType(ext) },
+            });
+          } catch {
+            return new Response("Not found", { status: 404 });
+          }
+        }
       }
 
       if (pathname === "/") {
@@ -298,13 +419,15 @@ export async function startServer(contentDir: string, port: number, liveMode = f
 
       try {
         const source = await readFile(mdPath, "utf-8");
-        const rendered = renderMarkdown(source);
+        const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
+        const rendered = renderMarkdown(resolved);
+        const toc = extractToc(source);
         const tree = await buildNavTree(normalizedContentDir);
         const nav = renderNav(tree, pathname);
-        const title = extractTitle(source, pathname.split("/").pop() || "explainr");
+        const title = extractTitle(source, pathname.split("/").pop() || "readrun");
 
         const embeddedFiles = liveMode ? [] : await loadEmbeddedFiles(filesDir);
-        const html = htmlPage(nav, rendered, title, undefined, liveMode, config, embeddedFiles);
+        const html = htmlPage(nav, rendered, title, undefined, liveMode, config, embeddedFiles, toc);
         return new Response(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
@@ -315,6 +438,6 @@ export async function startServer(contentDir: string, port: number, liveMode = f
     },
   });
 
-  console.log(`explainr running at http://localhost:${server.port}`);
+  console.log(`readrun running at http://localhost:${server.port}`);
   console.log(`Serving content from: ${normalizedContentDir}`);
 }

@@ -1,4 +1,6 @@
 import { join } from "path";
+import { mkdir, writeFile, stat } from "fs/promises";
+import { homedir } from "os";
 
 export interface ShortcutConfig {
   nextPage: string;
@@ -17,9 +19,10 @@ export interface ShortcutConfig {
   search: string;
   showShortcuts: string;
   closeOverlay: string;
+  edit: string;
 }
 
-export interface ExplainrConfig {
+export interface ReadrunConfig {
   shortcuts: ShortcutConfig;
 }
 
@@ -40,14 +43,39 @@ export const defaultShortcuts: ShortcutConfig = {
   search: "/",
   showShortcuts: "?",
   closeOverlay: "Escape",
+  edit: "e",
 };
 
-export const defaultConfig: ExplainrConfig = {
+export const defaultConfig: ReadrunConfig = {
   shortcuts: { ...defaultShortcuts },
 };
 
-export async function loadConfig(contentDir: string): Promise<ExplainrConfig> {
-  const configPath = join(contentDir, ".config", "explainr", "settings.toml");
+function shortcutsToToml(shortcuts: ShortcutConfig): string {
+  const lines = ["[shortcuts]"];
+  const maxKey = Math.max(...Object.keys(shortcuts).map(k => k.length));
+  for (const [key, value] of Object.entries(shortcuts)) {
+    lines.push(`${key.padEnd(maxKey)} = "${value}"`);
+  }
+  return lines.join("\n") + "\n";
+}
+
+function getConfigPath(): string {
+  return join(homedir(), ".config", "readrun", "settings.toml");
+}
+
+export async function loadConfig(): Promise<ReadrunConfig> {
+  const configPath = getConfigPath();
+  const configDir = join(homedir(), ".config", "readrun");
+
+  try {
+    await stat(configPath);
+  } catch {
+    // File doesn't exist — create it with defaults
+    await mkdir(configDir, { recursive: true });
+    await writeFile(configPath, shortcutsToToml(defaultShortcuts));
+    return structuredClone(defaultConfig);
+  }
+
   try {
     const file = Bun.file(configPath);
     const text = await file.text();

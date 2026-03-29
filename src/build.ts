@@ -1,6 +1,6 @@
 import { join, dirname } from "path";
 import { readFile, readdir, mkdir, writeFile } from "fs/promises";
-import { renderMarkdown } from "./markdown";
+import { renderMarkdown, resolveFileReferences, extractToc } from "./markdown";
 import { buildNavTree, renderNav, type NavNode } from "./nav";
 import { htmlPage, type EmbeddedFile } from "./template";
 import { extractTitle, findFirstFile } from "./utils";
@@ -24,7 +24,9 @@ export async function build(options: BuildOptions) {
   if (platform) console.log(`  Platform: ${platform}`);
   if (basePath) console.log(`  Base path: ${basePath}`);
 
-  const config = await loadConfig(contentDir);
+  const config = await loadConfig();
+  const scriptsDir = join(contentDir, ".readrun", "scripts");
+  const imagesDir = join(contentDir, ".readrun", "images");
   const tree = await buildNavTree(contentDir);
   const pages = collectPages(tree);
   const embeddedFiles = await loadEmbeddedFiles(contentDir);
@@ -41,11 +43,13 @@ export async function build(options: BuildOptions) {
 
     try {
       const source = await readFile(mdPath, "utf-8");
-      const rendered = renderMarkdown(source);
+      const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
+      const rendered = renderMarkdown(resolved);
+      const toc = extractToc(source);
       const nav = renderNav(tree, page.path);
       const title = extractTitle(source, page.name);
 
-      const html = htmlPage(nav, rendered, title, basePath, false, config, embeddedFiles);
+      const html = htmlPage(nav, rendered, title, basePath, false, config, embeddedFiles, toc);
 
       const outPath = join(outDir, page.path, "index.html");
       await mkdir(dirname(outPath), { recursive: true });
@@ -74,7 +78,7 @@ export async function build(options: BuildOptions) {
 }
 
 async function loadEmbeddedFiles(contentDir: string): Promise<EmbeddedFile[]> {
-  const filesDir = join(contentDir, ".explainr", "files");
+  const filesDir = join(contentDir, ".readrun", "files");
   try {
     const entries = await readdir(filesDir);
     const files: EmbeddedFile[] = [];
@@ -83,7 +87,7 @@ async function loadEmbeddedFiles(contentDir: string): Promise<EmbeddedFile[]> {
       files.push({ name, data: content.toString("base64") });
     }
     if (files.length > 0) {
-      console.log(`  Embedded ${files.length} file(s) from .explainr/files/`);
+      console.log(`  Embedded ${files.length} file(s) from .readrun/files/`);
     }
     return files;
   } catch {
@@ -107,7 +111,7 @@ async function writePlatformFiles(outDir: string, platform: Platform, basePath?:
     }
     case "vercel": {
       const config = {
-        buildCommand: "bunx explainr build vercel",
+        buildCommand: "bunx rr build vercel",
         outputDirectory: "dist",
       };
       await writeFile(join(outDir, "vercel.json"), JSON.stringify(config, null, 2) + "\n");
@@ -116,7 +120,7 @@ async function writePlatformFiles(outDir: string, platform: Platform, basePath?:
     }
     case "netlify": {
       const toml = `[build]
-  command = "bunx explainr build netlify"
+  command = "bunx rr build netlify"
   publish = "dist"
 `;
       await writeFile(join(outDir, "netlify.toml"), toml);
@@ -156,7 +160,7 @@ jobs:
 
       - run: bun install
 
-      - run: bunx explainr build github
+      - run: bunx rr build github
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "explainr",
+      "name": "readrun",
       "dependencies": {
         "@vscode/markdown-it-katex": "^1.1.2",
         "github-markdown-css": "^5.9.0",

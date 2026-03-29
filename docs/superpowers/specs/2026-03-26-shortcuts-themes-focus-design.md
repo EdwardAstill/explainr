@@ -2,7 +2,7 @@
 
 ## Overview
 
-Add keyboard shortcuts, a shortcut help overlay, 8 color themes with a theme picker overlay, and a focus mode to the explainr documentation viewer. All changes are in 3 existing files: `src/styles.ts`, `src/client-scripts.ts`, and `src/template.ts`.
+Add keyboard shortcuts, a shortcut help overlay, 8 color themes with a theme picker overlay, and a focus mode to the readrun documentation viewer. All changes are in 3 existing files: `src/styles.ts`, `src/client-scripts.ts`, and `src/template.ts`.
 
 ## Themes
 
@@ -34,7 +34,7 @@ Each theme gets a scoped `.hljs` color block under its `[data-theme]` selector, 
 
 ### Persistence
 
-Theme name stored in localStorage under the existing `explainr-settings` key as `settings.theme`. Default: `"light"`. Applied on page load by setting `document.documentElement.dataset.theme`.
+Theme name stored in localStorage under the existing `readrun-settings` key as `settings.theme`. Default: `"light"`. Applied on page load by setting `document.documentElement.dataset.theme`.
 
 ## Settings Panel Changes
 

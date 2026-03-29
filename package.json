@@ -1,9 +1,9 @@
 {
-  "name": "explainr",
+  "name": "readrun",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "explainr": "src/cli.ts"
+    "rr": "src/cli.ts"
   },
   "scripts": {
     "dev": "bun --hot src/cli.ts dev",

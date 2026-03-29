@@ -71,7 +71,7 @@ summarise_scores(class_data)
 
 ## That's the demo
 
-You've seen everything explainr can do:
+You've seen everything readrun can do:
 
 - **Plain Markdown** rendered as a navigable website ([welcome page](../welcome.md))
 - **Runnable Python** with inline output ([Python Basics](./lecture-1.md))
@@ -80,4 +80,4 @@ You've seen everything explainr can do:
 
 Next up: [Data Visualization](./lecture-3.md) shows how live mode lets you read files and generate matplotlib plots.
 
-To use explainr with your own notes, see the [getting started tutorial](../tutorials/intro.md).
+To use readrun with your own notes, see the [getting started tutorial](../tutorials/intro.md).

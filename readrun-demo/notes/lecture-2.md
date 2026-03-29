@@ -71,11 +71,11 @@ summarise_scores(class_data)
 
 ## That's the demo
 
-You've seen everything explainr can do:
+You've seen everything readrun can do:
 
 - **Plain Markdown** rendered as a navigable website ([welcome page](../welcome.md))
 - **Runnable Python** with inline output ([Python Basics](./lecture-1.md))
 - **Links between pages** that work as site navigation
 - **Settings** (gear icon, top-right) for font size, width, and sidebar
 
-To use explainr with your own notes, see the [getting started tutorial](../tutorials/intro.md).
+To use readrun with your own notes, see the [getting started tutorial](../tutorials/intro.md).

@@ -54,11 +54,17 @@ function readKey(): Promise<string> {
 
 // --- UI Components ---
 
-const LOGO = `${CYAN}${BOLD}
-  ╔═══════════════════════════════╗
-  ║        ${WHITE}e x p l a i n r${CYAN}        ║
-  ╚═══════════════════════════════╝${RESET}
-  ${DIM}Turn Markdown into interactive websites${RESET}
+const LOGO = `${DIM}
+                                     __
+                                    |  \\
+  ______    ______    ______    ____| $$  ______   __    __  _______
+ /      \\  /      \\  |      \\  /      $$ /      \\ |  \\  |  \\|       \\
+|  $$$$$$\\|  $$$$$$\\  \\$$$$$$\\|  $$$$$$$|  $$$$$$\\| $$  | $$| $$$$$$$\\
+| $$   \\$$| $$    $$ /      $$| $$  | $$| $$   \\$$| $$  | $$| $$  | $$
+| $$      | $$$$$$$$|  $$$$$$$| $$__| $$| $$      | $$__/ $$| $$  | $$
+| $$       \\$$     \\ \\$$    $$ \\$$    $$| $$       \\$$    $$| $$  | $$
+ \\$$        \\$$$$$$$  \\$$$$$$$  \\$$$$$$$ \\$$        \\$$$$$$  \\$$   \\$$
+${RESET}
 `;
 
 interface MenuOption {
@@ -188,7 +194,7 @@ async function confirmPrompt(label: string, defaultYes: boolean, row: number): P
 // --- TUI Flows ---
 
 export interface TuiResult {
-  command: "dev" | "build" | "guide" | "update" | "quit";
+  command: "dev" | "build" | "update" | "quit";
   contentDir: string;
   port?: number;
   liveMode?: boolean;
@@ -207,23 +213,18 @@ export async function runTui(): Promise<TuiResult> {
   write(LOGO);
 
   // Main menu
-  moveTo(7, 3);
+  moveTo(13, 3);
   write(`  ${BOLD}What would you like to do?${RESET}`);
 
   const mainChoice = await selectMenu("", [
     { label: "🌐 View", description: "Serve your site in the browser (no file access)", value: "view" },
     { label: "🖥  Live Server", description: "Dev server with native code execution + file uploads", value: "live" },
     { label: "📦 Build", description: "Build a static site for deployment", value: "build" },
-    { label: "📖 Guide", description: "Open the explainr documentation", value: "guide" },
-    { label: "🧪 Demo", description: "Launch with built-in demo content", value: "demo" },
+    { label: "🧪 Demo", description: "Launch with built-in demo content + docs", value: "demo" },
     { label: "🔄 Update", description: "Install/update dependencies", value: "update" },
-  ], 9);
+  ], 15);
 
   if (mainChoice === "quit") return cleanup({ command: "quit", contentDir: cwd });
-
-  if (mainChoice === "guide") {
-    return cleanup({ command: "guide", contentDir: cwd });
-  }
 
   if (mainChoice === "update") {
     return cleanup({ command: "update", contentDir: cwd });
@@ -251,16 +252,16 @@ export async function runTui(): Promise<TuiResult> {
 async function devFlow(cwd: string, liveMode: boolean): Promise<TuiResult> {
   clearScreen();
   write(LOGO);
-  moveTo(7, 3);
+  moveTo(13, 3);
   const title = liveMode ? `${BOLD}${GREEN}Live Server Setup${RESET}` : `${BOLD}${CYAN}View Setup${RESET}`;
   write(`  ${title}`);
 
   // Content directory
-  const contentDir = await promptInput("Content directory", cwd, 9);
+  const contentDir = await promptInput("Content directory", cwd, 15);
   if (contentDir === "quit") return cleanup({ command: "quit", contentDir: cwd });
 
   // Port
-  const portStr = await promptInput("Port", "3001", 11);
+  const portStr = await promptInput("Port", "3001", 17);
   if (portStr === "quit") return cleanup({ command: "quit", contentDir: cwd });
   const port = Number(portStr) || 3001;
 
@@ -275,15 +276,15 @@ async function devFlow(cwd: string, liveMode: boolean): Promise<TuiResult> {
 async function buildFlow(cwd: string): Promise<TuiResult> {
   clearScreen();
   write(LOGO);
-  moveTo(7, 3);
+  moveTo(13, 3);
   write(`  ${BOLD}${MAGENTA}Build Setup${RESET}`);
 
   // Content directory
-  const contentDir = await promptInput("Content directory", cwd, 9);
+  const contentDir = await promptInput("Content directory", cwd, 15);
   if (contentDir === "quit") return cleanup({ command: "quit", contentDir: cwd });
 
   // Platform selection
-  moveTo(11, 3);
+  moveTo(17, 3);
   write(`  ${BOLD}Target platform${RESET}`);
 
   const platform = await selectMenu("", [
@@ -291,7 +292,7 @@ async function buildFlow(cwd: string): Promise<TuiResult> {
     { label: "GitHub Pages", description: "Adds .nojekyll + Actions workflow", value: "github" },
     { label: "Vercel", description: "Adds vercel.json", value: "vercel" },
     { label: "Netlify", description: "Adds netlify.toml", value: "netlify" },
-  ], 13);
+  ], 19);
 
   if (platform === "quit") return cleanup({ command: "quit", contentDir: cwd });
 
@@ -299,15 +300,15 @@ async function buildFlow(cwd: string): Promise<TuiResult> {
 
   // Output directory
   const defaultOut = resolve(contentDir, "dist");
-  const outDir = await promptInput("Output directory", defaultOut, 19);
+  const outDir = await promptInput("Output directory", defaultOut, 25);
   if (outDir === "quit") return cleanup({ command: "quit", contentDir: cwd });
 
   // Base path (for GitHub Pages project sites)
   let basePath: string | undefined;
   if (resolvedPlatform === "github") {
-    moveTo(21, 3);
+    moveTo(27, 3);
     write(`  ${DIM}Base path is needed for GitHub Pages project sites (e.g. /my-repo/)${RESET}`);
-    const bp = await promptInput("Base path", "/", 22);
+    const bp = await promptInput("Base path", "/", 28);
     if (bp === "quit") return cleanup({ command: "quit", contentDir: cwd });
     basePath = bp === "/" ? undefined : bp;
   }
@@ -324,21 +325,21 @@ async function buildFlow(cwd: string): Promise<TuiResult> {
 async function demoFlow(cwd: string): Promise<TuiResult> {
   clearScreen();
   write(LOGO);
-  moveTo(7, 3);
+  moveTo(13, 3);
   write(`  ${BOLD}${YELLOW}Demo Mode${RESET}`);
 
-  moveTo(9, 3);
+  moveTo(15, 3);
   write(`  ${BOLD}Which demo?${RESET}`);
 
   const demoChoice = await selectMenu("", [
     { label: "Standard", description: "Basic demo with markdown examples", value: "standard" },
     { label: "Live", description: "Demo with Python execution and file uploads", value: "live" },
-  ], 11);
+  ], 17);
 
   if (demoChoice === "quit") return cleanup({ command: "quit", contentDir: cwd });
 
   // Port
-  const portStr = await promptInput("Port", "3001", 15);
+  const portStr = await promptInput("Port", "3001", 21);
   if (portStr === "quit") return cleanup({ command: "quit", contentDir: cwd });
   const port = Number(portStr) || 3001;
 

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: system-ui; padding: 20px; margin: 0; }
+    .card { border: 2px solid #4CAF50; border-radius: 8px; padding: 16px; max-width: 300px; }
+    .card h2 { margin: 0 0 8px; color: #2e7d32; }
+    button { background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #388E3C; }
+    #output { margin-top: 12px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Hello from HTML!</h2>
+    <p>This is a live HTML block rendered in an iframe.</p>
+    <button onclick="document.getElementById('output').textContent = 'Clicked at ' + new Date().toLocaleTimeString()">Click me</button>
+    <div id="output"></div>
+  </div>
+</body>
+</html>
