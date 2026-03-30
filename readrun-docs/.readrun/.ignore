@@ -1,0 +1,5 @@
+# Patterns to exclude from the sidebar and build
+# Works like .gitignore — one glob pattern per line
+
+drafts
+notes/scratch.md

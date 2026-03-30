@@ -67,7 +67,7 @@ The code is loaded from `.readrun/scripts/variables.py`, displayed on the page, 
 
 ### HTML blocks
 
-HTML is supported too — it renders in a sandboxed iframe. Inline or from a file:
+HTML is supported too — it renders in a sandboxed iframe that auto-resizes to fit the content. Inline or from a file:
 
 ```
 :::html
@@ -86,6 +86,10 @@ Place images in `.readrun/images/` and reference them the same way:
 ```
 :::diagram.svg
 ```
+
+Here's the "how it works" diagram from the welcome page, embedded via `:::how-it-works.svg`:
+
+:::how-it-works.svg
 
 Images are embedded directly in the page. Click any image to enlarge it.
 

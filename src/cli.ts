@@ -34,8 +34,8 @@ if (result.command === "update") {
   process.exit(0);
 }
 
-const demoDir = resolve(import.meta.dirname, "..", "readrun-demo");
-const contentDir = result.testMode ? demoDir : result.contentDir;
+const docsDir = resolve(import.meta.dirname, "..", "readrun-docs");
+const contentDir = result.testMode ? docsDir : result.contentDir;
 
 switch (result.command) {
   case "dev": {

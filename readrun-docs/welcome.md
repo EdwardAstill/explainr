@@ -18,10 +18,10 @@ readrun turns folders of Markdown into interactive websites. You're looking at o
 
 :::how-it-works.svg
 
-Your existing Markdown notes work as-is. This whole demo is just `.md` files in a folder:
+Your existing Markdown notes work as-is. These docs are just `.md` files in a folder:
 
 ```
-readrun-demo/
+readrun-docs/
   welcome.md          ← you are here
   tutorials/
     intro.md

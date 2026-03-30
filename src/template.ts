@@ -1,6 +1,6 @@
 import { escapeHtml as escape } from "./utils";
-import { styles } from "./styles";
-import { executionScript, settingsScript } from "./client-scripts";
+import { styles } from "./styles/index";
+import { executionScript, settingsScript } from "./client/index";
 import { type ReadrunConfig, defaultConfig } from "./config";
 import { type TocEntry } from "./markdown";
 
@@ -275,6 +275,19 @@ ${themePickerOverlayHtml}
     <div class="context-menu__item" data-action="settings">Settings</div>
   </div>
   <div class="lightbox" id="lightbox"><img id="lightbox-img" alt=""></div>
+  <div class="code-modal" id="code-modal">
+    <div class="code-modal__card">
+      <div class="code-modal__header">
+        <span class="code-modal__lang" id="code-modal-lang"></span>
+        <span class="code-modal__actions">
+          <button class="exec-run-btn" id="code-modal-run">Run</button>
+          <button class="code-modal__close" id="code-modal-close">&times;</button>
+        </span>
+      </div>
+      <pre class="hljs code-modal__code" id="code-modal-code"><code></code></pre>
+      <div class="exec-output code-modal__output" id="code-modal-output"></div>
+    </div>
+  </div>
 ${executionScript}
 ${settingsScript}
 </body>

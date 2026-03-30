@@ -48,9 +48,11 @@ readrun stores settings at `~/.config/readrun/settings.toml`. This file is creat
 
 ## How code execution works
 
-Python code blocks run entirely in the browser via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly). No server is involved.
+Python code blocks run entirely in the browser via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly). No server is involved. HTML blocks render in sandboxed iframes that auto-resize to match their content via `ResizeObserver` and `postMessage`.
 
 - **Automatic package installation** — import statements are parsed and packages are installed via micropip automatically. Common packages (numpy, pandas, matplotlib, scipy) are available from Pyodide's distribution. Pure-Python PyPI packages also work.
+- **HTML library auto-detection** — HTML blocks are scanned for JS library usage (Plotly, D3, Chart.js, Three.js, Leaflet, Mermaid, etc.) and CDN scripts are injected automatically. No manual `<script>` tags needed.
+- **File uploads** — `:::upload` directives render upload buttons that write files into Pyodide's virtual filesystem via the browser File API, making them available to Python code with standard file I/O.
 - **Preloading** — when a page loads, all code blocks are scanned for imports and packages begin installing in the background, so they're ready by the time you click Run.
 - **Shared session** — all code blocks on a page share a single Python session. Variables and imports persist between blocks, like cells in a Jupyter notebook.
 - **Matplotlib** — plots render inline automatically when `plt.show()` is called.

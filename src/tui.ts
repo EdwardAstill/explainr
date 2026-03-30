@@ -174,7 +174,7 @@ export async function runTui(): Promise<TuiResult> {
   const mainChoice = await selectMenu("", [
     { label: "👁  View", description: "Preview your site locally", value: "view" },
     { label: "📦 Build", description: "Build a static site for deployment", value: "build" },
-    { label: "🧪 Demo", description: "Preview the built-in demo", value: "demo" },
+    { label: "📖 Docs", description: "Preview the built-in docs", value: "docs" },
     { label: "🔄 Update", description: "Install/update dependencies", value: "update" },
   ], 15);
 
@@ -184,8 +184,8 @@ export async function runTui(): Promise<TuiResult> {
     return cleanup({ command: "update", contentDir: cwd });
   }
 
-  if (mainChoice === "demo") {
-    return await demoFlow(cwd);
+  if (mainChoice === "docs") {
+    return await docsFlow(cwd);
   }
 
   if (mainChoice === "view") {
@@ -264,11 +264,11 @@ async function viewFlow(cwd: string): Promise<TuiResult> {
   });
 }
 
-async function demoFlow(cwd: string): Promise<TuiResult> {
+async function docsFlow(cwd: string): Promise<TuiResult> {
   clearScreen();
   write(LOGO);
   moveTo(13, 3);
-  write(`  ${BOLD}${YELLOW}Demo Preview${RESET}`);
+  write(`  ${BOLD}${YELLOW}Docs Preview${RESET}`);
 
   const portStr = await promptInput("Port", "3001", 15);
   if (portStr === "quit") return cleanup({ command: "quit", contentDir: cwd });

@@ -1,4 +1,4 @@
-import { readdir, stat } from "fs/promises";
+import { readdir, stat, readFile } from "fs/promises";
 import { join, relative, basename, extname } from "path";
 import { escapeHtml } from "./utils";
 
@@ -9,11 +9,34 @@ export interface NavNode {
   children?: NavNode[];
 }
 
-export async function buildNavTree(contentDir: string): Promise<NavNode[]> {
-  return buildTree(contentDir, contentDir);
+async function loadIgnorePatterns(contentDir: string): Promise<Bun.Glob[]> {
+  const ignorePath = join(contentDir, ".readrun", ".ignore");
+  try {
+    const content = await readFile(ignorePath, "utf-8");
+    return content
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#"))
+      .map((pattern) => new Bun.Glob(pattern));
+  } catch {
+    return [];
+  }
 }
 
-async function buildTree(dir: string, root: string): Promise<NavNode[]> {
+function isIgnored(relPath: string, globs: Bun.Glob[]): boolean {
+  // relPath is relative to contentDir, e.g. "notes/draft.md" or "drafts"
+  for (const glob of globs) {
+    if (glob.match(relPath)) return true;
+  }
+  return false;
+}
+
+export async function buildNavTree(contentDir: string): Promise<NavNode[]> {
+  const ignoreGlobs = await loadIgnorePatterns(contentDir);
+  return buildTree(contentDir, contentDir, ignoreGlobs);
+}
+
+async function buildTree(dir: string, root: string, ignoreGlobs: Bun.Glob[]): Promise<NavNode[]> {
   const entries = await readdir(dir, { withFileTypes: true });
   const nodes: NavNode[] = [];
 
@@ -30,14 +53,17 @@ async function buildTree(dir: string, root: string): Promise<NavNode[]> {
 
   for (const entry of sorted) {
     const fullPath = join(dir, entry.name);
-    const relPath = "/" + relative(root, fullPath);
+    const relPath = relative(root, fullPath);
+
+    // Check against .ignore patterns
+    if (isIgnored(relPath, ignoreGlobs)) continue;
 
     if (entry.isDirectory()) {
-      const children = await buildTree(fullPath, root);
+      const children = await buildTree(fullPath, root, ignoreGlobs);
       if (children.length > 0) {
         nodes.push({
           name: entry.name,
-          path: relPath,
+          path: "/" + relPath,
           isDir: true,
           children,
         });
@@ -45,7 +71,7 @@ async function buildTree(dir: string, root: string): Promise<NavNode[]> {
     } else if (extname(entry.name) === ".md") {
       nodes.push({
         name: basename(entry.name, ".md"),
-        path: relPath.replace(/\.md$/, ""),
+        path: ("/" + relPath).replace(/\.md$/, ""),
         isDir: false,
       });
     }

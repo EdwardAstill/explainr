@@ -26,6 +26,54 @@ if (markdownItKatex) {
   md.use(markdownItKatex, { throwOnError: false });
 }
 
+// Custom rule: :::upload "Label" accept=.csv multiple rename=data.csv
+md.block.ruler.before("fence", "upload_button", (state, startLine, _endLine, silent) => {
+  const pos = state.bMarks[startLine] + state.tShift[startLine];
+  const max = state.eMarks[startLine];
+  const line = state.src.slice(pos, max);
+
+  if (!line.startsWith(":::upload ")) return false;
+  if (silent) return true;
+
+  const rest = line.slice(10); // after ":::upload "
+  const labelMatch = rest.match(/"([^"]+)"/);
+  const label = labelMatch ? labelMatch[1] : "Upload";
+  const acceptMatch = rest.match(/accept=([\S]+)/);
+  const accept = acceptMatch ? acceptMatch[1] : "";
+  const multiple = /\bmultiple\b/.test(rest);
+  const renameMatch = rest.match(/rename=([\S]+)/);
+  const rename = renameMatch ? renameMatch[1] : "";
+
+  const token = state.push("upload_button", "", 0);
+  token.meta = { label, accept, multiple, rename };
+  token.map = [startLine, startLine + 1];
+
+  state.line = startLine + 1;
+  return true;
+});
+
+let uploadBlockId = 0;
+
+md.renderer.rules.upload_button = (tokens, idx) => {
+  const { label, accept, multiple, rename } = tokens[idx].meta;
+  const id = uploadBlockId++;
+  const escapedLabel = md.utils.escapeHtml(label);
+  const acceptAttr = accept ? ` accept="${md.utils.escapeHtml(accept)}"` : "";
+  const multipleAttr = multiple ? " multiple" : "";
+  const renameAttr = rename ? ` data-rename="${md.utils.escapeHtml(rename)}"` : "";
+  return `<div class="upload-block" data-upload-id="${id}">
+    <div class="upload-block-header">
+      <span>file upload</span>
+      <span class="upload-block-status" data-upload-status="${id}"></span>
+    </div>
+    <div class="upload-block-body">
+      <label class="upload-btn" for="upload-input-${id}">${escapedLabel}</label>
+      <input type="file" id="upload-input-${id}" class="upload-input" data-upload-id="${id}"${acceptAttr}${multipleAttr}${renameAttr} style="display:none">
+      <div class="upload-file-list" data-upload-files="${id}"></div>
+    </div>
+  </div>`;
+};
+
 // Custom rule: treat :::lang ... ::: as executable code blocks with a Run button
 md.block.ruler.before("fence", "exec_fence", (state, startLine, endLine, silent) => {
   const pos = state.bMarks[startLine] + state.tShift[startLine];
@@ -34,7 +82,9 @@ md.block.ruler.before("fence", "exec_fence", (state, startLine, endLine, silent)
 
   if (!line.startsWith(":::")) return false;
 
-  const lang = line.slice(3).trim();
+  const parts = line.slice(3).trim().split(/\s+/);
+  const lang = parts[0];
+  const hidden = parts.includes("hidden");
 
   // Find closing :::
   let nextLine = startLine + 1;
@@ -51,6 +101,7 @@ md.block.ruler.before("fence", "exec_fence", (state, startLine, endLine, silent)
 
   const token = state.push("exec_fence", "code", 0);
   token.info = lang;
+  token.meta = { hidden };
   token.content = state.getLines(startLine + 1, nextLine, state.tShift[startLine], true);
   token.map = [startLine, nextLine + 1];
 
@@ -63,6 +114,7 @@ let execBlockId = 0;
 md.renderer.rules.exec_fence = (tokens, idx) => {
   const token = tokens[idx];
   const lang = token.info || "python";
+  const hidden = token.meta?.hidden ?? false;
   const id = execBlockId++;
   const rawCode = token.content;
   let highlighted: string;
@@ -73,10 +125,16 @@ md.renderer.rules.exec_fence = (tokens, idx) => {
   }
   // Embed raw source in a hidden script tag for Pyodide to read
   const encoded = Buffer.from(rawCode).toString("base64");
-  return `<div class="exec-block" data-lang="${md.utils.escapeHtml(lang)}" data-block-id="${id}">
+  const collapsedClass = hidden ? " exec-block--collapsed" : "";
+  const toggleLabel = hidden ? "Show" : "Hide";
+  return `<div class="exec-block${collapsedClass}" data-lang="${md.utils.escapeHtml(lang)}" data-block-id="${id}">
     <div class="exec-block-header">
       <span>${md.utils.escapeHtml(lang)}</span>
-      <button class="exec-run-btn" data-block-id="${id}">Run</button>
+      <span class="exec-block-actions">
+        <button class="exec-toggle-btn" data-block-id="${id}">${toggleLabel}</button>
+        <button class="exec-enlarge-btn" data-block-id="${id}">Enlarge</button>
+        <button class="exec-run-btn" data-block-id="${id}">Run</button>
+      </span>
     </div>
     <pre class="hljs"><code>${highlighted}</code></pre>
     <script type="text/plain" data-source="${id}">${encoded}</script>
@@ -126,6 +184,7 @@ export function extractToc(source: string): TocEntry[] {
   const stripped = source
     .replace(/^```[\s\S]*?^```/gm, "")
     .replace(/^~~~[\s\S]*?^~~~/gm, "")
+    .replace(/^:::\w[\s\S]*?^:::/gm, "")
     .replace(/`[^`\n]+`/g, "");
   const entries: TocEntry[] = [];
   const headingRegex = /^(#{1,6})\s+(.+)$/gm;
@@ -173,7 +232,7 @@ const EXT_TO_MIME: Record<string, string> = {
 };
 
 export async function resolveFileReferences(source: string, scriptsDir: string, imagesDir: string): Promise<string> {
-  const fileRefPattern = /^:::([\w.-]+\.\w+)\s*$/gm;
+  const fileRefPattern = /^:::([\w.-]+\.\w+)[^\S\n]*$/gm;
   const matches = [...source.matchAll(fileRefPattern)];
   if (matches.length === 0) return source;
 
@@ -219,5 +278,6 @@ export async function resolveFileReferences(source: string, scriptsDir: string, 
 
 export function renderMarkdown(source: string): string {
   execBlockId = 0;
+  uploadBlockId = 0;
   return md.render(source);
 }
