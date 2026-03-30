@@ -1,4 +1,5 @@
-import { resolve } from "path";
+import { resolve, basename } from "path";
+import { readdirSync, statSync } from "fs";
 
 // --- ANSI helpers ---
 const ESC = "\x1b[";
@@ -148,6 +149,143 @@ async function promptInput(label: string, defaultValue: string, row: number): Pr
   }
 }
 
+function detectRepoName(cwd: string): string | undefined {
+  try {
+    const result = Bun.spawnSync(["git", "remote", "get-url", "origin"], { cwd });
+    const url = result.stdout.toString().trim();
+    if (url) {
+      // Extract repo name from git URL (handles https and ssh)
+      const match = url.match(/\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        const name = match[1];
+        // username.github.io repos are root sites — no base path needed
+        if (name.endsWith(".github.io")) return undefined;
+        return name;
+      }
+    }
+  } catch {}
+  // Fallback: use directory name
+  return basename(cwd);
+}
+
+const BROWSE_IGNORE = new Set(["node_modules", "dist", "out", ".git", "__pycache__", ".venv", "venv"]);
+
+async function browseFolder(label: string, startDir: string, startRow: number): Promise<string> {
+  let currentDir = resolve(startDir);
+
+  while (true) {
+    // Read subdirectories
+    let dirs: string[] = [];
+    try {
+      dirs = readdirSync(currentDir)
+        .filter((name) => {
+          if (name.startsWith(".") || BROWSE_IGNORE.has(name)) return false;
+          try {
+            return statSync(resolve(currentDir, name)).isDirectory();
+          } catch {
+            return false;
+          }
+        })
+        .sort();
+    } catch {
+      // Can't read directory — go up
+      currentDir = resolve(currentDir, "..");
+      continue;
+    }
+
+    // Build options list
+    const options: MenuOption[] = [
+      { label: "✓ Use this folder", description: "", value: "__select__" },
+      { label: "../", description: "parent directory", value: "__up__" },
+      ...dirs.map((d) => ({ label: `${d}/`, description: "", value: d })),
+    ];
+
+    // Draw header
+    moveTo(startRow, 3);
+    write(CLEAR_LINE);
+    write(`  ${BOLD}${label}${RESET}`);
+    moveTo(startRow + 1, 3);
+    write(CLEAR_LINE);
+    write(`  ${DIM}📂 ${currentDir}${RESET}`);
+
+    // Clear old content below
+    const maxVisible = Math.min(options.length, 15);
+    for (let i = 0; i < maxVisible + 4; i++) {
+      moveTo(startRow + 3 + i, 1);
+      write(CLEAR_LINE);
+    }
+
+    let selected = 0;
+    let scrollOffset = 0;
+
+    const render = () => {
+      const visible = Math.min(options.length, 15);
+      // Adjust scroll to keep selected in view
+      if (selected < scrollOffset) scrollOffset = selected;
+      if (selected >= scrollOffset + visible) scrollOffset = selected - visible + 1;
+
+      for (let i = 0; i < visible; i++) {
+        const idx = scrollOffset + i;
+        moveTo(startRow + 3 + i, 3);
+        write(CLEAR_LINE);
+        if (idx === selected) {
+          write(`${CYAN}${BOLD}  ▸ ${options[idx].label}${RESET}  ${DIM}${options[idx].description}${RESET}`);
+        } else {
+          write(`${DIM}    ${options[idx].label}${RESET}  ${DIM}${options[idx].description}${RESET}`);
+        }
+      }
+      // Scroll indicators
+      moveTo(startRow + 3 + visible, 3);
+      write(CLEAR_LINE);
+      if (options.length > visible) {
+        write(`${DIM}  ${scrollOffset > 0 ? "↑ " : "  "}${scrollOffset + visible < options.length ? "↓ " : "  "}(${options.length} items)${RESET}`);
+      }
+      moveTo(startRow + 3 + visible + 1, 3);
+      write(CLEAR_LINE);
+      write(`${DIM}  ↑/↓ navigate  ⏎ enter/select  q quit${RESET}`);
+    };
+
+    render();
+
+    let picked: string | null = null;
+    while (picked === null) {
+      const key = await readKey();
+
+      if (key === "\x03" || key === "q") {
+        return "quit";
+      }
+
+      if (key === "\r" || key === "\n") {
+        const val = options[selected].value;
+        if (val === "__select__") {
+          return currentDir;
+        } else if (val === "__up__") {
+          currentDir = resolve(currentDir, "..");
+          picked = "__navigate__";
+        } else {
+          currentDir = resolve(currentDir, val);
+          picked = "__navigate__";
+        }
+      }
+
+      if (key === "\x1b[A" || key === "k") {
+        selected = (selected - 1 + options.length) % options.length;
+      } else if (key === "\x1b[B" || key === "j") {
+        selected = (selected + 1) % options.length;
+      }
+
+      if (picked === null) render();
+    }
+
+    // Clear the browser area before re-rendering
+    const clearRows = Math.min(options.length, 15) + 5;
+    for (let i = 0; i < clearRows; i++) {
+      moveTo(startRow + i, 1);
+      write(CLEAR_LINE);
+    }
+  }
+}
+
 // --- TUI Flows ---
 
 export interface TuiResult {
@@ -202,13 +340,17 @@ export async function runTui(): Promise<TuiResult> {
 async function buildFlow(cwd: string): Promise<TuiResult> {
   clearScreen();
   write(LOGO);
-  moveTo(13, 3);
-  write(`  ${BOLD}${MAGENTA}Build Setup${RESET}`);
 
-  const contentDir = await promptInput("Content directory", cwd, 15);
+  // 1. Content directory — folder browser
+  const contentDir = await browseFolder("Choose your site root (the folder with your .md files)", cwd, 13);
   if (contentDir === "quit") return cleanup({ command: "quit", contentDir: cwd });
 
-  moveTo(17, 3);
+  // 2. Platform selection
+  clearScreen();
+  write(LOGO);
+  moveTo(13, 3);
+  write(`  ${BOLD}${MAGENTA}Build Setup${RESET}  ${DIM}site: ${contentDir}${RESET}`);
+  moveTo(15, 3);
   write(`  ${BOLD}Target platform${RESET}`);
 
   const platform = await selectMenu("", [
@@ -216,23 +358,38 @@ async function buildFlow(cwd: string): Promise<TuiResult> {
     { label: "GitHub Pages", description: "Adds .nojekyll + Actions workflow", value: "github" },
     { label: "Vercel", description: "Adds vercel.json", value: "vercel" },
     { label: "Netlify", description: "Adds netlify.toml", value: "netlify" },
-  ], 19);
+  ], 17);
 
   if (platform === "quit") return cleanup({ command: "quit", contentDir: cwd });
 
   const resolvedPlatform = platform === "none" ? null : platform as "github" | "vercel" | "netlify";
 
-  const defaultOut = resolve(contentDir, "dist");
-  const outDir = await promptInput("Output directory", defaultOut, 25);
-  if (outDir === "quit") return cleanup({ command: "quit", contentDir: cwd });
+  // 3. Output directory — folder browser + name
+  clearScreen();
+  write(LOGO);
+  moveTo(13, 3);
+  write(`  ${BOLD}${MAGENTA}Build Setup${RESET}  ${DIM}site: ${contentDir}${RESET}`);
 
+  const outParent = await browseFolder("Choose where to put the output folder", contentDir, 15);
+  if (outParent === "quit") return cleanup({ command: "quit", contentDir: cwd });
+
+  clearScreen();
+  write(LOGO);
+  moveTo(13, 3);
+  write(`  ${BOLD}${MAGENTA}Build Setup${RESET}  ${DIM}site: ${contentDir}${RESET}`);
+  moveTo(15, 3);
+  write(`  ${DIM}Output will be created in: ${outParent}/${RESET}`);
+  const outName = await promptInput("Output folder name", "dist", 16);
+  if (outName === "quit") return cleanup({ command: "quit", contentDir: cwd });
+  const outDir = resolve(outParent, outName);
+
+  // 4. Base path — auto-detected from git repo name
   let basePath: string | undefined;
   if (resolvedPlatform === "github") {
-    moveTo(27, 3);
-    write(`  ${DIM}Base path is needed for GitHub Pages project sites (e.g. /my-repo/)${RESET}`);
-    const bp = await promptInput("Base path", "/", 28);
-    if (bp === "quit") return cleanup({ command: "quit", contentDir: cwd });
-    basePath = bp === "/" ? undefined : bp;
+    const repoName = detectRepoName(cwd);
+    if (repoName) {
+      basePath = "/" + repoName;
+    }
   }
 
   return cleanup({
@@ -245,22 +402,10 @@ async function buildFlow(cwd: string): Promise<TuiResult> {
 }
 
 async function viewFlow(cwd: string): Promise<TuiResult> {
-  clearScreen();
-  write(LOGO);
-  moveTo(13, 3);
-  write(`  ${BOLD}${CYAN}View Site${RESET}`);
-
-  const contentDir = await promptInput("Content directory", cwd, 15);
-  if (contentDir === "quit") return cleanup({ command: "quit", contentDir: cwd });
-
-  const portStr = await promptInput("Port", "3001", 17);
-  if (portStr === "quit") return cleanup({ command: "quit", contentDir: cwd });
-  const port = Number(portStr) || 3001;
-
   return cleanup({
     command: "dev",
-    contentDir: resolve(contentDir),
-    port,
+    contentDir: cwd,
+    port: 3001,
   });
 }
 

@@ -27,7 +27,7 @@ Known constraints of readrun in its current state.
 - **No hot reload** — in View mode, changes to markdown files require a page refresh to see. There is no file watcher or live reload.
 - **No client-side routing** — navigating between pages is a full page load. Python state resets when you navigate to a different page.
 - **No broken link detection** — links to non-existent markdown files are not caught during build. They just 404 at runtime.
-- **Node_modules and common dirs are filtered** — the nav tree ignores `node_modules`, `dist`, `out`, `__pycache__`, and `venv` directories. If your content is inside one of these, it won't appear.
+- **Common directories are filtered** — the nav tree ignores `.git`, `node_modules`, `dist`, `out`, `__pycache__`, and `venv` directories. If your content is inside one of these, it won't appear.
 
 ## Static builds
 

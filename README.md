@@ -23,7 +23,7 @@ rr -t                      # try the built-in docs
 ## Features
 
 - **Markdown-first** -- your existing notes work as-is, no special syntax needed
-- **Executable code** -- `:::python` code blocks run in the browser via Pyodide with automatic package installation. `:::html` blocks render in a sandboxed iframe that auto-resizes to fit the content, with automatic detection of JS libraries (Plotly, D3, Chart.js, Three.js, Leaflet, Mermaid, etc.) so you don't need CDN script tags. All blocks have Hide/Show and Enlarge controls; add `hidden` (e.g. `:::python hidden`) to start collapsed
+- **Executable code** -- `:::python` code blocks run in the browser via Pyodide with automatic package installation. `:::html` blocks render in a sandboxed iframe that auto-resizes to fit the content, with automatic detection of JS libraries (Plotly, D3, Chart.js, Observable Plot, Three.js, p5.js, Leaflet, Mermaid) so you don't need CDN script tags. All blocks have Hide/Show, Enlarge (full-screen modal), and Run controls; add `hidden` (e.g. `:::python hidden`) to start collapsed
 - **File uploads** -- `:::upload "Label" accept=.csv multiple rename=data.csv` renders an upload button that writes files into Pyodide's virtual filesystem, so subsequent Python blocks can read them with standard file I/O
 - **Shared Python session** -- all code blocks on a page share state, like Jupyter notebook cells. Imports and variables persist between blocks
 - **File references** -- keep code in `.readrun/scripts/` and images in `.readrun/images/`, reference with `:::filename`
@@ -31,21 +31,26 @@ rr -t                      # try the built-in docs
 - **Resource browser** -- sidebar tabs for content, images, files, and scripts -- browse `.readrun/` resources without leaving the page
 - **In-page search** -- press `/` to search the current page with highlighted matches and navigation
 - **Context menu** -- right-click in the main content for quick access to Search and Settings
-- **Table of contents** -- auto-generated TOC sidebar from headings, with collapsible sections
-- **Themes** -- 8 built-in themes (Light, Dark, Solarized, Nord, Dracula, Monokai, Gruvbox, Catppuccin)
-- **Keyboard shortcuts** -- fully configurable via `~/.config/readrun/settings.toml`
+- **Table of contents** -- auto-generated TOC sidebar from headings, with collapsible sections and scroll spy
+- **Themes** -- 8 built-in themes (Light, Dark, Solarized, Nord, Dracula, Monokai, Gruvbox, Catppuccin) with a visual theme picker
+- **Keyboard shortcuts** -- fully configurable via `~/.config/readrun/settings.toml`, including chord bindings (e.g. `g h` for home)
 - **Link navigation** -- markdown links between `.md` files are automatically rewritten for site navigation
 - **Settings panel** -- press Escape to adjust font size, content width, theme, and sidebar visibility
-- **Platform builds** -- build for GitHub Pages, Vercel, or Netlify via the TUI
+- **Focus mode** -- press `f` to hide both sidebars for distraction-free reading
+- **Resizable sidebars** -- drag sidebar edges to resize, widths persist across sessions
+- **Image lightbox** -- click any image to view it enlarged
+- **Ignore patterns** -- `.readrun/.ignore` file to exclude files and folders from navigation
+- **Smart port detection** -- dev server automatically finds an available port
+- **Platform builds** -- build for GitHub Pages, Vercel, or Netlify via the TUI with auto-detected base paths
 
 ## Usage
 
 ```bash
-readrun    # launch interactive TUI
-rr         # shorthand
+cd your-markdown-folder
+rr                         # launch TUI
 ```
 
-The TUI lets you choose between View, Build, Docs, and Update. Each mode prompts for content directory, port, and other options.
+Select **View** to preview from the current directory, or **Build** to generate a static site. The build flow has a folder browser for choosing your content and output directories.
 
 ## How it works
 
@@ -68,7 +73,7 @@ my-notes/
     files/              # author-curated data (embedded in static builds)
 ```
 
-It renders a website with a sidebar nav built from your folder structure. Standard Markdown renders as clean HTML. Code blocks wrapped in `:::python` / `:::` get a "Run" button -- readers click it and see output inline. `:::html` blocks render in a sandboxed iframe that dynamically resizes to match the content — no fixed height limit. The iframe observes content changes, so interactive elements that grow or shrink (accordions, form submissions, dynamic lists) update the frame size automatically. All executable blocks have a Hide/Show toggle to collapse the code while keeping the Run button and output visible.
+It renders a website with a sidebar nav built from your folder structure. Standard Markdown renders as clean HTML. Code blocks wrapped in `:::python` / `:::` get a "Run" button -- readers click it and see output inline. `:::html` blocks render in a sandboxed iframe that dynamically resizes to match the content. All executable blocks have Hide/Show, Enlarge (full-screen modal), and Run controls.
 
 Add `hidden` after the language to start a block collapsed:
 
@@ -110,23 +115,17 @@ This renders a button that writes the selected file into Pyodide's virtual files
 
 **Your existing Markdown notes should just work.** Executable code and file downloads are optional layers -- a site built entirely from standard Markdown is a first-class use case. Notes written for readrun remain readable in any Markdown viewer.
 
-See [docs/philosophy.md](docs/philosophy.md) for more.
+See [readrun-docs/docs/philosophy.md](readrun-docs/docs/philosophy.md) for more.
 
 ## Deployment
 
-Build a static site and deploy anywhere:
+Run `rr` from your repository, select **Build**, and pick your platform. The TUI walks you through choosing your content folder and output directory. For GitHub Pages, the base path is auto-detected from your git remote.
 
-```bash
-rr build github    # GitHub Pages (.nojekyll + Actions workflow)
-rr build vercel    # Vercel (vercel.json)
-rr build netlify   # Netlify (netlify.toml)
-```
-
-Python execution happens client-side via Pyodide (WASM), so static hosts work without a server. See [docs/deployment.md](docs/deployment.md) for details.
+Python execution happens client-side via Pyodide (WASM), so static hosts work without a server. See [readrun-docs/docs/deployment.md](readrun-docs/docs/deployment.md) for details.
 
 ## Documentation
 
-- [Philosophy](docs/philosophy.md) -- core design principles
-- [Deployment](docs/deployment.md) -- building and hosting your site
-- [Limitations](docs/limitations.md) -- known constraints
-- [Future features](docs/future/) -- planned work
+- [Philosophy](readrun-docs/docs/philosophy.md) -- core design principles
+- [Deployment](readrun-docs/docs/deployment.md) -- building and hosting your site
+- [Limitations](readrun-docs/docs/limitations.md) -- known constraints
+- [Future features](readrun-docs/docs/future/) -- planned work

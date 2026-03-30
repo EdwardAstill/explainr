@@ -40,9 +40,8 @@ const contentDir = result.testMode ? docsDir : result.contentDir;
 switch (result.command) {
   case "dev": {
     const { startServer } = await import("./server");
-    const port = result.port || 3001;
-    await startServer({ contentDir, port });
-    openBrowser(`http://localhost:${port}`);
+    const actualPort = await startServer({ contentDir, port: result.port || 3001 });
+    openBrowser(`http://localhost:${actualPort}`);
     break;
   }
   case "build": {

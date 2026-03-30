@@ -45,7 +45,7 @@ export async function build(options: BuildOptions) {
       const source = await readFile(mdPath, "utf-8");
       const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
       const rendered = renderMarkdown(resolved);
-      const toc = extractToc(source);
+      const toc = extractToc(resolved);
       const nav = renderNav(tree, page.path);
       const title = extractTitle(source, page.name);
 

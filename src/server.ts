@@ -25,13 +25,36 @@ const MIME: Record<string, string> = {
   ".txt": "text/plain",
 };
 
+async function isPortAvailable(port: number): Promise<boolean> {
+  try {
+    const { createServer } = await import("net");
+    return new Promise((resolve) => {
+      const server = createServer();
+      server.once("error", () => resolve(false));
+      server.listen(port, "localhost", () => {
+        server.close(() => resolve(true));
+      });
+    });
+  } catch {
+    return false;
+  }
+}
+
+async function findAvailablePort(start: number): Promise<number> {
+  for (let port = start; port < start + 20; port++) {
+    if (await isPortAvailable(port)) return port;
+  }
+  return start;
+}
+
 export interface ServerOptions {
   contentDir: string;
   port: number;
 }
 
-export async function startServer(options: ServerOptions) {
-  const { contentDir, port } = options;
+export async function startServer(options: ServerOptions): Promise<number> {
+  const port = await findAvailablePort(options.port);
+  const { contentDir } = options;
   const normalizedContent = normalize(resolve(contentDir));
   const scriptsDir = join(contentDir, ".readrun", "scripts");
   const imagesDir = join(contentDir, ".readrun", "images");
@@ -131,7 +154,7 @@ export async function startServer(options: ServerOptions) {
         const source = await readFile(mdPath, "utf-8");
         const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
         const rendered = renderMarkdown(resolved);
-        const toc = extractToc(source);
+        const toc = extractToc(resolved);
         const nav = renderNav(tree, pagePath);
         const title = extractTitle(source, pagePath.split("/").pop() || "readrun");
 
@@ -148,4 +171,5 @@ export async function startServer(options: ServerOptions) {
 
   console.log(`readrun running at http://localhost:${port}`);
   console.log(`Serving content from: ${contentDir}`);
+  return port;
 }

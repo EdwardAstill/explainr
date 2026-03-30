@@ -232,7 +232,7 @@ const EXT_TO_MIME: Record<string, string> = {
 };
 
 export async function resolveFileReferences(source: string, scriptsDir: string, imagesDir: string): Promise<string> {
-  const fileRefPattern = /^:::([\w.-]+\.\w+)[^\S\n]*$/gm;
+  const fileRefPattern = /^:::([\w.-]+\.\w+)(?:[^\S\n]+(hidden))?[^\S\n]*$/gm;
   const matches = [...source.matchAll(fileRefPattern)];
   if (matches.length === 0) return source;
 
@@ -240,6 +240,7 @@ export async function resolveFileReferences(source: string, scriptsDir: string, 
   // Process in reverse so indices stay valid
   for (const match of matches.reverse()) {
     const filename = match[1];
+    const hidden = match[2] === "hidden";
     const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
 
     let replacement: string;
@@ -259,12 +260,13 @@ export async function resolveFileReferences(source: string, scriptsDir: string, 
     } else {
       // Code reference — resolve from .readrun/scripts/
       const lang = EXT_TO_LANG[ext] || ext.slice(1);
+      const hiddenFlag = hidden ? " hidden" : "";
       const filePath = join(scriptsDir, filename);
       try {
         const content = await readFile(filePath, "utf-8");
-        replacement = `:::${lang}\n${content}\n:::`;
+        replacement = `:::${lang}${hiddenFlag}\n${content}\n:::`;
       } catch {
-        replacement = `:::${lang}\n# Error: file not found: .readrun/scripts/${filename}\n:::`;
+        replacement = `:::${lang}${hiddenFlag}\n# Error: file not found: .readrun/scripts/${filename}\n:::`;
       }
     }
 
