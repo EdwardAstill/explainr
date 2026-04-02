@@ -44,7 +44,7 @@ async function findAvailablePort(start: number): Promise<number> {
   for (let port = start; port < start + 20; port++) {
     if (await isPortAvailable(port)) return port;
   }
-  return start;
+  throw new Error(`No available port found in range ${start}–${start + 19}`);
 }
 
 export interface ServerOptions {
@@ -112,7 +112,7 @@ export async function startServer(options: ServerOptions): Promise<number> {
         } else {
           const fileName = parts.slice(1).join("/");
           const filePath = normalize(resolve(dir, fileName));
-          if (!filePath.startsWith(dir)) {
+          if (!filePath.startsWith(dir + "/") && filePath !== dir) {
             return new Response("Forbidden", { status: 403 });
           }
           try {

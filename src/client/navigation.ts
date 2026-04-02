@@ -147,6 +147,7 @@ export const navigationCode = `
           if (mainContent && savedMainHtml) {
             mainContent.innerHTML = savedMainHtml;
           }
+          setTimeout(applyEnteredFolder, 0);
         } else {
           window.location.reload();
         }
@@ -216,4 +217,152 @@ export const navigationCode = `
       setActiveTab(activeTab);
       loadResourceTab(activeTab);
     }
+
+    // --- Enter folder feature ---
+    const ENTERED_FOLDER_KEY = "readrun-entered-folder";
+
+    function getEnteredFolder() {
+      return localStorage.getItem(ENTERED_FOLDER_KEY) || null;
+    }
+
+    function setEnteredFolder(path) {
+      if (path) localStorage.setItem(ENTERED_FOLDER_KEY, path);
+      else localStorage.removeItem(ENTERED_FOLDER_KEY);
+    }
+
+    // Sidebar context menu
+    const sidebarCtxMenu = document.getElementById("sidebar-context-menu");
+    let ctxFolderPath = null;
+
+    function showSidebarCtxMenu(x, y) {
+      sidebarCtxMenu.style.left = x + "px";
+      sidebarCtxMenu.style.top = y + "px";
+      sidebarCtxMenu.classList.add("open");
+      const rect = sidebarCtxMenu.getBoundingClientRect();
+      if (rect.right > window.innerWidth) sidebarCtxMenu.style.left = (window.innerWidth - rect.width - 4) + "px";
+      if (rect.bottom > window.innerHeight) sidebarCtxMenu.style.top = (window.innerHeight - rect.height - 4) + "px";
+    }
+
+    function hideSidebarCtxMenu() {
+      sidebarCtxMenu.classList.remove("open");
+      ctxFolderPath = null;
+    }
+
+    const sidebarNavEl = document.querySelector(".sidebar-nav");
+    if (sidebarNavEl) {
+      sidebarNavEl.addEventListener("contextmenu", (e) => {
+        const summary = e.target.closest("details[data-nav-path] > summary");
+        if (!summary) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const details = summary.parentElement;
+        ctxFolderPath = details.dataset.navPath;
+        showSidebarCtxMenu(e.clientX, e.clientY);
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      if (sidebarCtxMenu && !sidebarCtxMenu.contains(e.target)) hideSidebarCtxMenu();
+    });
+
+    document.addEventListener("scroll", hideSidebarCtxMenu, { passive: true });
+
+    if (sidebarCtxMenu) {
+      sidebarCtxMenu.addEventListener("click", (e) => {
+        const item = e.target.closest(".context-menu__item");
+        if (!item) return;
+        const folderPath = ctxFolderPath;
+        hideSidebarCtxMenu();
+        if (item.dataset.action === "enter-folder" && folderPath) {
+          setEnteredFolder(folderPath);
+          applyEnteredFolder();
+        }
+      });
+    }
+
+    function applyEnteredFolder() {
+      const navEl = document.querySelector(".sidebar-nav");
+      if (!navEl) return;
+
+      // Remove any existing breadcrumb bar
+      const existingBar = navEl.querySelector(".entered-folder-bar");
+      if (existingBar) existingBar.remove();
+
+      // Reset all hidden/promoted state
+      navEl.querySelectorAll(".entered-folder-hidden").forEach(el => el.classList.remove("entered-folder-hidden"));
+      navEl.querySelectorAll(".entered-folder-promoted").forEach(el => el.classList.remove("entered-folder-promoted"));
+
+      const enteredPath = getEnteredFolder();
+      if (!enteredPath) return;
+
+      const targetDetails = navEl.querySelector('details[data-nav-path="' + CSS.escape(enteredPath) + '"]');
+      if (!targetDetails) {
+        setEnteredFolder(null);
+        return;
+      }
+
+      // Force target open
+      targetDetails.setAttribute("open", "");
+
+      // Find all ancestor <li> elements from target up to nav root
+      const ancestorLis = new Set();
+      let el = targetDetails.closest("li");
+      while (el && navEl.contains(el)) {
+        ancestorLis.add(el);
+        const parentUl = el.parentElement;
+        if (!parentUl) break;
+        el = parentUl.closest("li");
+      }
+
+      // At each level, hide siblings not in the ancestor chain
+      for (const ancestorLi of ancestorLis) {
+        const parentUl = ancestorLi.parentElement;
+        if (!parentUl) continue;
+        for (const sibling of parentUl.children) {
+          if (sibling !== ancestorLi) {
+            sibling.classList.add("entered-folder-hidden");
+          }
+        }
+        // Force ancestor details open and hide their summaries
+        const details = ancestorLi.querySelector(":scope > details");
+        if (details) {
+          details.setAttribute("open", "");
+          details.querySelector(":scope > summary").classList.add("entered-folder-hidden");
+        }
+      }
+
+      // Promote the target's inner <ul> (remove indentation)
+      const innerUl = targetDetails.querySelector(":scope > ul");
+      if (innerUl) innerUl.classList.add("entered-folder-promoted");
+
+      // Build breadcrumb bar
+      const segments = enteredPath.split("/").filter(Boolean);
+      let breadcrumbHtml = '<div class="entered-folder-bar">';
+      breadcrumbHtml += '<span class="entered-folder-bar__item" data-enter-path="">&#x2302;</span>';
+      let accum = "";
+      for (let i = 0; i < segments.length; i++) {
+        accum += "/" + segments[i];
+        const isLast = i === segments.length - 1;
+        breadcrumbHtml += '<span class="entered-folder-bar__sep">/</span>';
+        if (isLast) {
+          breadcrumbHtml += '<span class="entered-folder-bar__current">' + escapeHtml(segments[i]) + '</span>';
+        } else {
+          breadcrumbHtml += '<span class="entered-folder-bar__item" data-enter-path="' + escapeHtml(accum) + '">' + escapeHtml(segments[i]) + '</span>';
+        }
+      }
+      breadcrumbHtml += '</div>';
+      navEl.insertAdjacentHTML("afterbegin", breadcrumbHtml);
+
+      // Breadcrumb click handlers
+      navEl.querySelector(".entered-folder-bar").addEventListener("click", (e) => {
+        const item = e.target.closest("[data-enter-path]");
+        if (!item) return;
+        const path = item.dataset.enterPath;
+        setEnteredFolder(path || null);
+        applyEnteredFolder();
+      });
+    }
+
+    // Apply on page load
+    applyEnteredFolder();
 `;

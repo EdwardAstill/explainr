@@ -233,8 +233,8 @@ export interface EmbeddedFile {
 
 export function htmlPage(nav: string, content: string, title: string, basePath?: string, config: ReadrunConfig = defaultConfig, embeddedFiles: EmbeddedFile[] = [], toc: TocEntry[] = []): string {
   const baseTag = basePath ? `\n  <base href="${escape(basePath)}">` : "";
-  const configJson = JSON.stringify(config.shortcuts);
-  const filesJson = JSON.stringify(embeddedFiles);
+  const configJson = JSON.stringify(config.shortcuts).replace(/<\//g, "<\\/");
+  const filesJson = JSON.stringify(embeddedFiles).replace(/<\//g, "<\\/");
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,6 +276,9 @@ ${themePickerOverlayHtml}
     <div class="context-menu__item" data-action="search">Search</div>
     <div class="context-menu__sep"></div>
     <div class="context-menu__item" data-action="settings">Settings</div>
+  </div>
+  <div class="context-menu" id="sidebar-context-menu">
+    <div class="context-menu__item" data-action="enter-folder">Enter folder</div>
   </div>
   <div class="lightbox" id="lightbox"><img id="lightbox-img" alt=""></div>
   <div class="code-modal" id="code-modal">

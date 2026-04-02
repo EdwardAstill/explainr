@@ -125,6 +125,45 @@ export const uiStyles = `
       margin: 2px 0;
     }
 
+    /* Entered folder */
+    .entered-folder-hidden { display: none !important; }
+    .entered-folder-promoted { padding-left: 0 !important; }
+
+    .entered-folder-bar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 12px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--color-border);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-text-muted);
+      flex-wrap: wrap;
+    }
+
+    .entered-folder-bar__item {
+      cursor: pointer;
+      color: var(--color-link);
+      padding: 1px 3px;
+      border-radius: 3px;
+    }
+
+    .entered-folder-bar__item:hover {
+      background: var(--color-border);
+      text-decoration: underline;
+    }
+
+    .entered-folder-bar__sep {
+      color: var(--color-text-muted);
+      user-select: none;
+    }
+
+    .entered-folder-bar__current {
+      color: var(--color-text);
+      font-weight: 600;
+    }
+
     /* Focus mode */
     [data-focus="true"] .sidebar { display: none !important; }
     [data-focus="true"] .settings { display: none !important; }
