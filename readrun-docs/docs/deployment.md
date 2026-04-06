@@ -7,12 +7,13 @@ Run `rr` from your content folder and select **View**. readrun serves the curren
 ## Usage
 
 ```bash
-readrun    # launch interactive TUI
-rr         # shorthand
-rr -t      # preview the built-in docs
+readrun          # launch interactive TUI
+rr               # shorthand
+rr <folder>      # open a folder directly
+rr <file.md>     # open a single markdown file directly
 ```
 
-The TUI lets you choose between View, Build, Docs, and Update.
+The TUI has six options: **View** (preview current directory), **Saved** (open a saved path), **File** (browse and open a single markdown file), **Build** (generate a static site), **Docs** (preview the built-in documentation), and **Update** (install/update dependencies).
 
 ## Building a static site
 
@@ -48,18 +49,25 @@ readrun stores settings at `~/.config/readrun/settings.toml`. This file is creat
 
 ```toml
 [shortcuts]
-search = "/"
-settings = "Escape"
-next_page = "j"
-prev_page = "k"
-home = "g h"
-scroll_down = "d"
-scroll_up = "u"
-focus_mode = "f"
-run_all = "r a"
+nextPage       = "j"
+prevPage       = "k"
+goHome         = "g h"
+scrollDown     = "Space"
+scrollUp       = "Shift+Space"
+scrollToTop    = "g g"
+scrollToBottom = "G"
+toggleSidebar  = "s"
+focusMode      = "f"
+nextTheme      = "t"
+prevTheme      = "T"
+fontIncrease   = "+"
+fontDecrease   = "-"
+search         = "/"
+showShortcuts  = "?"
+closeOverlay   = "Escape"
 ```
 
-Chord bindings like `g h` (go home) and `r a` (run all) require pressing both keys within one second.
+Chord bindings like `g h` (go home) and `g g` (scroll to top) require pressing both keys within one second.
 
 ## Ignore patterns
 
@@ -91,6 +99,8 @@ your-notes/
 
 ## How code execution works
 
+### Python blocks (`:::python`)
+
 Python code blocks run entirely in the browser via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly). No server is involved.
 
 - **Automatic package installation** — import statements are parsed and packages are installed via micropip automatically. Common packages (numpy, pandas, matplotlib, scipy) are available from Pyodide's distribution. Pure-Python PyPI packages also work. Common import-to-package mappings are built in (e.g. `PIL` → `pillow`, `cv2` → `opencv-python`, `sklearn` → `scikit-learn`)
@@ -101,10 +111,28 @@ Python code blocks run entirely in the browser via [Pyodide](https://pyodide.org
 - **File uploads** — `:::upload` directives render upload buttons that write files into Pyodide's virtual filesystem via the browser File API, making them available to Python code with standard file I/O
 - **Embedded data** — files placed in `.readrun/files/` are embedded into the static build (base64 encoded) and preloaded into Pyodide's virtual filesystem
 
+### JSX blocks (`:::jsx`)
+
+JSX blocks run React/JSX code in the browser and auto-render on page load (no Run button needed). React 18, ReactDOM, Babel, and Tailwind CSS are loaded automatically.
+
+Use the `render()` function to mount a component:
+
+```
+:::jsx
+function Counter() {
+  const [n, setN] = React.useState(0);
+  return <button onClick={() => setN(n + 1)} className="p-2 bg-blue-500 text-white rounded">Clicked {n} times</button>;
+}
+render(<Counter />);
+:::
+```
+
+JSX blocks can also have Hide/Show, Enlarge, and Run controls like Python blocks. Add `hidden` to start collapsed.
+
 ## User interface
 
-- **Settings panel** — press Escape to open. Adjust font size (small/medium/large), content width (500–1400px slider), theme, and sidebar visibility
-- **Theme picker** — click the theme name in settings to browse all 8 themes with live previews (Light, Dark, Solarized, Nord, Dracula, Monokai, Gruvbox, Catppuccin)
+- **Settings panel** — press Escape to open (Escape follows a priority chain: close open overlays → close search → close settings panel → exit focus mode → open settings). Adjust font size (small/medium/large), content width (500–1400px slider), theme, and sidebar visibility
+- **Theme picker** — click the theme name in settings to browse all 8 themes with live previews (Light, Dark, Solarized, Nord, Dracula, Monokai, Gruvbox, Catppuccin). Or press `t`/`T` to cycle themes directly
 - **In-page search** — press `/` to search. Matches are highlighted and counted (e.g. "3/12"). Navigate with Enter/Shift+Enter or arrow buttons
 - **Table of contents** — auto-generated from headings in the right sidebar. Sections are collapsible. The current section highlights as you scroll (scroll spy). Heading IDs are generated from the text (e.g. `## My Section` → `#my-section`)
 - **Context menu** — right-click in the content area for quick access to Search and Settings
@@ -113,23 +141,30 @@ Python code blocks run entirely in the browser via [Pyodide](https://pyodide.org
 - **Resizable sidebars** — drag the edge of the nav or TOC sidebar to resize. Widths persist across page loads
 - **Image lightbox** — click any image to view it enlarged. Press Escape to close
 - **Resource browser** — sidebar tabs for images, files, and scripts from `.readrun/`. Only works in View mode (dev server); static builds show empty tabs
+- **Enter folder** — right-click any folder in the nav sidebar to zoom into it. A breadcrumb bar appears at the top; click any crumb to navigate back up
+- **Saved documents** — the TUI **Saved** option lets you save folders or files for quick access. Saved paths are stored in `~/.config/readrun/settings.toml` under `[[saved]]` entries
 
 ## Keyboard shortcuts
 
-All shortcuts are configurable in `~/.config/readrun/settings.toml`.
+All shortcuts are configurable in `~/.config/readrun/settings.toml`. Press `?` on any page to view the full list.
 
 | Action | Default | Description |
 |--------|---------|-------------|
 | Search | `/` | Open in-page search |
-| Settings | `Escape` | Toggle settings panel |
+| Close / Settings | `Escape` | Close overlays → search → settings panel → focus mode → open settings |
+| Show shortcuts | `?` | Open keyboard shortcuts overlay |
 | Next page | `j` | Navigate to next page |
 | Previous page | `k` | Navigate to previous page |
-| Home | `g h` | Go to first page |
-| Scroll down | `d` | Smooth scroll down |
-| Scroll up | `u` | Smooth scroll up |
-| Focus mode | `f` | Toggle sidebar visibility |
-| Run all | `r a` | Run all code blocks on page |
-
-Escape also closes search, modals, and focus mode (in that priority order).
+| Go home | `g h` | Go to first page |
+| Scroll down | `Space` | Scroll down one screen |
+| Scroll up | `Shift+Space` | Scroll up one screen |
+| Scroll to top | `g g` | Jump to top of page |
+| Scroll to bottom | `G` | Jump to bottom of page |
+| Toggle sidebar | `s` | Show/hide nav sidebar |
+| Focus mode | `f` | Hide both sidebars |
+| Next theme | `t` | Cycle to next theme |
+| Previous theme | `T` | Cycle to previous theme |
+| Increase font | `+` | Increase font size |
+| Decrease font | `-` | Decrease font size |
 
 See [limitations](./limitations.md) for known constraints.

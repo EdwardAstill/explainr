@@ -17,13 +17,14 @@ bun install -g github:EdwardAstill/readrun
 ```bash
 cd your-markdown-folder
 rr                         # launch TUI, select View to preview
-rr -t                      # try the built-in docs
+rr <folder>                # open a folder directly
+rr <file.md>               # open a single file directly
 ```
 
 ## Features
 
 - **Markdown-first** -- your existing notes work as-is, no special syntax needed
-- **Executable code** -- `:::python` code blocks run in the browser via Pyodide with automatic package installation. `:::html` blocks render in a sandboxed iframe that auto-resizes to fit the content, with automatic detection of JS libraries (Plotly, D3, Chart.js, Observable Plot, Three.js, p5.js, Leaflet, Mermaid) so you don't need CDN script tags. All blocks have Hide/Show, Enlarge (full-screen modal), and Run controls; add `hidden` (e.g. `:::python hidden`) to start collapsed
+- **Executable code** -- `:::python` code blocks run in the browser via Pyodide with automatic package installation. `:::jsx` blocks run React/JSX components (with Tailwind) and auto-render on page load without a Run button. All blocks have Hide/Show, Enlarge (full-screen modal), and Run controls; add `hidden` (e.g. `:::python hidden`) to start collapsed
 - **File uploads** -- `:::upload "Label" accept=.csv multiple rename=data.csv` renders an upload button that writes files into Pyodide's virtual filesystem, so subsequent Python blocks can read them with standard file I/O
 - **Shared Python session** -- all code blocks on a page share state, like Jupyter notebook cells. Imports and variables persist between blocks
 - **File references** -- keep code in `.readrun/scripts/` and images in `.readrun/images/`, reference with `:::filename`
@@ -33,24 +34,35 @@ rr -t                      # try the built-in docs
 - **Context menu** -- right-click in the main content for quick access to Search and Settings
 - **Table of contents** -- auto-generated TOC sidebar from headings, with collapsible sections and scroll spy
 - **Themes** -- 8 built-in themes (Light, Dark, Solarized, Nord, Dracula, Monokai, Gruvbox, Catppuccin) with a visual theme picker
-- **Keyboard shortcuts** -- fully configurable via `~/.config/readrun/settings.toml`, including chord bindings (e.g. `g h` for home)
+- **Keyboard shortcuts** -- fully configurable via `~/.config/readrun/settings.toml`, including chord bindings (e.g. `g h` for home). Press `?` to see all shortcuts
 - **Link navigation** -- markdown links between `.md` files are automatically rewritten for site navigation
-- **Settings panel** -- press Escape to adjust font size, content width, theme, and sidebar visibility
+- **Settings panel** -- press Escape to open/close. Adjust font size, content width, theme, and sidebar visibility. Escape also closes overlays, search, and focus mode (in priority order)
 - **Focus mode** -- press `f` to hide both sidebars for distraction-free reading
 - **Resizable sidebars** -- drag sidebar edges to resize, widths persist across sessions
 - **Image lightbox** -- click any image to view it enlarged
+- **Enter folder** -- right-click a folder in the nav to zoom into it with breadcrumb navigation
+- **Saved documents** -- save frequently used folders or files in the TUI for quick access
 - **Ignore patterns** -- `.readrun/.ignore` file to exclude files and folders from navigation
 - **Smart port detection** -- dev server automatically finds an available port
 - **Platform builds** -- build for GitHub Pages, Vercel, or Netlify via the TUI with auto-detected base paths
+- **Math rendering** -- LaTeX blocks render via KaTeX when `@vscode/markdown-it-katex` is installed
 
 ## Usage
 
 ```bash
 cd your-markdown-folder
 rr                         # launch TUI
+rr <folder>                # open a folder directly
+rr <file.md>               # open a single markdown file directly
 ```
 
-Select **View** to preview from the current directory, or **Build** to generate a static site. The build flow has a folder browser for choosing your content and output directories.
+The TUI has six options:
+- **View** — preview the current directory
+- **Saved** — open a saved folder or file (add paths with the Add option)
+- **File** — browse and open a single markdown file
+- **Build** — generate a static site for deployment
+- **Docs** — preview the built-in readrun documentation
+- **Update** — install/update dependencies
 
 ## How it works
 
@@ -73,7 +85,7 @@ my-notes/
     files/              # author-curated data (embedded in static builds)
 ```
 
-It renders a website with a sidebar nav built from your folder structure. Standard Markdown renders as clean HTML. Code blocks wrapped in `:::python` / `:::` get a "Run" button -- readers click it and see output inline. `:::html` blocks render in a sandboxed iframe that dynamically resizes to match the content. All executable blocks have Hide/Show, Enlarge (full-screen modal), and Run controls.
+It renders a website with a sidebar nav built from your folder structure. Standard Markdown renders as clean HTML. Code blocks wrapped in `:::python` / `:::` get a "Run" button -- readers click it and see output inline. `:::jsx` blocks render React/JSX components automatically on page load (no Run button needed). All executable blocks have Hide/Show, Enlarge (full-screen modal), and Run controls.
 
 Add `hidden` after the language to start a block collapsed:
 
@@ -101,7 +113,17 @@ Click any image to enlarge it.
 
 Python runs in the browser via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly). Packages like numpy, pandas, matplotlib, and scipy are detected from import statements and installed automatically. All code blocks on a page share a single Python session -- variables and imports persist between blocks, like cells in a Jupyter notebook. Matplotlib plots render inline automatically. Files generated by scripts (CSVs, images, etc.) are detected and offered as downloads.
 
-HTML blocks auto-detect JS library usage and inject CDN scripts automatically -- just use `Plotly.newPlot(...)`, `d3.select(...)`, `new Chart(...)`, etc. and the library loads without manual `<script>` tags. Supported: Plotly, D3, Chart.js, Observable Plot, Three.js, p5.js, Leaflet, and Mermaid.
+JSX blocks have access to React, ReactDOM, and Tailwind CSS (loaded automatically). Use the `render()` function to mount your component:
+
+```
+:::jsx
+function Counter() {
+  const [n, setN] = React.useState(0);
+  return <button onClick={() => setN(n + 1)} className="p-2 bg-blue-500 text-white rounded">Clicked {n} times</button>;
+}
+render(<Counter />);
+:::
+```
 
 Upload buttons let readers load their own files into the Python environment:
 

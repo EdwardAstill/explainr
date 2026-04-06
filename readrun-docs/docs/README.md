@@ -15,12 +15,16 @@ readrun turns folders of Markdown into interactive websites. No config, no front
 ## Quick start
 
 ```bash
-bun install -g readrun
+bun install -g github:EdwardAstill/readrun
 
 # serve your notes
 cd your-notes-folder
-readrun
+rr
 
-# or try the built-in demo
-# select "Demo" from the TUI menu
+# open a folder or file directly
+rr <folder>
+rr <file.md>
+
+# or try the built-in docs
+# select "Docs" from the TUI menu
 ```
