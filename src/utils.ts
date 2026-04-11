@@ -42,7 +42,7 @@ export function detectRepoName(cwd: string): string | undefined {
     const url = result.stdout.toString().trim();
     if (url) {
       const match = url.match(/\/([^/]+?)(?:\.git)?$/);
-      if (match) {
+      if (match?.[1]) {
         const name = match[1];
         if (name.endsWith(".github.io")) return undefined;
         return name;
