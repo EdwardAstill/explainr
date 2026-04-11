@@ -36,3 +36,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # readrun preview output
 .readrun/.preview/
+
+# git worktrees
+.worktrees/
