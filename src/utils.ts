@@ -35,3 +35,19 @@ export function findFirstFile(nodes: NavNode[]): string | null {
   }
   return null;
 }
+
+export function detectRepoName(cwd: string): string | undefined {
+  try {
+    const result = Bun.spawnSync(["git", "remote", "get-url", "origin"], { cwd });
+    const url = result.stdout.toString().trim();
+    if (url) {
+      const match = url.match(/\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        const name = match[1];
+        if (name.endsWith(".github.io")) return undefined;
+        return name;
+      }
+    }
+  } catch {}
+  return undefined;
+}
