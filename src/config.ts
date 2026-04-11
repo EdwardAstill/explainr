@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join, resolve } from "path";
 import { mkdir, writeFile, stat } from "fs/promises";
 import { homedir } from "os";
 
@@ -29,6 +29,7 @@ export interface SavedEntry {
 export interface ReadrunConfig {
   shortcuts: ShortcutConfig;
   saved: SavedEntry[];
+  recent: string[];
 }
 
 export const defaultShortcuts: ShortcutConfig = {
@@ -53,6 +54,7 @@ export const defaultShortcuts: ShortcutConfig = {
 export const defaultConfig: ReadrunConfig = {
   shortcuts: { ...defaultShortcuts },
   saved: [],
+  recent: [],
 };
 
 function escapeTomlString(s: string): string {
@@ -75,10 +77,18 @@ function savedToToml(entries: SavedEntry[]): string {
     .join("\n\n") + "\n";
 }
 
+function recentToToml(recent: string[]): string {
+  if (recent.length === 0) return "";
+  return recent.map(p => `[[recent]]\npath = "${escapeTomlString(p)}"`).join("\n\n") + "\n";
+}
+
 function configToToml(config: ReadrunConfig): string {
   let toml = shortcutsToToml(config.shortcuts);
   if (config.saved.length > 0) {
     toml += "\n" + savedToToml(config.saved);
+  }
+  if (config.recent.length > 0) {
+    toml += "\n" + recentToToml(config.recent);
   }
   return toml;
 }
@@ -92,6 +102,13 @@ export async function saveConfig(config: ReadrunConfig): Promise<void> {
   const configDir = join(homedir(), ".config", "readrun");
   await mkdir(configDir, { recursive: true });
   await writeFile(configPath, configToToml(config));
+}
+
+export async function addRecent(path: string): Promise<void> {
+  const config = await loadConfig();
+  const abs = resolve(path);
+  config.recent = [abs, ...config.recent.filter(p => p !== abs)].slice(0, 5);
+  await saveConfig(config);
 }
 
 export async function loadConfig(): Promise<ReadrunConfig> {
@@ -126,6 +143,13 @@ export async function loadConfig(): Promise<ReadrunConfig> {
       config.saved = parsed.saved
         .filter((e: any) => typeof e.name === "string" && typeof e.path === "string")
         .map((e: any) => ({ name: e.name, path: e.path }));
+    }
+
+    if (Array.isArray(parsed.recent)) {
+      config.recent = parsed.recent
+        .filter((e: any) => typeof e.path === "string")
+        .map((e: any) => e.path as string)
+        .slice(0, 5);
     }
 
     return config;
