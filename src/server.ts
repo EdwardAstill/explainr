@@ -1,10 +1,12 @@
-import { join, normalize, resolve, extname } from "path";
-import { readFile, readdir, stat } from "fs/promises";
+import { join, normalize, resolve, extname, basename } from "path";
+import { readFile, readdir, stat, access } from "fs/promises";
 import { renderMarkdown, resolveFileReferences, extractToc } from "./markdown";
 import { buildNavTree, renderNav } from "./nav";
 import { htmlPage } from "./template";
 import { extractTitle } from "./utils";
-import { loadConfig, type ReadrunConfig } from "./config";
+import { loadConfig, saveConfig } from "./config";
+import { dashboardHtml } from "./landing";
+import { guideHtml } from "./guide";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -48,7 +50,7 @@ async function findAvailablePort(start: number): Promise<number> {
 }
 
 export interface ServerOptions {
-  contentDir: string;
+  contentDir?: string;
   port: number;
 }
 
@@ -59,16 +61,13 @@ export interface ServerHandle {
 
 export async function startServer(options: ServerOptions): Promise<ServerHandle> {
   const port = await findAvailablePort(options.port);
-  const { contentDir } = options;
-  const normalizedContent = normalize(resolve(contentDir));
-  const scriptsDir = join(contentDir, ".readrun", "scripts");
-  const imagesDir = join(contentDir, ".readrun", "images");
+  let contentDir = options.contentDir ? normalize(resolve(options.contentDir)) : undefined;
+  const isDashboard = () => contentDir === undefined;
 
   const config = await loadConfig();
 
-  // Load embedded files from .readrun/files/
-  async function loadEmbeddedFiles() {
-    const filesDir = join(contentDir, ".readrun", "files");
+  async function loadEmbeddedFiles(dir: string) {
+    const filesDir = join(dir, ".readrun", "files");
     try {
       const entries = await readdir(filesDir);
       const files: { name: string; data: string }[] = [];
@@ -88,27 +87,86 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       const url = new URL(req.url);
       const pathname = decodeURIComponent(url.pathname);
 
+      // --- Guide route (works in both modes) ---
+      if (pathname === "/guide") {
+        return new Response(guideHtml(), {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
+
+      // --- Dashboard API routes (dashboard mode only) ---
+      if (isDashboard() && pathname === "/api/saved" && req.method === "GET") {
+        const cfg = await loadConfig();
+        return Response.json({ saved: cfg.saved.map(e => e.path), recent: cfg.recent });
+      }
+
+      if (isDashboard() && pathname === "/api/saved" && req.method === "POST") {
+        const { action, path: p } = await req.json() as { action: string; path: string };
+        const abs = resolve(p);
+        const cfg = await loadConfig();
+        if (action === "add") {
+          try { await access(abs); } catch {
+            return Response.json({ error: `Path not found: ${abs}` }, { status: 400 });
+          }
+          if (!cfg.saved.find(e => e.path === abs)) {
+            cfg.saved.push({ name: basename(abs), path: abs });
+            await saveConfig(cfg);
+          }
+          return Response.json({ ok: true });
+        }
+        if (action === "remove") {
+          cfg.saved = cfg.saved.filter(e => e.path !== abs);
+          await saveConfig(cfg);
+          return Response.json({ ok: true });
+        }
+        return Response.json({ error: "Unknown action" }, { status: 400 });
+      }
+
+      if (isDashboard() && pathname === "/api/open" && req.method === "POST") {
+        const { path: p } = await req.json() as { path: string };
+        const abs = normalize(resolve(p));
+        try { await access(abs); } catch {
+          return Response.json({ error: `Path not found: ${abs}` }, { status: 400 });
+        }
+        contentDir = abs;
+        return Response.json({ url: "/" });
+      }
+
+      // --- Dashboard landing (dashboard mode only) ---
+      if (isDashboard()) {
+        if (pathname === "/" || pathname === "") {
+          return new Response(dashboardHtml(), {
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+        }
+        return new Response("Not found", { status: 404 });
+      }
+
+      // --- Content mode (existing logic) ---
+      const dir = contentDir!;
+      const normalizedContent = normalize(resolve(dir));
+      const scriptsDir = join(dir, ".readrun", "scripts");
+      const imagesDir = join(dir, ".readrun", "images");
+
       // Resource browser API
       if (pathname.startsWith("/api/resources/") && req.method === "GET") {
         const parts = pathname.slice("/api/resources/".length).split("/");
-        const tab = parts[0];
+        const tab = parts[0] ?? "";
         const tabDirs: Record<string, string> = {
           images: join(normalizedContent, ".readrun", "images"),
           files: join(normalizedContent, ".readrun", "files"),
           scripts: join(normalizedContent, ".readrun", "scripts"),
         };
-        const dir = tabDirs[tab];
-        if (!dir) return Response.json({ error: "Invalid tab" }, { status: 400 });
+        const tabDir = tabDirs[tab];
+        if (!tabDir) return Response.json({ error: "Invalid tab" }, { status: 400 });
 
         if (parts.length === 1) {
           try {
-            const entries = await readdir(dir).catch(() => [] as string[]);
+            const entries = await readdir(tabDir).catch(() => [] as string[]);
             const files: { name: string; size: number }[] = [];
             for (const name of entries) {
-              const s = await stat(join(dir, name)).catch(() => null);
-              if (s && s.isFile()) {
-                files.push({ name, size: s.size });
-              }
+              const s = await stat(join(tabDir, name)).catch(() => null);
+              if (s && s.isFile()) files.push({ name, size: s.size });
             }
             return Response.json({ files });
           } catch {
@@ -116,8 +174,8 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
           }
         } else {
           const fileName = parts.slice(1).join("/");
-          const filePath = normalize(resolve(dir, fileName));
-          if (!filePath.startsWith(dir + "/") && filePath !== dir) {
+          const filePath = normalize(resolve(tabDir, fileName));
+          if (!filePath.startsWith(tabDir + "/") && filePath !== tabDir) {
             return new Response("Forbidden", { status: 403 });
           }
           try {
@@ -133,14 +191,11 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         }
       }
 
-      // Render markdown pages on the fly
+      // Render markdown pages
       let pagePath = pathname === "/" ? null : pathname.replace(/\/$/, "");
+      const tree = await buildNavTree(dir);
+      const embeddedFiles = await loadEmbeddedFiles(dir);
 
-      // Build nav tree fresh each request (fast enough for dev)
-      const tree = await buildNavTree(contentDir);
-      const embeddedFiles = await loadEmbeddedFiles();
-
-      // Root redirect to first page
       if (!pagePath || pagePath === "/") {
         const { findFirstFile } = await import("./utils");
         const first = findFirstFile(tree);
@@ -153,8 +208,7 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         return new Response("No pages found", { status: 404 });
       }
 
-      // Try to render the markdown file
-      const mdPath = join(contentDir, pagePath + ".md");
+      const mdPath = join(dir, pagePath + ".md");
       try {
         const source = await readFile(mdPath, "utf-8");
         const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
@@ -162,9 +216,7 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         const toc = extractToc(resolved);
         const nav = renderNav(tree, pagePath);
         const title = extractTitle(source, pagePath.split("/").pop() || "readrun");
-
         const html = htmlPage(nav, rendered, title, undefined, config, embeddedFiles, toc);
-
         return new Response(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
@@ -175,6 +227,6 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
   });
 
   console.log(`readrun running at http://localhost:${port}`);
-  console.log(`Serving content from: ${contentDir}`);
+  if (contentDir) console.log(`Serving content from: ${contentDir}`);
   return { port, stop: () => server.stop() };
 }
