@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { resolve, basename } from "path";
+import { resolve } from "path";
 import { statSync } from "fs";
 import { addRecent } from "./config";
 import { detectRepoName } from "./utils";
@@ -32,7 +32,8 @@ async function promptSelect(
         process.stdin.pause();
         const n = parseInt(buf.trim());
         const idx = Number.isFinite(n) && n >= 1 && n <= options.length ? n - 1 : 0;
-        res(options[idx]!.value);
+        const chosen = options[idx] ?? options[0];
+        res(chosen?.value ?? "");
       }
     };
     process.stdin.on("data", handler);
