@@ -50,8 +50,7 @@ function validateMdContent(
   let fenceLine = 0;
   let colonLine = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const [i, line] of lines.entries()) {
     const lineNum = i + 1;
 
     // Malformed headings (e.g. #NoSpace)
@@ -79,6 +78,7 @@ function validateMdContent(
 
       const parts = rest.split(/\s+/);
       const identifier = parts[0];
+      if (!identifier) continue;
       const modifiers = parts.slice(1);
 
       for (const m of modifiers) {
