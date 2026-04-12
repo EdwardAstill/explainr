@@ -10,7 +10,7 @@ function openBrowser(url: string) {
   const cmd = process.platform === "darwin" ? "open"
     : process.platform === "win32" ? "start"
     : "xdg-open";
-  Bun.spawn([cmd, url], { stdout: "ignore", stderr: "ignore" });
+  Bun.spawn([cmd, url], { stdin: "ignore", stdout: "ignore", stderr: "ignore" });
 }
 
 async function promptSelect(
@@ -63,6 +63,7 @@ if (process.argv.length === 2) {
   openBrowser(`http://localhost:${handle.port}`);
   console.log(`readrun dashboard at http://localhost:${handle.port}`);
   console.log("Press Ctrl+C to stop.");
+  process.stdin.unref();
   await new Promise(() => {}); // keep alive
 }
 
@@ -203,6 +204,7 @@ if (rawCmd === "guide") {
   openBrowser(`http://localhost:${handle.port}/guide`);
   console.log(`\nGuide open at http://localhost:${handle.port}/guide`);
   console.log("Press Ctrl+C to stop.");
+  process.stdin.unref();
   await new Promise(() => {}); // keep alive
 }
 
@@ -245,4 +247,5 @@ if (filePath) {
 }
 openBrowser(`http://localhost:${handle.port}${openPath}`);
 console.log("\nPress Ctrl+C to stop.");
+process.stdin.unref();
 await new Promise(() => {}); // keep alive until Ctrl+C
