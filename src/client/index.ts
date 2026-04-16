@@ -3,6 +3,7 @@ import { codeUiCode } from "./code-ui";
 import { settingsCode } from "./settings";
 import { navigationCode } from "./navigation";
 import { searchCode } from "./search";
+import { quizCode } from "./quiz";
 
 export const executionScript = `
   <script type="module">
@@ -15,4 +16,5 @@ export const settingsScript = `
 ${settingsCode}
 ${navigationCode}
 ${searchCode}
+${quizCode}
   </script>`;

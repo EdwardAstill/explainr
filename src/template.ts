@@ -11,6 +11,7 @@ function resourceSwitcherHtml(): string {
     <div class="resource-switcher__item" data-tab="images">images</div>
     <div class="resource-switcher__item" data-tab="files">files</div>
     <div class="resource-switcher__item" data-tab="scripts">scripts</div>
+    <div class="resource-switcher__item" data-tab="quizzes">quizzes</div>
   </div>`;
 }
 

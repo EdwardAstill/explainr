@@ -275,3 +275,11 @@ export function renderMarkdown(source: string): string {
   uploadBlockId = 0;
   return md.render(source);
 }
+
+export function renderMarkdownText(source: string): string {
+  return md.render(source);
+}
+
+export function renderMarkdownInline(source: string): string {
+  return md.renderInline(source);
+}
