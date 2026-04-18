@@ -88,16 +88,45 @@ async function buildQuizTree(dir: string, relBase: string = ""): Promise<{ child
 export interface ServerOptions {
   contentDir?: string;
   port: number;
+  host?: string;
+  watch?: boolean;
 }
 
 export interface ServerHandle {
   port: number;
+  host: string;
   stop: () => void;
+  reload: () => void;
+}
+
+const RELOAD_SCRIPT = `<script>
+(function(){
+  try {
+    var es = new EventSource("/__reload");
+    es.addEventListener("reload", function(){ location.reload(); });
+    es.onerror = function(){ /* server likely stopped; let next keepalive reconnect */ };
+  } catch (e) {}
+})();
+</script>`;
+
+function injectReload(html: string): string {
+  if (!html.includes("</body>")) return html + RELOAD_SCRIPT;
+  return html.replace("</body>", RELOAD_SCRIPT + "</body>");
 }
 
 export async function startServer(options: ServerOptions): Promise<ServerHandle> {
   const port = await findAvailablePort(options.port);
+  const host = options.host ?? "localhost";
+  const watch = options.watch === true;
   let contentDir = options.contentDir ? normalize(resolve(options.contentDir)) : undefined;
+
+  const reloadClients = new Set<ReadableStreamDefaultController<Uint8Array>>();
+  const encoder = new TextEncoder();
+  function broadcastReload() {
+    for (const ctl of reloadClients) {
+      try { ctl.enqueue(encoder.encode("event: reload\ndata: 1\n\n")); } catch {}
+    }
+  }
   const isDashboard = () => contentDir === undefined;
 
   const config = await loadConfig();
@@ -119,13 +148,36 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
 
   const server = Bun.serve({
     port,
+    hostname: host,
     async fetch(req) {
       const url = new URL(req.url);
       const pathname = decodeURIComponent(url.pathname);
 
+      // --- Live-reload SSE (watch mode only) ---
+      if (watch && pathname === "/__reload") {
+        const stream = new ReadableStream<Uint8Array>({
+          start(ctl) {
+            reloadClients.add(ctl);
+            ctl.enqueue(encoder.encode("retry: 1000\n\n"));
+            req.signal.addEventListener("abort", () => {
+              reloadClients.delete(ctl);
+              try { ctl.close(); } catch {}
+            });
+          },
+        });
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+          },
+        });
+      }
+
       // --- Guide route (works in both modes) ---
       if (pathname === "/guide") {
-        return new Response(guideHtml(), {
+        const html = watch ? injectReload(guideHtml()) : guideHtml();
+        return new Response(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
       }
@@ -171,7 +223,8 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       // --- Dashboard landing (dashboard mode only) ---
       if (isDashboard()) {
         if (pathname === "/" || pathname === "") {
-          return new Response(dashboardHtml(), {
+          const html = watch ? injectReload(dashboardHtml()) : dashboardHtml();
+          return new Response(html, {
             headers: { "Content-Type": "text/html; charset=utf-8" },
           });
         }
@@ -303,7 +356,8 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         const toc = extractToc(resolved);
         const nav = renderNav(tree, pagePath);
         const title = extractTitle(source, pagePath.split("/").pop() || "readrun");
-        const html = htmlPage(nav, rendered, title, undefined, config, embeddedFiles, toc);
+        const raw = htmlPage(nav, rendered, title, undefined, config, embeddedFiles, toc);
+        const html = watch ? injectReload(raw) : raw;
         return new Response(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
@@ -313,7 +367,12 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
     },
   });
 
-  console.log(`readrun running at http://localhost:${port}`);
+  console.log(`readrun running at http://${host}:${port}`);
   if (contentDir) console.log(`Serving content from: ${contentDir}`);
-  return { port, stop: () => server.stop() };
+  return {
+    port,
+    host,
+    stop: () => server.stop(),
+    reload: broadcastReload,
+  };
 }

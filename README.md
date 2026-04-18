@@ -16,10 +16,14 @@ bun install -g github:EdwardAstill/readrun
 
 ```bash
 cd your-markdown-folder
-rr                         # launch TUI, select View to preview
-rr <folder>                # open a folder directly
-rr <file.md>               # open a single file directly
+rr serve                   # serve current folder at http://localhost:3001
+rr serve <folder>          # serve a specific folder
+rr serve <file.md>         # open a single file directly
+rr watch <folder>          # serve + auto-reload the page on file changes
+rr                         # open the web dashboard (saved + recent folders, guide)
 ```
+
+See `rr --help` for the full command list or `rr <command> --help` for per-command flags.
 
 ## Features
 
@@ -41,28 +45,34 @@ rr <file.md>               # open a single file directly
 - **Resizable sidebars** -- drag sidebar edges to resize, widths persist across sessions
 - **Image lightbox** -- click any image to view it enlarged
 - **Enter folder** -- right-click a folder in the nav to zoom into it with breadcrumb navigation
-- **Saved documents** -- save frequently used folders or files in the TUI for quick access
+- **Saved documents** -- save frequently used folders or files from the dashboard for quick access
 - **Ignore patterns** -- `.readrun/.ignore` file to exclude files and folders from navigation
 - **Smart port detection** -- dev server automatically finds an available port
-- **Platform builds** -- build for GitHub Pages, Vercel, or Netlify via the TUI with auto-detected base paths
+- **Platform builds** -- `rr build <folder> --platform=github|vercel|netlify` with auto-detected base paths for GitHub Pages
 - **Math rendering** -- LaTeX blocks render via KaTeX when `@vscode/markdown-it-katex` is installed
 
 ## Usage
 
 ```bash
-cd your-markdown-folder
-rr                         # launch TUI
-rr <folder>                # open a folder directly
-rr <file.md>               # open a single markdown file directly
+rr serve [path]            # serve a folder or .md file (default: cwd)
+rr watch [path]            # same as serve, plus live-reload on file changes
+rr                         # open the web dashboard (saved + recent folders)
+rr init [path]             # scaffold .readrun/ structure
+rr validate [path]         # check content and .readrun/ for errors
+rr new <page.md>           # create a new Markdown page with a starter template
+rr build <path> [--platform=github|vercel|netlify] [--out=<dir>]
+rr preview [dist-folder]   # preview a built static site
+rr clean [path] [--orphans] [--dry-run]
+rr doctor                  # environment check
+rr guide                   # open the architecture guide
+rr self-update             # reinstall readrun dependencies in place
 ```
 
-The TUI has six options:
-- **View** — preview the current directory
-- **Saved** — open a saved folder or file (add paths with the Add option)
-- **File** — browse and open a single markdown file
-- **Build** — generate a static site for deployment
-- **Docs** — preview the built-in readrun documentation
-- **Update** — install/update dependencies
+All commands that run a server accept `--port=<n>`, `--host=<name>`, and `--no-open`
+to suppress the browser auto-open. Run `rr <command> --help` to see the full set.
+
+The dashboard (bare `rr`) lists saved and recent folders and links to the architecture
+guide. It is a web page, not a terminal UI.
 
 ## How it works
 
@@ -141,7 +151,7 @@ See [readrun-docs/docs/philosophy.md](readrun-docs/docs/philosophy.md) for more.
 
 ## Deployment
 
-Run `rr` from your repository, select **Build**, and pick your platform. The TUI walks you through choosing your content folder and output directory. For GitHub Pages, the base path is auto-detected from your git remote.
+Run `rr build <folder>` from your repository and pass `--platform=github|vercel|netlify` (or omit it for plain static HTML). The default output directory is `./dist` in the current working directory; override with `--out=<dir>`. For GitHub Pages, the base path is auto-detected from your git remote.
 
 Python execution happens client-side via Pyodide (WASM), so static hosts work without a server. See [readrun-docs/docs/deployment.md](readrun-docs/docs/deployment.md) for details.
 
