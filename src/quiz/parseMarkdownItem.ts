@@ -9,6 +9,7 @@ import type {
 } from "./types";
 import type { IdGenerator } from "./idGenerator";
 import { validateAnswerIndex } from "./validateQuiz";
+import { parseFreetextAnswer } from "./parseFreetextAnswer";
 
 type ItemType = "single" | "multi" | "truefalse" | "freetext" | "info" | "group";
 
@@ -176,7 +177,7 @@ export function parseItem(
         id,
         type: "freetext",
         question: questionText,
-        correctAnswer: freetextAnswer,
+        answer: parseFreetextAnswer(freetextAnswer),
         hint,
         explanation,
       } as FreeTextQuestion;

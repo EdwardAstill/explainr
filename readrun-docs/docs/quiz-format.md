@@ -41,7 +41,7 @@ Markdown content...
 true *                           ← * marks which value is correct
 
 ## [freetext] Question text      ← free-text question
-= Expected answer                ← exact-match answer
+= Expected answer                ← exact-match answer (see "Free-text Answer Spec" below)
 
 ## [group] Shared prompt         ← question group
 ### [truefalse] Sub-question 1   ← sub-questions use ###
@@ -61,10 +61,49 @@ true *
 | Extended body | `:::` block after heading (supports code fences inside) |
 | Options | `- Option text` (append ` *` for correct) |
 | True/false answer | `true *` or `false *` on its own line |
-| Free text answer | `= answer text` |
+| Free text answer | `= <spec>` — string, number, range, or list (see [Free-text Answer Spec](#free-text-answer-spec)) |
 | Hint | `?> hint text` |
 | Explanation | `> text` (multiline: each line starts with `> `) |
 | Local image | `:::filename.png` on its own line inside a `:::` body block — loads from `.readrun/quizzes/.images/` |
+
+### Free-text Answer Spec
+
+The line following a `[freetext]` heading starts with `=` and then describes what counts as a correct answer. The parser supports four forms plus a bareword fallback for backwards compatibility.
+
+| Form | Syntax | Example | Matches |
+|------|--------|---------|---------|
+| Bareword string | `= word1 word2 ...` | `= Simple Storage Service` | `"Simple Storage Service"` (case-insensitive by default) |
+| Quoted string | `= "text"` | `= "hello world"` | Exact string (use when bareword would be ambiguous) |
+| Number | `= N` | `= 3.14` | Exact numeric value (input parsed as number) |
+| Range | `= range:<open><min>,<max><close>` | `= range:[0, 1)` | Number in the interval. `[`/`]` = inclusive, `(`/`)` = exclusive. Any combination allowed. |
+| List (any-of) | `= [item1, item2, ...]` | `= ["yen", "JPY"]` | Any item matches. Items can be any of the forms above, including nested ranges or quoted strings. |
+
+**Examples:**
+
+```markdown
+## [freetext] What does S3 stand for?
+= Simple Storage Service
+
+## [freetext] Value of π to 2dp?
+= range:[3.13, 3.15]
+
+## [freetext] Currency of Japan (accept code or name)?
+= ["yen", "JPY"]
+
+## [freetext] Pi, by numeric tolerance or exact decimal?
+= [range:[3.13, 3.15], 3.14159]
+
+## [freetext] Dimensionless ratio strictly between 0 and 1?
+= range:(0, 1)
+```
+
+**Semantics:**
+
+- **Strings** are compared case-insensitively by default; whitespace is trimmed on both sides.
+- **Numbers** are matched by numeric equality after `Number()` parse (`3.14 == 3.140`).
+- **Ranges** parse the user's input as a number; non-numeric input is rejected. `[a, b]` accepts both endpoints; `(a, b)` rejects both.
+- **Lists** short-circuit: the first matching item wins. Useful for numeric tolerance + alternative phrasings in the same question.
+- Bare strings outside `[...]` remain supported so existing `= some answer` lines keep working.
 
 ### Extended Body Blocks (`:::`)
 

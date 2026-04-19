@@ -27,11 +27,13 @@ export interface TrueFalseQuestion {
   explanation?: string;
 }
 
+import type { FreeTextSpec } from "./parseFreetextAnswer";
+
 export interface FreeTextQuestion {
   id: string;
   type: "freetext";
   question: string;
-  correctAnswer: string;
+  answer: FreeTextSpec;
   caseSensitive?: boolean;
   placeholder?: string;
   hint?: string;

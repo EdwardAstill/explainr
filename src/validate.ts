@@ -13,7 +13,7 @@ export interface ValidationResult {
 }
 
 const VALID_IDENTIFIERS = new Set(["python", "jsx", "upload"]);
-const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files"]);
+const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files", "quizzes"]);
 
 async function exists(p: string): Promise<boolean> {
   try { await access(p); return true; } catch { return false; }

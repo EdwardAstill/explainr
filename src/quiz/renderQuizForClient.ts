@@ -1,5 +1,6 @@
 import { renderMarkdownText, renderMarkdownInline } from "../markdown";
 import type { Quiz, TopLevelItem, QuizItem, Question } from "./types";
+import { formatFreetextSpec } from "./parseFreetextAnswer";
 
 function renderQuestion(q: Question): Record<string, unknown> {
   const base: Record<string, unknown> = {
@@ -18,7 +19,13 @@ function renderQuestion(q: Question): Record<string, unknown> {
     case "truefalse":
       return { ...base, correctAnswer: q.correctAnswer };
     case "freetext":
-      return { ...base, correctAnswer: q.correctAnswer, caseSensitive: q.caseSensitive, placeholder: q.placeholder };
+      return {
+        ...base,
+        answer: q.answer,
+        answerDisplay: formatFreetextSpec(q.answer),
+        caseSensitive: q.caseSensitive,
+        placeholder: q.placeholder,
+      };
   }
 }
 

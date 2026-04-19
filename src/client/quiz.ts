@@ -74,11 +74,40 @@ export const quizCode = `
         case "truefalse": return q.correctAnswer === answer;
         case "freetext": {
           if (typeof answer !== "string") return false;
-          var a = q.caseSensitive ? answer.trim() : answer.trim().toLowerCase();
-          var b = q.caseSensitive ? q.correctAnswer.trim() : q.correctAnswer.trim().toLowerCase();
-          return a === b;
+          return matchFreetextSpec(q.answer, answer, !!q.caseSensitive);
         }
       }
+    }
+
+    function matchFreetextSpec(spec, answer, caseSensitive) {
+      if (!spec || typeof spec !== "object") return false;
+      var trimmed = String(answer).trim();
+      switch (spec.kind) {
+        case "string": {
+          var a = caseSensitive ? trimmed : trimmed.toLowerCase();
+          var b = caseSensitive ? String(spec.value).trim() : String(spec.value).trim().toLowerCase();
+          return a === b;
+        }
+        case "number": {
+          var n = Number(trimmed);
+          if (!isFinite(n)) return false;
+          return n === spec.value;
+        }
+        case "range": {
+          var nr = Number(trimmed);
+          if (!isFinite(nr)) return false;
+          if (spec.minInclusive ? nr < spec.min : nr <= spec.min) return false;
+          if (spec.maxInclusive ? nr > spec.max : nr >= spec.max) return false;
+          return true;
+        }
+        case "any": {
+          for (var i = 0; i < spec.specs.length; i++) {
+            if (matchFreetextSpec(spec.specs[i], answer, caseSensitive)) return true;
+          }
+          return false;
+        }
+      }
+      return false;
     }
 
     function findQuizQuestion(qId) {
@@ -185,7 +214,7 @@ export const quizCode = `
           } else if (q.type === "truefalse") {
             h += 'Answer: ' + (q.correctAnswer ? 'True' : 'False');
           } else if (q.type === "freetext") {
-            h += 'Answer: ' + escapeHtml(q.correctAnswer);
+            h += 'Answer: ' + escapeHtml(q.answerDisplay || '');
           }
           h += '</div>';
         }
