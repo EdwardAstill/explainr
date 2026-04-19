@@ -1,6 +1,7 @@
 import { join, normalize, resolve, extname, basename } from "path";
 import { readFile, readdir, stat, access } from "fs/promises";
 import { renderMarkdown, resolveFileReferences, extractToc } from "./markdown";
+import { getWikilinkIndex, rewriteWikilinks } from "./wikilinks";
 import { buildNavTree, renderNav } from "./nav";
 import { htmlPage } from "./template";
 import { extractTitle } from "./utils";
@@ -352,8 +353,10 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       try {
         const source = await readFile(mdPath, "utf-8");
         const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
-        const rendered = renderMarkdown(resolved);
-        const toc = extractToc(resolved);
+        const wikiIndex = await getWikilinkIndex(dir);
+        const linked = rewriteWikilinks(resolved, wikiIndex);
+        const rendered = renderMarkdown(linked);
+        const toc = extractToc(linked);
         const nav = renderNav(tree, pagePath);
         const title = extractTitle(source, pagePath.split("/").pop() || "readrun");
         const raw = htmlPage(nav, rendered, title, undefined, config, embeddedFiles, toc);

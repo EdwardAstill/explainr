@@ -1,6 +1,7 @@
 import { join, dirname } from "path";
 import { readFile, readdir, mkdir, writeFile } from "fs/promises";
 import { renderMarkdown, resolveFileReferences, extractToc } from "./markdown";
+import { getWikilinkIndex, rewriteWikilinks } from "./wikilinks";
 import { buildNavTree, renderNav, type NavNode } from "./nav";
 import { htmlPage, type EmbeddedFile } from "./template";
 import { extractTitle, findFirstFile } from "./utils";
@@ -30,6 +31,7 @@ export async function build(options: BuildOptions) {
   const tree = await buildNavTree(contentDir);
   const pages = collectPages(tree);
   const embeddedFiles = await loadEmbeddedFiles(contentDir);
+  const wikiIndex = await getWikilinkIndex(contentDir);
 
   if (pages.length === 0) {
     console.log("No .md files found.");
@@ -44,8 +46,9 @@ export async function build(options: BuildOptions) {
     try {
       const source = await readFile(mdPath, "utf-8");
       const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
-      const rendered = renderMarkdown(resolved);
-      const toc = extractToc(resolved);
+      const linked = rewriteWikilinks(resolved, wikiIndex);
+      const rendered = renderMarkdown(linked);
+      const toc = extractToc(linked);
       const nav = renderNav(tree, page.path);
       const title = extractTitle(source, page.name);
 
