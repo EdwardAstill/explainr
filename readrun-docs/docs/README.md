@@ -1,10 +1,12 @@
 # readrun
 
-readrun turns folders of Markdown into interactive websites. No config, no frontmatter, no special setup — just `.md` files in a folder.
+readrun turns folders of Markdown into interactive websites. No config, no mandatory setup — just `.md` files in a folder. Optional YAML frontmatter (`title`, `virtual_path`) is recognised when present.
 
 ## Documentation
 
 **[Philosophy](./philosophy.md)** — the design principles behind readrun: markdown-first, optional enhancements, not a notebook.
+
+**[Frontmatter](./frontmatter.md)** — `virtual_path` for virtual folder nav, `title` for labels, wikilink resolution rules.
 
 **[Deployment](./deployment.md)** — TUI usage, static builds, and platform-specific deployment (GitHub Pages, Vercel, Netlify).
 

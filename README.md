@@ -2,7 +2,7 @@
 
 Turn folders of Markdown into interactive websites with executable Python code blocks.
 
-Write your content in `.md` files, organize them in folders, and readrun renders them as a navigable site where readers can run Python code inline. No config files, no frontmatter, no special setup -- just Markdown.
+Write your content in `.md` files, organize them in folders, and readrun renders them as a navigable site where readers can run Python code inline. No config files, no mandatory setup -- just Markdown. Optional YAML frontmatter (`title`, `virtual_path`) is recognised when present, stripped from the rendered body, and used to drive a virtual folder nav for flat-on-disk knowledge bases.
 
 ## Install
 
@@ -40,6 +40,9 @@ See `rr --help` for the full command list or `rr <command> --help` for per-comma
 - **Themes** -- 8 built-in themes (Light, Dark, Solarized, Nord, Dracula, Monokai, Gruvbox, Catppuccin) with a visual theme picker
 - **Keyboard shortcuts** -- fully configurable via `~/.config/readrun/settings.toml`, including chord bindings (e.g. `g h` for home). Press `?` to see all shortcuts
 - **Link navigation** -- markdown links between `.md` files are automatically rewritten for site navigation
+- **Wikilinks** -- `[[target]]`, `[[target|alias]]`, `[[target#anchor]]`, and `[[folder/target]]` resolve against a filename index (with fuzzy matches: snake-case, leading `01_` prefixes, case-insensitive) and render as clickable links. Unresolved links stay literal so broken refs are visible. Display label prefers an explicit alias, then the target's frontmatter `title`, then its filename
+- **Virtual folder nav** -- set `virtual_path:` in a note's YAML frontmatter (e.g., `virtual_path: "math/analysis/complex-analysis/contour-integration"`) and readrun builds a nested sidebar tree from those paths -- independent of disk layout. Lets a flat-on-disk KB (one folder per domain, all notes at depth 2) display as a deep hierarchy. Notes without `virtual_path` fall back to their file-tree position
+- **Frontmatter strip** -- YAML frontmatter (`---\n…\n---`) is removed from the rendered HTML body automatically. `title:` is used as the page title; any other field is available to tooling but invisible to the reader
 - **Settings panel** -- press Escape to open/close. Adjust font size, content width, theme, and sidebar visibility. Escape also closes overlays, search, and focus mode (in priority order)
 - **Focus mode** -- press `f` to hide both sidebars for distraction-free reading
 - **Resizable sidebars** -- drag sidebar edges to resize, widths persist across sessions
@@ -158,6 +161,7 @@ Python execution happens client-side via Pyodide (WASM), so static hosts work wi
 ## Documentation
 
 - [Philosophy](readrun-docs/docs/philosophy.md) -- core design principles
+- [Frontmatter](readrun-docs/docs/frontmatter.md) -- `virtual_path`, `title`, wikilink resolution
 - [Deployment](readrun-docs/docs/deployment.md) -- building and hosting your site
 - [Limitations](readrun-docs/docs/limitations.md) -- known constraints
 - [Future features](readrun-docs/docs/future/) -- planned work
