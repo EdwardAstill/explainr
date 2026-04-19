@@ -270,14 +270,20 @@ export async function resolveFileReferences(source: string, scriptsDir: string, 
   return result;
 }
 
+const FRONTMATTER_STRIP_RE = /^---\n[\s\S]*?\n---\n?/;
+
+export function stripFrontmatter(source: string): string {
+  return source.replace(FRONTMATTER_STRIP_RE, "");
+}
+
 export function renderMarkdown(source: string): string {
   execBlockId = 0;
   uploadBlockId = 0;
-  return md.render(source);
+  return md.render(stripFrontmatter(source));
 }
 
 export function renderMarkdownText(source: string): string {
-  return md.render(source);
+  return md.render(stripFrontmatter(source));
 }
 
 export function renderMarkdownInline(source: string): string {
