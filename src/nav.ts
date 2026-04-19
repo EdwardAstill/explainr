@@ -1,12 +1,18 @@
-import { readdir, stat, readFile } from "fs/promises";
+import { readdir, readFile } from "fs/promises";
 import { join, relative, basename, extname } from "path";
 import { escapeHtml } from "./utils";
 
 export interface NavNode {
   name: string;
-  path: string; // URL path
+  path: string; // URL path (for files) or synthetic virtual path (for dirs)
   isDir: boolean;
   children?: NavNode[];
+}
+
+interface FileMeta {
+  urlPath: string;           // /notes/math/contour-integration
+  segments: string[];        // virtual tree position, last segment is the leaf
+  displayName: string;       // leaf label
 }
 
 async function loadIgnorePatterns(contentDir: string): Promise<Bun.Glob[]> {
@@ -24,60 +30,124 @@ async function loadIgnorePatterns(contentDir: string): Promise<Bun.Glob[]> {
 }
 
 function isIgnored(relPath: string, globs: Bun.Glob[]): boolean {
-  // relPath is relative to contentDir, e.g. "notes/draft.md" or "drafts"
   for (const glob of globs) {
     if (glob.match(relPath)) return true;
   }
   return false;
 }
 
-export async function buildNavTree(contentDir: string): Promise<NavNode[]> {
-  const ignoreGlobs = await loadIgnorePatterns(contentDir);
-  return buildTree(contentDir, contentDir, ignoreGlobs);
+const IGNORE_DIRS = new Set(["node_modules", "dist", "out", ".git", "__pycache__", ".venv", "venv"]);
+
+const FM_RE = /^---\n([\s\S]*?)\n---/;
+const VPATH_LINE_RE = /^virtual_path:\s*["']?([^"'\n]+?)["']?\s*$/m;
+const TITLE_LINE_RE = /^title:\s*["']?([^"'\n]+?)["']?\s*$/m;
+
+function parseFrontmatterFields(head: string): { virtualPath?: string; title?: string } {
+  const fm = head.match(FM_RE);
+  const block = fm?.[1];
+  if (!block) return {};
+  const vp = block.match(VPATH_LINE_RE)?.[1];
+  const ti = block.match(TITLE_LINE_RE)?.[1];
+  return {
+    virtualPath: vp ? vp.trim() : undefined,
+    title: ti ? ti.trim() : undefined,
+  };
 }
 
-async function buildTree(dir: string, root: string, ignoreGlobs: Bun.Glob[]): Promise<NavNode[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const nodes: NavNode[] = [];
+async function readHead(filePath: string, bytes = 2048): Promise<string> {
+  const f = Bun.file(filePath);
+  const blob = f.slice(0, bytes);
+  return await blob.text();
+}
 
-  // Sort: directories first, then files, alphabetical within each group
-  const IGNORE_DIRS = new Set(["node_modules", "dist", "out", ".git", "__pycache__", ".venv", "venv"]);
+async function collectFiles(contentDir: string, ignoreGlobs: Bun.Glob[]): Promise<FileMeta[]> {
+  const out: FileMeta[] = [];
 
-  const sorted = entries
-    .filter((e) => !e.name.startsWith(".") && !(e.isDirectory() && IGNORE_DIRS.has(e.name)))
-    .sort((a, b) => {
-      if (a.isDirectory() && !b.isDirectory()) return -1;
-      if (!a.isDirectory() && b.isDirectory()) return 1;
-      return a.name.localeCompare(b.name);
-    });
-
-  for (const entry of sorted) {
-    const fullPath = join(dir, entry.name);
-    const relPath = relative(root, fullPath);
-
-    // Check against .ignore patterns
-    if (isIgnored(relPath, ignoreGlobs)) continue;
-
-    if (entry.isDirectory()) {
-      const children = await buildTree(fullPath, root, ignoreGlobs);
-      if (children.length > 0) {
-        nodes.push({
-          name: entry.name,
-          path: "/" + relPath,
-          isDir: true,
-          children,
-        });
+  async function walk(dir: string) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.name.startsWith(".")) continue;
+      if (e.isDirectory() && IGNORE_DIRS.has(e.name)) continue;
+      const full = join(dir, e.name);
+      const relPath = relative(contentDir, full);
+      if (isIgnored(relPath, ignoreGlobs)) continue;
+      if (e.isDirectory()) {
+        await walk(full);
+        continue;
       }
-    } else if (extname(entry.name) === ".md") {
-      nodes.push({
-        name: basename(entry.name, ".md"),
-        path: ("/" + relPath).replace(/\.md$/, ""),
-        isDir: false,
-      });
+      if (extname(e.name) !== ".md") continue;
+
+      const head = await readHead(full);
+      const { virtualPath, title } = parseFrontmatterFields(head);
+
+      const urlPath = "/" + relPath.replace(/\\/g, "/").replace(/\.md$/, "");
+      const fileStemPath = relPath.replace(/\\/g, "/").replace(/\.md$/, "");
+      const segments = (virtualPath && virtualPath.length > 0)
+        ? virtualPath.split("/").filter(Boolean)
+        : fileStemPath.split("/");
+
+      const leaf = segments[segments.length - 1] ?? basename(e.name, ".md");
+      const displayName = title && title.length > 0 ? title : leaf;
+
+      out.push({ urlPath, segments, displayName });
     }
   }
 
-  return nodes;
+  await walk(contentDir);
+  return out;
+}
+
+function insert(tree: NavNode[], dirsByPath: Map<string, NavNode>, file: FileMeta): void {
+  if (file.segments.length === 0) return;
+  const leaf = file.segments[file.segments.length - 1]!;
+  const dirSegments = file.segments.slice(0, -1);
+
+  let parentChildren = tree;
+  let pathAcc = "";
+  for (const seg of dirSegments) {
+    pathAcc = pathAcc ? `${pathAcc}/${seg}` : seg;
+    const existing = dirsByPath.get(pathAcc);
+    if (existing) {
+      parentChildren = existing.children!;
+      continue;
+    }
+    const node: NavNode = {
+      name: seg,
+      path: "/" + pathAcc,
+      isDir: true,
+      children: [],
+    };
+    parentChildren.push(node);
+    dirsByPath.set(pathAcc, node);
+    parentChildren = node.children!;
+  }
+
+  parentChildren.push({
+    name: file.displayName === leaf ? leaf : file.displayName,
+    path: file.urlPath,
+    isDir: false,
+  });
+}
+
+function sortTree(nodes: NavNode[]): void {
+  nodes.sort((a, b) => {
+    if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+  for (const n of nodes) {
+    if (n.isDir && n.children) sortTree(n.children);
+  }
+}
+
+export async function buildNavTree(contentDir: string): Promise<NavNode[]> {
+  const ignoreGlobs = await loadIgnorePatterns(contentDir);
+  const files = await collectFiles(contentDir, ignoreGlobs);
+
+  const tree: NavNode[] = [];
+  const dirsByPath = new Map<string, NavNode>();
+  for (const file of files) insert(tree, dirsByPath, file);
+  sortTree(tree);
+  return tree;
 }
 
 export function renderNav(tree: NavNode[], currentPath: string): string {
