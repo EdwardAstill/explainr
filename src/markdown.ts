@@ -2,6 +2,7 @@ import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
 import { join } from "path";
 import { readFile, stat } from "fs/promises";
+import { splitFrontmatter } from "./frontmatter";
 
 let markdownItKatex: any;
 try {
@@ -189,8 +190,9 @@ export interface TocEntry {
 }
 
 export function extractToc(source: string): TocEntry[] {
-  // Strip fenced code blocks and inline code so we don't pick up # inside them
-  const stripped = source
+  // Strip frontmatter (YAML # comments aren't headings), fenced code blocks,
+  // and inline code so we don't pick up # inside them.
+  const stripped = splitFrontmatter(source).body
     .replace(/^```[\s\S]*?^```/gm, "")
     .replace(/^~~~[\s\S]*?^~~~/gm, "")
     .replace(/^:::\w[\s\S]*?^:::/gm, "")
@@ -270,10 +272,8 @@ export async function resolveFileReferences(source: string, scriptsDir: string, 
   return result;
 }
 
-const FRONTMATTER_STRIP_RE = /^---\n[\s\S]*?\n---\n?/;
-
 export function stripFrontmatter(source: string): string {
-  return source.replace(FRONTMATTER_STRIP_RE, "");
+  return splitFrontmatter(source).body;
 }
 
 export function renderMarkdown(source: string): string {

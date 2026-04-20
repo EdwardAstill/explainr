@@ -1,6 +1,7 @@
 import { readdir, readFile } from "fs/promises";
 import { join, relative, basename, extname } from "path";
 import { escapeHtml } from "./utils";
+import { readFrontmatter } from "./frontmatter";
 
 export interface NavNode {
   name: string;
@@ -38,28 +39,6 @@ function isIgnored(relPath: string, globs: Bun.Glob[]): boolean {
 
 const IGNORE_DIRS = new Set(["node_modules", "dist", "out", ".git", "__pycache__", ".venv", "venv"]);
 
-const FM_RE = /^---\n([\s\S]*?)\n---/;
-const VPATH_LINE_RE = /^virtual_path:\s*["']?([^"'\n]+?)["']?\s*$/m;
-const TITLE_LINE_RE = /^title:\s*["']?([^"'\n]+?)["']?\s*$/m;
-
-function parseFrontmatterFields(head: string): { virtualPath?: string; title?: string } {
-  const fm = head.match(FM_RE);
-  const block = fm?.[1];
-  if (!block) return {};
-  const vp = block.match(VPATH_LINE_RE)?.[1];
-  const ti = block.match(TITLE_LINE_RE)?.[1];
-  return {
-    virtualPath: vp ? vp.trim() : undefined,
-    title: ti ? ti.trim() : undefined,
-  };
-}
-
-async function readHead(filePath: string, bytes = 2048): Promise<string> {
-  const f = Bun.file(filePath);
-  const blob = f.slice(0, bytes);
-  return await blob.text();
-}
-
 async function collectFiles(contentDir: string, ignoreGlobs: Bun.Glob[]): Promise<FileMeta[]> {
   const out: FileMeta[] = [];
 
@@ -77,8 +56,8 @@ async function collectFiles(contentDir: string, ignoreGlobs: Bun.Glob[]): Promis
       }
       if (extname(e.name) !== ".md") continue;
 
-      const head = await readHead(full);
-      const { virtualPath, title } = parseFrontmatterFields(head);
+      const { fm } = await readFrontmatter(full);
+      const { virtualPath, title } = fm;
 
       const urlPath = "/" + relPath.replace(/\\/g, "/").replace(/\.md$/, "");
       const fileStemPath = relPath.replace(/\\/g, "/").replace(/\.md$/, "");

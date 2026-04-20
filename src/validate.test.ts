@@ -76,3 +76,28 @@ test("errors when file ref target is missing", async () => {
   const result = await validateFolder(tmpDir);
   expect(result.errors.some(e => e.message.includes("demo.py"))).toBe(true);
 });
+
+test("errors on malformed frontmatter YAML", async () => {
+  await write("bad.md", "---\ntitle: [unterminated\n---\n# body\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.errors.some(e => e.file === "bad.md" && e.message.includes("frontmatter parse error"))).toBe(true);
+});
+
+test("warns on unknown frontmatter field", async () => {
+  await write("page.md", "---\ntitle: X\nauthor: me\n---\n# body\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.warnings.some(w => w.file === "page.md" && w.message.includes('"author"'))).toBe(true);
+});
+
+test("errors on virtual_path collision", async () => {
+  await write("a.md", '---\nvirtual_path: "foo/bar"\n---\n# a\n');
+  await write("b.md", '---\nvirtual_path: "foo/bar"\n---\n# b\n');
+  const result = await validateFolder(tmpDir);
+  expect(result.errors.some(e => e.message.includes("virtual_path") && e.message.includes("collides"))).toBe(true);
+});
+
+test("errors on wrong type for title", async () => {
+  await write("num.md", "---\ntitle: 42\n---\n# body\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.errors.some(e => e.file === "num.md" && e.message.includes("must be string"))).toBe(true);
+});

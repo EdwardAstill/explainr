@@ -1,8 +1,11 @@
 import { resolve, normalize } from "path";
 import type { NavNode } from "./nav";
+import { parseFrontmatter } from "./frontmatter";
 
 export function extractTitle(source: string, fallback: string): string {
-  const match = source.match(/^#\s+(.+)$/m);
+  const { fm, body } = parseFrontmatter(source);
+  if (fm.title) return fm.title;
+  const match = body.match(/^#\s+(.+)$/m);
   return match?.[1] ?? fallback;
 }
 

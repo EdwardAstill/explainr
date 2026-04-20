@@ -1,5 +1,6 @@
 import { join } from "path";
 import { readdir, readFile, stat, access } from "fs/promises";
+import { parseFrontmatter } from "./frontmatter";
 
 export interface Issue {
   file: string;
@@ -42,8 +43,31 @@ function validateMdContent(
   content: string,
   errors: Issue[],
   warnings: Issue[],
-  fileRefs: Set<string>
+  fileRefs: Set<string>,
+  virtualPaths: Map<string, string>
 ) {
+  const { fm, issues: fmIssues } = parseFrontmatter(content);
+  for (const iss of fmIssues) {
+    if (iss.kind === "parse_error") {
+      errors.push({ file: relPath, line: iss.line, message: `frontmatter parse error: ${iss.message}` });
+    } else if (iss.kind === "wrong_type") {
+      errors.push({ file: relPath, message: `frontmatter "${iss.name}" must be ${iss.expected} (got ${iss.got})` });
+    } else if (iss.kind === "unknown_field") {
+      warnings.push({ file: relPath, message: `unknown frontmatter field "${iss.name}" (readrun ignores it)` });
+    }
+  }
+  if (fm.virtualPath) {
+    const prior = virtualPaths.get(fm.virtualPath);
+    if (prior && prior !== relPath) {
+      errors.push({
+        file: relPath,
+        message: `virtual_path "${fm.virtualPath}" collides with ${prior}`,
+      });
+    } else {
+      virtualPaths.set(fm.virtualPath, relPath);
+    }
+  }
+
   const lines = content.split("\n");
   let inFence = false;
   let inColonBlock = false;
@@ -121,12 +145,13 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
   const readrunDir = join(folderPath, ".readrun");
 
   const allFileRefs = new Set<string>();
+  const virtualPaths = new Map<string, string>();
 
   const mdFiles = await collectMdFiles(folderPath);
   for (const full of mdFiles) {
     const content = await readFile(full, "utf-8");
     const rel = full.slice(folderPath.length + 1);
-    validateMdContent(rel, content, errors, warnings, allFileRefs);
+    validateMdContent(rel, content, errors, warnings, allFileRefs, virtualPaths);
   }
 
   // Resolve file references

@@ -1,5 +1,6 @@
 import { readdir } from "fs/promises";
 import { join, relative, extname, basename } from "path";
+import { readFrontmatter } from "./frontmatter";
 
 export interface WikilinkEntry {
   url: string;      // URL path, e.g. /notes/math/contour-integration
@@ -17,18 +18,6 @@ function normalize(s: string): string {
     .replace(/^\d+[_-]/, "") // strip leading 01_ / 01-
     .replace(/_/g, "-")
     .replace(/-+/g, "-");
-}
-
-async function readHead(path: string, bytes = 2048): Promise<string> {
-  return await Bun.file(path).slice(0, bytes).text();
-}
-
-function parseTitle(head: string): string | undefined {
-  const fm = head.match(/^---\n([\s\S]*?)\n---/);
-  const block = fm?.[1];
-  if (!block) return undefined;
-  const m = block.match(/^title:\s*["']?([^"'\n]+?)["']?\s*$/m);
-  return m?.[1]?.trim();
 }
 
 function addKey(idx: WikilinkIndex, key: string, entry: WikilinkEntry): void {
@@ -58,8 +47,8 @@ export async function buildWikilinkIndex(contentDir: string): Promise<WikilinkIn
       const rel = relative(contentDir, full).replace(/\\/g, "/");
       const stem = basename(e.name, ".md");
       const url = "/" + rel.replace(/\.md$/, "");
-      const head = await readHead(full);
-      const title = parseTitle(head) ?? stem;
+      const { fm } = await readFrontmatter(full);
+      const title = fm.title ?? stem;
 
       const entry: WikilinkEntry = { url, title, filename: stem };
       // Register under multiple keys so fuzzy forms resolve.
