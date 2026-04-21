@@ -295,6 +295,7 @@ export const quizCode = `
         // Body
         h += '<div class="quiz__body">';
         if (item.type === "info") {
+          h += '<div class="quiz__info-label">Reading</div>';
           h += '<div class="quiz__info">' + item.contentHtml + '</div>';
         } else if (item.type === "group") {
           h += renderGroupHtml(item);
@@ -314,6 +315,11 @@ export const quizCode = `
 
         container.innerHTML = h;
         container.scrollTo(0, 0);
+
+        // Trigger JSX auto-render for any blocks injected into this card
+        if (typeof window.__rrRenderJsxAuto === "function") {
+          window.__rrRenderJsxAuto(container);
+        }
       }
 
       function renderResults() {

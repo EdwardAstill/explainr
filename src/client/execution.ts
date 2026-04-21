@@ -307,6 +307,17 @@ sys.stderr = sys.__stderr__
     }
 
 
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const ta = e.target.closest(".exec-editable");
+      if (!ta) return;
+      e.preventDefault();
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      ta.value = ta.value.slice(0, start) + "    " + ta.value.slice(end);
+      ta.selectionStart = ta.selectionEnd = start + 4;
+    });
+
     document.addEventListener("click", (e) => {
       const toggleBtn = e.target.closest(".exec-toggle-btn");
       if (!toggleBtn) return;
@@ -322,11 +333,12 @@ sys.stderr = sys.__stderr__
 
       const blockId = btn.dataset.blockId;
       const block = btn.closest(".exec-block");
+      const editableEl = document.querySelector(\`textarea[data-editable-source="\${blockId}"]\`);
       const sourceEl = document.querySelector(\`script[data-source="\${blockId}"]\`);
       const outputEl = document.querySelector(\`[data-output="\${blockId}"]\`);
-      if (!sourceEl || !outputEl) return;
+      if ((!sourceEl && !editableEl) || !outputEl) return;
 
-      const code = decodeSource(sourceEl.textContent);
+      const code = editableEl ? editableEl.value : decodeSource(sourceEl.textContent);
       const lang = block ? block.dataset.lang : "";
 
       if (lang === "jsx") {
@@ -347,17 +359,23 @@ sys.stderr = sys.__stderr__
       return new TextDecoder().decode(bytes);
     }
 
-    // Auto-render JSX blocks — must run after all let declarations are initialized
-    (async () => {
-      const autoBlocks = document.querySelectorAll("[data-jsx-auto]");
-      if (autoBlocks.length === 0) return;
+    // Expose JSX auto-render for other modules (e.g. quiz) to call after injecting content
+    window.__rrRenderJsxAuto = async function(root) {
+      const els = (root || document).querySelectorAll("[data-jsx-auto]");
+      if (els.length === 0) return;
       const dummyBtn = { disabled: false, textContent: "" };
-      for (const outputEl of autoBlocks) {
+      for (const outputEl of els) {
+        if (outputEl.children.length > 0) continue; // already rendered
         const id = outputEl.dataset.output;
         const sourceEl = document.querySelector(\`script[data-source="\${id}"]\`);
         if (!sourceEl) continue;
         const code = decodeSource(sourceEl.textContent);
         await runJsx(code, dummyBtn, outputEl);
       }
+    };
+
+    // Auto-render JSX blocks — must run after all let declarations are initialized
+    (async () => {
+      await window.__rrRenderJsxAuto(document);
     })();
 `;

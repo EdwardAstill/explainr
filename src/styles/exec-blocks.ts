@@ -62,6 +62,18 @@ export const execBlockStyles = `
 
     .exec-block--collapsed > pre { display: none; }
 
+    .exec-editable {
+      display: block; width: 100%; min-height: 120px;
+      padding: 14px 16px; margin: 0;
+      background: var(--color-code-bg); color: var(--color-text);
+      border: none; border-top: 1px solid var(--color-border);
+      font-family: var(--font-mono); font-size: 0.875em; line-height: 1.6;
+      resize: vertical; outline: none; tab-size: 4;
+      box-sizing: border-box;
+    }
+    .exec-editable:focus { background: var(--color-bg); }
+    .exec-block--collapsed .exec-editable { display: none; }
+
     .exec-enlarge-btn {
       background: none; color: var(--color-text-muted); border: 1px solid var(--color-border);
       padding: 2px 8px; border-radius: 4px; font-size: 11px;

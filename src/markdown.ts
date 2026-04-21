@@ -90,6 +90,7 @@ md.block.ruler.before("fence", "exec_fence", (state: any, startLine: any, endLin
   const parts = line.slice(3).trim().split(/\s+/);
   const lang = parts[0];
   const hidden = parts.includes("hidden");
+  const editable = parts.includes("editable");
 
   // Find closing :::
   let nextLine = startLine + 1;
@@ -108,7 +109,7 @@ md.block.ruler.before("fence", "exec_fence", (state: any, startLine: any, endLin
 
   const token = state.push("exec_fence", "code", 0);
   token.info = lang;
-  token.meta = { hidden };
+  token.meta = { hidden, editable };
   token.content = state.getLines(startLine + 1, nextLine, state.tShift[startLine], true);
   token.map = [startLine, nextLine + 1];
 
@@ -122,6 +123,7 @@ md.renderer.rules.exec_fence = (tokens: any, idx: any) => {
   const token = tokens[idx];
   const lang = token.info || "python";
   const hidden = token.meta?.hidden ?? false;
+  const editable = token.meta?.editable ?? false;
   const id = execBlockId++;
   const rawCode = token.content;
   let highlighted: string;
@@ -130,10 +132,8 @@ md.renderer.rules.exec_fence = (tokens: any, idx: any) => {
   } else {
     highlighted = md.utils.escapeHtml(rawCode);
   }
-  // Embed raw source in a hidden script tag for Pyodide to read
   const encoded = Buffer.from(rawCode).toString("base64");
 
-  // JSX blocks auto-render as seamless visualisations — no header, no code display
   if (lang === "jsx") {
     return `<div class="jsx-block" data-output="${id}" data-jsx-auto="${id}"></div>
 <script type="text/plain" data-source="${id}">${encoded}</script>`;
@@ -141,6 +141,10 @@ md.renderer.rules.exec_fence = (tokens: any, idx: any) => {
 
   const collapsedClass = hidden ? " exec-block--collapsed" : "";
   const toggleLabel = hidden ? "Show" : "Hide";
+  const codeDisplay = editable
+    ? `<textarea class="exec-editable" data-editable-source="${id}" spellcheck="false">${md.utils.escapeHtml(rawCode)}</textarea>`
+    : `<pre class="hljs"><code>${highlighted}</code></pre>
+    <script type="text/plain" data-source="${id}">${encoded}</script>`;
   return `<div class="exec-block${collapsedClass}" data-lang="${md.utils.escapeHtml(lang)}" data-block-id="${id}">
     <div class="exec-block-header">
       <span>${md.utils.escapeHtml(lang)}</span>
@@ -150,8 +154,7 @@ md.renderer.rules.exec_fence = (tokens: any, idx: any) => {
         <button class="exec-run-btn" data-block-id="${id}">Run</button>
       </span>
     </div>
-    <pre class="hljs"><code>${highlighted}</code></pre>
-    <script type="text/plain" data-source="${id}">${encoded}</script>
+    ${codeDisplay}
     <div class="exec-output" data-output="${id}"></div>
   </div>`;
 };
@@ -313,18 +316,21 @@ function renderBlock(block: Block): string {
 }
 
 function renderExecBlock(block: Block): string {
-  const lang = block.name; // "jsx" or "python"
+  const lang = block.name;
   const hidden = hasAttr(block, "hidden");
+  const editable = hasAttr(block, "editable");
 
   if (block.src) {
-    const hiddenStr = hidden ? " hidden" : "";
-    return md.render(`:::${lang}${hiddenStr}\n# [jsx=${block.src}] — inline file ref not yet wired\n:::`);
+    const flags = [hidden ? "hidden" : "", editable ? "editable" : ""].filter(Boolean).join(" ");
+    const flagStr = flags ? ` ${flags}` : "";
+    return md.render(`:::${lang}${flagStr}\n# [${lang}=${block.src}] — inline file ref not yet wired\n:::`);
   }
 
   const textRun = block.children.find(c => c.kind === "text") as TextRun | undefined;
   const code = textRun?.content ?? "";
-  const hiddenStr = hidden ? " hidden" : "";
-  return md.render(`:::${lang}${hiddenStr}\n${code}\n:::`);
+  const flags = [hidden ? "hidden" : "", editable ? "editable" : ""].filter(Boolean).join(" ");
+  const flagStr = flags ? ` ${flags}` : "";
+  return md.render(`:::${lang}${flagStr}\n${code}\n:::`);
 }
 
 function renderUploadBlock(block: Block): string {
@@ -348,7 +354,7 @@ function renderQuizBlock(block: Block): string {
     return `<div class="quiz-error"><p>Quiz parse error: ${md.utils.escapeHtml(e?.message ?? String(e))}</p></div>`;
   }
   const clientData = renderQuizForClient(quiz);
-  const json = JSON.stringify(clientData);
+  const json = JSON.stringify(clientData).replace(/<\/script/gi, "<\\/script");
   return `<div data-readrun-inline-quiz="${id}"></div>\n<script type="application/json" id="quiz-data-${id}">${json}</script>`;
 }
 

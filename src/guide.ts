@@ -64,6 +64,17 @@ print(df.head())
 print("click Show to reveal")
 [/python]</code></pre>
 
+<p>Add <code>editable</code> to make the code block a live scratchpad — the reader can type directly in the block and run their own code. Combine with an empty body for a blank scratchpad:</p>
+<pre><code>[python editable]
+x = 10
+print(x * 2)
+[/python]
+
+[python editable]
+[/python]</code></pre>
+
+<p>Tab indents four spaces inside editable blocks. The block is resizable by dragging the bottom edge.</p>
+
 <p>Reference an external file from <code>.readrun/scripts/</code> instead of inlining the code:</p>
 <pre><code>[python=scripts/plot.py]
 [python=scripts/setup.py hidden]</code></pre>

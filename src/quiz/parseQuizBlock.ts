@@ -191,16 +191,29 @@ function parseGroupBlock(block: Block, ids: IdGenerator): QuestionGroup {
   return g;
 }
 
+const EXEC_BLOCK_NAMES = new Set(["jsx", "python"]);
+
+function infoContent(children: (Block | TextRun)[]): string {
+  return children.map(c => {
+    if (c.kind === "text") return (c as TextRun).content;
+    const b = c as Block;
+    if (EXEC_BLOCK_NAMES.has(b.name)) {
+      const code = (b.children.find(ch => ch.kind === "text") as TextRun | undefined)?.content ?? "";
+      return `[${b.name}]\n${code}\n[/${b.name}]`;
+    }
+    return "";
+  }).join("\n").trim();
+}
+
 function parseInfoBlock(block: Block, ids: IdGenerator): InfoPage {
   const rawId = attrString(block, "id");
   const id = ids.nextInfoId(rawId);
-  const content = textFromChildren(block.children);
+  const content = infoContent(block.children);
   return { id, type: "info", content };
 }
 
 export function parseQuizBlock(block: Block): Quiz {
-  const title = attrString(block, "title");
-  if (!title) throw new Error("[quiz] block missing required 'title' attr");
+  const title = attrString(block, "title") ?? "";
 
   const description = attrString(block, "description");
 
