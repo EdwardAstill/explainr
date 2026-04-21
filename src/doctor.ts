@@ -1,5 +1,5 @@
 import { join } from "path";
-import { access, stat } from "fs/promises";
+import { access } from "fs/promises";
 import { homedir } from "os";
 import { resolve as resolvePath } from "path";
 
@@ -78,6 +78,12 @@ export async function doctor(): Promise<DoctorResult> {
     name: `Default port ${defaultPort}`,
     status: portFree ? "ok" : "warn",
     detail: portFree ? "available" : "in use — readrun will auto-fall back to the next free port",
+  });
+
+  checks.push({
+    name: "Block syntax",
+    status: "ok",
+    detail: 'Use [name]/[/name] syntax. Run "readrun validate" to detect deprecated ::: blocks.',
   });
 
   const ok = checks.every((c) => c.status !== "fail");

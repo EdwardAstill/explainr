@@ -8,8 +8,6 @@ import { extractTitle } from "./utils";
 import { loadConfig, saveConfig } from "./config";
 import { dashboardHtml } from "./landing";
 import { guideHtml } from "./guide";
-import { parseQuizMarkdown } from "./quiz/parseMarkdown";
-import { renderQuizForClient } from "./quiz/renderQuizForClient";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -52,39 +50,6 @@ async function findAvailablePort(start: number): Promise<number> {
   throw new Error(`No available port found in range ${start}–${start + 19}`);
 }
 
-const QUIZ_RESERVED = new Set([".images", ".scripts"]);
-
-interface QuizTreeNode {
-  type: "dir" | "file";
-  name: string;
-  path: string;
-  children?: QuizTreeNode[];
-}
-
-async function buildQuizTree(dir: string, relBase: string = ""): Promise<{ children: QuizTreeNode[] }> {
-  try {
-    const entries = await readdir(dir).catch(() => [] as string[]);
-    const children: QuizTreeNode[] = [];
-    for (const name of entries) {
-      if (QUIZ_RESERVED.has(name)) continue;
-      const fullPath = join(dir, name);
-      const s = await stat(fullPath).catch(() => null);
-      if (!s) continue;
-      const relPath = relBase ? `${relBase}/${name}` : name;
-      if (s.isDirectory()) {
-        const sub = await buildQuizTree(fullPath, relPath);
-        if (sub.children.length > 0) {
-          children.push({ type: "dir", name, path: relPath, children: sub.children });
-        }
-      } else if (name.endsWith(".quiz.md") || name.endsWith(".quiz")) {
-        children.push({ type: "file", name, path: relPath });
-      }
-    }
-    return { children };
-  } catch {
-    return { children: [] };
-  }
-}
 
 export interface ServerOptions {
   contentDir?: string;
@@ -238,38 +203,6 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       const scriptsDir = join(dir, ".readrun", "scripts");
       const imagesDir = join(dir, ".readrun", "images");
 
-      // Quiz asset routes
-      const quizzesDir = join(normalizedContent, ".readrun", "quizzes");
-      if (pathname.startsWith("/api/quiz-images/") && req.method === "GET") {
-        const fileName = pathname.slice("/api/quiz-images/".length);
-        const filePath = normalize(resolve(quizzesDir, ".images", fileName));
-        const imagesBase = join(quizzesDir, ".images");
-        if (!filePath.startsWith(imagesBase + "/") && filePath !== imagesBase) {
-          return new Response("Forbidden", { status: 403 });
-        }
-        try {
-          const file = Bun.file(filePath);
-          if (!(await file.exists())) return new Response("Not found", { status: 404 });
-          const ext = extname(filePath).toLowerCase();
-          return new Response(file, { headers: { "Content-Type": MIME[ext] || "application/octet-stream" } });
-        } catch { return new Response("Not found", { status: 404 }); }
-      }
-
-      if (pathname.startsWith("/api/quiz-scripts/") && req.method === "GET") {
-        const fileName = pathname.slice("/api/quiz-scripts/".length);
-        const filePath = normalize(resolve(quizzesDir, ".scripts", fileName));
-        const scriptsBase = join(quizzesDir, ".scripts");
-        if (!filePath.startsWith(scriptsBase + "/") && filePath !== scriptsBase) {
-          return new Response("Forbidden", { status: 403 });
-        }
-        try {
-          const file = Bun.file(filePath);
-          if (!(await file.exists())) return new Response("Not found", { status: 404 });
-          const ext = extname(filePath).toLowerCase();
-          return new Response(file, { headers: { "Content-Type": MIME[ext] || "text/plain" } });
-        } catch { return new Response("Not found", { status: 404 }); }
-      }
-
       // Resource browser API
       if (pathname.startsWith("/api/resources/") && req.method === "GET") {
         const parts = pathname.slice("/api/resources/".length).split("/");
@@ -278,17 +211,11 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
           images: join(normalizedContent, ".readrun", "images"),
           files: join(normalizedContent, ".readrun", "files"),
           scripts: join(normalizedContent, ".readrun", "scripts"),
-          quizzes: quizzesDir,
         };
         const tabDir = tabDirs[tab];
         if (!tabDir) return Response.json({ error: "Invalid tab" }, { status: 400 });
 
         if (parts.length === 1) {
-          // Quizzes: return tree structure
-          if (tab === "quizzes") {
-            const tree = await buildQuizTree(tabDir);
-            return Response.json(tree);
-          }
           try {
             const entries = await readdir(tabDir).catch(() => [] as string[]);
             const files: { name: string; size: number }[] = [];
@@ -305,18 +232,6 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
           const filePath = normalize(resolve(tabDir, fileName));
           if (!filePath.startsWith(tabDir + "/") && filePath !== tabDir) {
             return new Response("Forbidden", { status: 403 });
-          }
-
-          // Quizzes: parse and return as JSON
-          if (tab === "quizzes") {
-            try {
-              const content = await readFile(filePath, "utf-8");
-              const quiz = parseQuizMarkdown(content);
-              const rendered = renderQuizForClient(quiz);
-              return Response.json(rendered);
-            } catch (e: any) {
-              return Response.json({ error: e.message || "Failed to parse quiz" }, { status: 400 });
-            }
           }
 
           try {

@@ -299,16 +299,6 @@ export const uiStyles = `
       text-transform: uppercase; letter-spacing: 0.08em;
     }
 
-    .settings__font-sizes { display: flex; gap: 6px; }
-
-    .settings__font-btn {
-      flex: 1; padding: 4px; background: var(--color-sidebar-bg);
-      border: 1px solid var(--color-border); border-radius: 4px;
-      cursor: pointer; font-family: var(--font-mono); font-size: 12px;
-      color: var(--color-text-muted); transition: all 0.12s;
-    }
-    .settings__font-btn:hover { border-color: var(--color-text-muted); color: var(--color-text); }
-    .settings__font-btn--active { border-color: var(--color-link); color: var(--color-link); }
 
     .settings__range { width: 100%; accent-color: var(--color-link); cursor: pointer; }
 

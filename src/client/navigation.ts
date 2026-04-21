@@ -121,26 +121,6 @@ export const navigationCode = `
       });
     });
 
-    // --- Quiz tree nav builder ---
-    function buildQuizNavHtml(nodes, tab) {
-      if (!nodes || nodes.length === 0) {
-        return '<ul><li style="padding:3px 12px;color:var(--color-text-muted);font-family:var(--font-mono);font-size:12px;">(empty)</li></ul>';
-      }
-      var html = '<ul>';
-      for (var i = 0; i < nodes.length; i++) {
-        var node = nodes[i];
-        if (node.type === 'dir') {
-          html += '<li class="nav-dir"><details open><summary>' + escapeHtml(node.name) + '</summary>';
-          html += buildQuizNavHtml(node.children || [], tab);
-          html += '</details></li>';
-        } else {
-          html += '<li class="nav-file"><a href="#" data-resource-tab="' + escapeHtml(tab) + '" data-resource-file="' + escapeHtml(node.path) + '">' + escapeHtml(node.name) + '</a></li>';
-        }
-      }
-      html += '</ul>';
-      return html;
-    }
-
     // --- Resource browser tab switching ---
     const TAB_KEY = "readrun-active-tab";
     const switcher = document.getElementById("resource-switcher");
@@ -179,19 +159,15 @@ export const navigationCode = `
         const data = await res.json();
         let html = '<nav class="sidebar-nav nav-tree">';
 
-        if (tab === "quizzes") {
-          html += buildQuizNavHtml(data.children || [], tab);
-        } else {
-          html += '<ul>';
-          if (data.files && data.files.length > 0) {
-            for (const f of data.files) {
-              html += '<li class="nav-file"><a href="#" data-resource-tab="' + escapeHtml(tab) + '" data-resource-file="' + escapeHtml(f.name) + '">' + escapeHtml(f.name) + '</a></li>';
-            }
-          } else {
-            html += '<li style="padding:3px 12px;color:var(--color-text-muted);font-family:var(--font-mono);font-size:12px;">(empty)</li>';
+        html += '<ul>';
+        if (data.files && data.files.length > 0) {
+          for (const f of data.files) {
+            html += '<li class="nav-file"><a href="#" data-resource-tab="' + escapeHtml(tab) + '" data-resource-file="' + escapeHtml(f.name) + '">' + escapeHtml(f.name) + '</a></li>';
           }
-          html += '</ul>';
+        } else {
+          html += '<li style="padding:3px 12px;color:var(--color-text-muted);font-family:var(--font-mono);font-size:12px;">(empty)</li>';
         }
+        html += '</ul>';
 
         html += '</nav>';
         const currentNav = sidebar.querySelector(".sidebar-nav");
@@ -204,11 +180,6 @@ export const navigationCode = `
     async function previewResource(tab, fileName) {
       if (!mainContent) return;
       const url = "/api/resources/" + encodeURIComponent(tab) + "/" + encodeURIComponent(fileName);
-
-      if (tab === "quizzes") {
-        loadQuiz(fileName);
-        return;
-      }
 
       if (tab === "images") {
         mainContent.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:60vh;flex-direction:column;gap:12px;"><img src="' + escapeHtml(url) + '" alt="' + escapeHtml(fileName) + '" style="max-width:100%;max-height:70vh;"><div style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted);">' + escapeHtml(fileName) + '</div></div>';

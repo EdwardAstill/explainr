@@ -14,7 +14,7 @@ export interface ValidationResult {
 }
 
 const VALID_IDENTIFIERS = new Set(["python", "jsx", "upload"]);
-const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files", "quizzes"]);
+const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files"]);
 
 async function exists(p: string): Promise<boolean> {
   try { await access(p); return true; } catch { return false; }
@@ -73,6 +73,7 @@ function validateMdContent(
   let inColonBlock = false;
   let fenceLine = 0;
   let colonLine = 0;
+  const bracketStack: string[] = [];
 
   for (const [i, line] of lines.entries()) {
     const lineNum = i + 1;
@@ -112,11 +113,13 @@ function validateMdContent(
       }
 
       if (identifier === "upload") {
-        // upload is self-closing — no block body
+        warnings.push({ file: relPath, line: lineNum, message: `deprecated ::: block syntax — run "readrun migrate" to convert to [${identifier}] syntax` });
       } else if (VALID_IDENTIFIERS.has(identifier)) {
+        warnings.push({ file: relPath, line: lineNum, message: `deprecated ::: block syntax — run "readrun migrate" to convert to [${identifier}] syntax` });
         inColonBlock = true;
         colonLine = lineNum;
       } else if (identifier.includes(".")) {
+        warnings.push({ file: relPath, line: lineNum, message: `deprecated ::: block syntax — run "readrun migrate" to convert to [${identifier}] syntax` });
         fileRefs.add(identifier);
         inColonBlock = true;
         colonLine = lineNum;
@@ -125,6 +128,29 @@ function validateMdContent(
         inColonBlock = true;
         colonLine = lineNum;
       }
+      continue;
+    }
+
+    const bracketMatch = line.match(/^\s*\[(?<close>\/)?(?<name>[A-Za-z][A-Za-z0-9-]*)(?:=\S+)?[^\]]*\]\s*$/);
+    if (!inFence && bracketMatch) {
+      const name = bracketMatch.groups!.name!;
+      const isClose = !!bracketMatch.groups!.close;
+      const VOID_BRACKET = new Set(["upload", "include"]);
+
+      if (isClose) {
+        const top = bracketStack[bracketStack.length - 1] as string | undefined;
+        if (bracketStack.length === 0) {
+          errors.push({ file: relPath, line: lineNum, message: `unexpected [/${name}] with no open block` });
+        } else if (top !== name) {
+          errors.push({ file: relPath, line: lineNum, message: `[/${name}] closes [${top ?? "?"}] (opened earlier) — mismatched` });
+          bracketStack.pop();
+        } else {
+          bracketStack.pop();
+        }
+      } else if (!VOID_BRACKET.has(name)) {
+        bracketStack.push(name);
+      }
+      continue;
     }
   }
 
@@ -133,6 +159,9 @@ function validateMdContent(
   }
   if (inColonBlock) {
     errors.push({ file: relPath, line: colonLine, message: `unclosed ::: block (opened at line ${colonLine})` });
+  }
+  if (bracketStack.length > 0) {
+    errors.push({ file: relPath, line: lines.length, message: `unclosed [${bracketStack[bracketStack.length - 1]}] block` });
   }
 }
 

@@ -2,9 +2,7 @@ export const settingsCode = `
     const STORAGE_KEY = "readrun-settings";
     const THEMES = ["light", "dark", "solarized", "nord", "dracula", "monokai", "gruvbox", "catppuccin"];
     const THEME_LABELS = { light: "Light", dark: "Dark", solarized: "Solarized", nord: "Nord", dracula: "Dracula", monokai: "Monokai", gruvbox: "Gruvbox", catppuccin: "Catppuccin" };
-    const FONT_SIZES = ["small", "medium", "large"];
-    const fontSizeMap = { small: "14px", medium: "16px", large: "18px" };
-    const defaults = { fontSize: "medium", contentWidth: 880, showSidebar: true, theme: "light", focusMode: false };
+    const defaults = { fontSize: 16, contentWidth: 880, showSidebar: true, theme: "light", focusMode: false };
 
     function escapeHtml(s) {
       const d = document.createElement("div");
@@ -24,10 +22,9 @@ export const settingsCode = `
 
     function applySettings(s) {
       // Font size
-      document.body.style.fontSize = fontSizeMap[s.fontSize] || fontSizeMap.medium;
-      document.querySelectorAll("[data-font]").forEach(btn => {
-        btn.classList.toggle("settings__font-btn--active", btn.dataset.font === s.fontSize);
-      });
+      document.body.style.fontSize = s.fontSize + "px";
+      document.getElementById("font-range").value = s.fontSize;
+      document.getElementById("font-label").textContent = "Font size \\u2014 " + s.fontSize + "px";
 
       // Content width
       document.getElementById("main-content").style.maxWidth = s.contentWidth + "px";
@@ -73,13 +70,11 @@ export const settingsCode = `
       }
     });
 
-    // Font size buttons
-    document.querySelectorAll("[data-font]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        settings.fontSize = btn.dataset.font;
-        saveSettings(settings);
-        applySettings(settings);
-      });
+    // Font size slider
+    document.getElementById("font-range").addEventListener("input", (e) => {
+      settings.fontSize = Number(e.target.value);
+      saveSettings(settings);
+      applySettings(settings);
     });
 
     // Content width slider

@@ -1,8 +1,7 @@
 export const quizStyles = `
     /* Quiz container */
     .quiz {
-      max-width: 800px;
-      margin: 0 auto;
+      width: 100%;
       padding: 32px 24px;
       font-family: var(--font-body);
     }
@@ -15,14 +14,14 @@ export const quizStyles = `
     }
 
     .quiz__title {
-      font-size: 22px;
+      font-size: 1.375em;
       font-weight: 700;
       color: var(--color-text);
       margin-bottom: 4px;
     }
 
     .quiz__section {
-      font-size: 12px;
+      font-size: 0.75em;
       color: var(--color-link);
       font-weight: 600;
       text-transform: uppercase;
@@ -32,7 +31,7 @@ export const quizStyles = `
     }
 
     .quiz__progress {
-      font-size: 12px;
+      font-size: 0.75em;
       color: var(--color-text-muted);
       font-family: var(--font-mono);
     }
@@ -43,7 +42,7 @@ export const quizStyles = `
     .quiz__question { margin-bottom: 24px; }
 
     .quiz__question-text {
-      font-size: 15px;
+      font-size: 0.9375em;
       line-height: 1.6;
       color: var(--color-text);
       margin-bottom: 16px;
@@ -69,7 +68,7 @@ export const quizStyles = `
       border-radius: 6px;
       cursor: pointer;
       font-family: var(--font-body);
-      font-size: 14px;
+      font-size: 0.875em;
       color: var(--color-text);
       text-align: left;
       transition: border-color 0.12s, background 0.12s;
@@ -103,7 +102,7 @@ export const quizStyles = `
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      font-size: 11px;
+      font-size: 0.6875em;
       font-weight: 600;
       font-family: var(--font-mono);
       background: var(--color-border);
@@ -138,7 +137,7 @@ export const quizStyles = `
       justify-content: center;
       border: 2px solid var(--color-border);
       border-radius: 3px;
-      font-size: 11px;
+      font-size: 0.6875em;
       flex-shrink: 0;
     }
 
@@ -174,7 +173,7 @@ export const quizStyles = `
       border-radius: 6px;
       background: var(--color-sidebar-bg);
       cursor: pointer;
-      font-size: 15px;
+      font-size: 0.9375em;
       font-weight: 600;
       font-family: var(--font-body);
       color: var(--color-text);
@@ -209,7 +208,7 @@ export const quizStyles = `
       border-radius: 6px;
       background: var(--color-bg);
       color: var(--color-text);
-      font-size: 14px;
+      font-size: 0.875em;
       font-family: var(--font-body);
       margin-bottom: 8px;
       outline: none;
@@ -223,7 +222,7 @@ export const quizStyles = `
       border: 1px solid var(--color-border);
       border-radius: 6px;
       background: var(--color-sidebar-bg);
-      font-size: 14px;
+      font-size: 0.875em;
       color: var(--color-text);
     }
 
@@ -234,7 +233,7 @@ export const quizStyles = `
       border-radius: 5px;
       background: var(--color-link);
       color: white;
-      font-size: 13px;
+      font-size: 0.8125em;
       font-weight: 500;
       font-family: var(--font-body);
       cursor: pointer;
@@ -253,7 +252,7 @@ export const quizStyles = `
       border-radius: 4px;
       background: transparent;
       color: var(--color-text-muted);
-      font-size: 11px;
+      font-size: 0.6875em;
       font-family: var(--font-mono);
       cursor: pointer;
       transition: all 0.12s;
@@ -269,7 +268,7 @@ export const quizStyles = `
       padding: 10px 14px;
       border-left: 3px solid var(--color-link);
       background: var(--color-sidebar-bg);
-      font-size: 13px;
+      font-size: 0.8125em;
       color: var(--color-text);
     }
 
@@ -285,7 +284,7 @@ export const quizStyles = `
     }
 
     .quiz__feedback-result {
-      font-size: 15px;
+      font-size: 0.9375em;
       font-weight: 700;
       margin-bottom: 6px;
     }
@@ -294,14 +293,14 @@ export const quizStyles = `
     .quiz__feedback-result--wrong { color: #cf222e; }
 
     .quiz__correct-answer {
-      font-size: 13px;
+      font-size: 0.8125em;
       color: var(--color-text-muted);
       margin-bottom: 6px;
       font-family: var(--font-mono);
     }
 
     .quiz__explanation {
-      font-size: 13px;
+      font-size: 0.8125em;
       color: var(--color-text);
       border-top: 1px solid var(--color-border);
       padding-top: 8px;
@@ -326,7 +325,7 @@ export const quizStyles = `
       border-radius: 5px;
       background: var(--color-sidebar-bg);
       color: var(--color-text);
-      font-size: 12px;
+      font-size: 0.75em;
       font-family: var(--font-mono);
       cursor: pointer;
       transition: all 0.12s;
@@ -342,7 +341,7 @@ export const quizStyles = `
 
     /* Group */
     .quiz__group-prompt {
-      font-size: 15px;
+      font-size: 0.9375em;
       line-height: 1.6;
       margin-bottom: 24px;
       padding-bottom: 16px;
@@ -358,7 +357,7 @@ export const quizStyles = `
     }
 
     .quiz__group-part-label {
-      font-size: 11px;
+      font-size: 0.6875em;
       font-weight: 600;
       color: var(--color-text-muted);
       text-transform: uppercase;
@@ -369,7 +368,7 @@ export const quizStyles = `
 
     /* Info page */
     .quiz__info {
-      font-size: 15px;
+      font-size: 0.9375em;
       line-height: 1.7;
       color: var(--color-text);
     }
@@ -385,7 +384,7 @@ export const quizStyles = `
     }
 
     .quiz__results-score {
-      font-size: 48px;
+      font-size: 3em;
       font-weight: 700;
       color: var(--color-text);
       margin: 12px 0 4px;
@@ -393,7 +392,7 @@ export const quizStyles = `
     }
 
     .quiz__results-detail {
-      font-size: 13px;
+      font-size: 0.8125em;
       color: var(--color-text-muted);
       font-family: var(--font-mono);
     }
@@ -411,7 +410,7 @@ export const quizStyles = `
       gap: 8px;
       padding: 6px 10px;
       border-radius: 4px;
-      font-size: 13px;
+      font-size: 0.8125em;
     }
 
     .quiz__result-item--correct { background: rgba(45, 164, 78, 0.07); }
@@ -423,7 +422,7 @@ export const quizStyles = `
 
     .quiz__result-num {
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 0.6875em;
       color: var(--color-text-muted);
       min-width: 28px;
     }

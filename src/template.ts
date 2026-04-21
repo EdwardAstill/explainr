@@ -11,7 +11,6 @@ function resourceSwitcherHtml(): string {
     <div class="resource-switcher__item" data-tab="images">images</div>
     <div class="resource-switcher__item" data-tab="files">files</div>
     <div class="resource-switcher__item" data-tab="scripts">scripts</div>
-    <div class="resource-switcher__item" data-tab="quizzes">quizzes</div>
   </div>`;
 }
 
@@ -19,12 +18,8 @@ const settingsHtml = `
   <div class="settings" id="settings">
     <div class="settings__panel" id="settings-panel">
       <div class="settings__section">
-        <span class="settings__label">Font size</span>
-        <div class="settings__font-sizes">
-          <button class="settings__font-btn" data-font="small">S</button>
-          <button class="settings__font-btn settings__font-btn--active" data-font="medium">M</button>
-          <button class="settings__font-btn" data-font="large">L</button>
-        </div>
+        <span class="settings__label" id="font-label">Font size — 16px</span>
+        <input class="settings__range" id="font-range" type="range" min="12" max="24" step="1" value="16">
       </div>
       <div class="settings__section">
         <span class="settings__label">Theme</span>
@@ -187,13 +182,13 @@ function buildTocTree(entries: TocEntry[]): TocNode[] {
   const stack: TocNode[] = [];
   for (const entry of entries) {
     const node: TocNode = { entry, children: [] };
-    while (stack.length > 0 && stack[stack.length - 1].entry.level >= entry.level) {
+    while (stack.length > 0 && stack[stack.length - 1]!.entry.level >= entry.level) {
       stack.pop();
     }
     if (stack.length === 0) {
       roots.push(node);
     } else {
-      stack[stack.length - 1].children.push(node);
+      stack[stack.length - 1]!.children.push(node);
     }
     stack.push(node);
   }

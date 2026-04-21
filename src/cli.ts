@@ -336,6 +336,23 @@ const guideCmd = defineCommand({
   },
 });
 
+const migrateCmd = defineCommand({
+  meta: { name: "migrate", description: "Rewrite ::: block syntax to [block] syntax in all .md files." },
+  args: {
+    path: { type: "positional", required: false, description: "Content folder (default: cwd)" },
+    "dry-run": { type: "boolean", description: "Print what would change without writing files", default: false },
+  },
+  async run({ args }) {
+    const contentDir = resolvePath(args.path);
+    const { migrate } = await import("./migrate");
+    const res = await migrate({ contentDir, dryRun: args["dry-run"] });
+    const prefix = args["dry-run"] ? "[dry-run] " : "";
+    for (const f of res.filesModified) console.log(`${prefix}modified  ${f}`);
+    for (const f of res.filesSkipped) console.log(`${prefix}skipped   ${f}`);
+    console.log(`\n${res.filesScanned} file(s) scanned, ${res.filesModified.length} modified, ${res.filesSkipped.length} skipped.`);
+  },
+});
+
 const selfUpdateCmd = defineCommand({
   meta: { name: "self-update", description: "Reinstall readrun dependencies in place (runs `bun install` in the readrun install dir)." },
   async run() {
@@ -357,7 +374,7 @@ const selfUpdateCmd = defineCommand({
 
 const KNOWN = new Set([
   "serve", "dashboard", "watch", "init", "validate", "build",
-  "preview", "new", "clean", "doctor", "guide", "self-update",
+  "preview", "new", "clean", "doctor", "guide", "self-update", "migrate",
   "help", "--help", "-h", "--version", "-v",
 ]);
 
@@ -396,6 +413,7 @@ const main = defineCommand({
     doctor: doctorCmd,
     guide: guideCmd,
     "self-update": selfUpdateCmd,
+    migrate: migrateCmd,
   },
   async run({ args }) {
     // `rr` with no subcommand — fall back to dashboard so the bare command stays useful.

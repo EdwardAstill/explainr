@@ -1,8 +1,12 @@
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
 import { join } from "path";
-import { readFile, stat } from "fs/promises";
+import { readFile } from "fs/promises";
 import { splitFrontmatter } from "./frontmatter";
+import { parse, getAttr, hasAttr } from "./blocks";
+import type { Block, TextRun } from "./blocks";
+import { parseQuizBlock } from "./quiz/parseQuizBlock";
+import { renderQuizForClient } from "./quiz/renderQuizForClient";
 
 let markdownItKatex: any;
 try {
@@ -15,7 +19,7 @@ const md = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,
-  highlight(str, lang) {
+  highlight(str: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
       return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`;
     }
@@ -28,7 +32,7 @@ if (markdownItKatex) {
 }
 
 // Custom rule: :::upload "Label" accept=.csv multiple rename=data.csv
-md.block.ruler.before("fence", "upload_button", (state, startLine, _endLine, silent) => {
+md.block.ruler.before("fence", "upload_button", (state: any, startLine: any, _endLine: any, silent: any) => {
   const pos = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
   const line = state.src.slice(pos, max);
@@ -55,7 +59,7 @@ md.block.ruler.before("fence", "upload_button", (state, startLine, _endLine, sil
 
 let uploadBlockId = 0;
 
-md.renderer.rules.upload_button = (tokens, idx) => {
+md.renderer.rules.upload_button = (tokens: any, idx: any) => {
   const { label, accept, multiple, rename } = tokens[idx].meta;
   const id = uploadBlockId++;
   const escapedLabel = md.utils.escapeHtml(label);
@@ -76,7 +80,7 @@ md.renderer.rules.upload_button = (tokens, idx) => {
 };
 
 // Custom rule: treat :::lang ... ::: as executable code blocks with a Run button
-md.block.ruler.before("fence", "exec_fence", (state, startLine, endLine, silent) => {
+md.block.ruler.before("fence", "exec_fence", (state: any, startLine: any, endLine: any, silent: any) => {
   const pos = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
   const line = state.src.slice(pos, max);
@@ -114,7 +118,7 @@ md.block.ruler.before("fence", "exec_fence", (state, startLine, endLine, silent)
 
 let execBlockId = 0;
 
-md.renderer.rules.exec_fence = (tokens, idx) => {
+md.renderer.rules.exec_fence = (tokens: any, idx: any) => {
   const token = tokens[idx];
   const lang = token.info || "python";
   const hidden = token.meta?.hidden ?? false;
@@ -155,21 +159,20 @@ md.renderer.rules.exec_fence = (tokens, idx) => {
 // Rewrite .md links to rendered paths (e.g., ./intro.md -> ./intro, ../notes/lecture-1.md -> ../notes/lecture-1)
 const defaultLinkOpen = md.renderer.rules.link_open || ((tokens: any, idx: any, options: any, _env: any, self: any) => self.renderToken(tokens, idx, options));
 
-md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+md.renderer.rules.link_open = (tokens: any, idx: any, options: any, env: any, self: any) => {
   const hrefIndex = tokens[idx].attrIndex("href");
   if (hrefIndex >= 0) {
-    const href = tokens[idx].attrs![hrefIndex][1];
-    // Only rewrite relative .md links, not external URLs
+    const href = tokens[idx].attrs[hrefIndex][1];
     if (href.endsWith(".md") && !href.startsWith("http://") && !href.startsWith("https://")) {
-      tokens[idx].attrs![hrefIndex][1] = href.replace(/\.md$/, "");
+      tokens[idx].attrs[hrefIndex][1] = href.replace(/\.md$/, "");
     }
   }
   return defaultLinkOpen(tokens, idx, options, env, self);
 };
 
 // Add IDs to headings for TOC anchor links
-md.renderer.rules.heading_open = (tokens, idx, options, _env, self) => {
-  const token = tokens[idx];
+md.renderer.rules.heading_open = (tokens: any, idx: any, options: any, _env: any, self: any) => {
+  const token = tokens[idx]!
   // Get the text content from the inline token that follows
   const inlineToken = tokens[idx + 1];
   if (inlineToken && inlineToken.children) {
@@ -201,8 +204,8 @@ export function extractToc(source: string): TocEntry[] {
   const headingRegex = /^(#{1,6})\s+(.+)$/gm;
   let match;
   while ((match = headingRegex.exec(stripped)) !== null) {
-    const level = match[1].length;
-    const text = match[2].replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[(.+?)\]\(.+?\)/g, "$1").replace(/`(.+?)`/g, "$1").trim();
+    const level = match[1]!.length;
+    const text = match[2]!.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[(.+?)\]\(.+?\)/g, "$1").replace(/`(.+?)`/g, "$1").trim();
     const id = text.toLowerCase().replace(/[^\w]+/g, "-").replace(/^-|-$/g, "");
     entries.push({ level, text, id });
   }
@@ -233,7 +236,7 @@ export async function resolveFileReferences(source: string, scriptsDir: string, 
   let result = source;
   // Process in reverse so indices stay valid
   for (const match of matches.reverse()) {
-    const filename = match[1];
+    const filename = match[1]!;
     const hidden = match[2] === "hidden";
     const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
 
@@ -276,14 +279,93 @@ export function stripFrontmatter(source: string): string {
   return splitFrontmatter(source).body;
 }
 
+let inlineQuizCounter = 0;
+
+function renderWithBlocks(source: string): string {
+  inlineQuizCounter = 0;
+  const { tree } = parse(stripFrontmatter(source));
+  return tree.map(node => renderNode(node)).join("");
+}
+
+function renderNode(node: Block | TextRun): string {
+  if (node.kind === "text") {
+    return md.render(node.content);
+  }
+  return renderBlock(node);
+}
+
+function renderBlock(block: Block): string {
+  switch (block.name) {
+    case "jsx":
+    case "python":
+      return renderExecBlock(block);
+    case "upload":
+      return renderUploadBlock(block);
+    case "quiz":
+      return renderQuizBlock(block);
+    case "raw":
+      return renderRawBlock(block);
+    case "include":
+      return `<p><em>include blocks not yet supported inline</em></p>`;
+    default:
+      return block.children.map(renderNode).join("");
+  }
+}
+
+function renderExecBlock(block: Block): string {
+  const lang = block.name; // "jsx" or "python"
+  const hidden = hasAttr(block, "hidden");
+
+  if (block.src) {
+    const hiddenStr = hidden ? " hidden" : "";
+    return md.render(`:::${lang}${hiddenStr}\n# [jsx=${block.src}] — inline file ref not yet wired\n:::`);
+  }
+
+  const textRun = block.children.find(c => c.kind === "text") as TextRun | undefined;
+  const code = textRun?.content ?? "";
+  const hiddenStr = hidden ? " hidden" : "";
+  return md.render(`:::${lang}${hiddenStr}\n${code}\n:::`);
+}
+
+function renderUploadBlock(block: Block): string {
+  const label = getAttr(block, "label") || "Upload";
+  const accept = getAttr(block, "accept") || "";
+  const multiple = hasAttr(block, "multiple");
+  const rename = getAttr(block, "rename") || "";
+  const labelStr = typeof label === "string" ? `"${label}"` : '"Upload"';
+  const acceptStr = accept && typeof accept === "string" ? ` accept=${accept}` : "";
+  const multipleStr = multiple ? " multiple" : "";
+  const renameStr = rename && typeof rename === "string" ? ` rename=${rename}` : "";
+  return md.render(`:::upload ${labelStr}${acceptStr}${multipleStr}${renameStr}`);
+}
+
+function renderQuizBlock(block: Block): string {
+  const id = `inline-quiz-${++inlineQuizCounter}`;
+  let quiz;
+  try {
+    quiz = parseQuizBlock(block);
+  } catch (e: any) {
+    return `<div class="quiz-error"><p>Quiz parse error: ${md.utils.escapeHtml(e?.message ?? String(e))}</p></div>`;
+  }
+  const clientData = renderQuizForClient(quiz);
+  const json = JSON.stringify(clientData);
+  return `<div data-readrun-inline-quiz="${id}"></div>\n<script type="application/json" id="quiz-data-${id}">${json}</script>`;
+}
+
+function renderRawBlock(block: Block): string {
+  const textRun = block.children.find(c => c.kind === "text") as TextRun | undefined;
+  const code = md.utils.escapeHtml(textRun?.content ?? "");
+  return `<pre class="hljs"><code>${code}</code></pre>`;
+}
+
 export function renderMarkdown(source: string): string {
   execBlockId = 0;
   uploadBlockId = 0;
-  return md.render(stripFrontmatter(source));
+  return renderWithBlocks(source);
 }
 
 export function renderMarkdownText(source: string): string {
-  return md.render(stripFrontmatter(source));
+  return renderWithBlocks(source);
 }
 
 export function renderMarkdownInline(source: string): string {

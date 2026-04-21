@@ -2,7 +2,7 @@ import { test, expect, beforeEach, afterEach } from "bun:test";
 import { mkdtemp, rm, mkdir, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { validateFolder, type ValidationResult } from "./validate";
+import { validateFolder } from "./validate";
 
 let tmpDir: string;
 
@@ -22,7 +22,7 @@ async function write(rel: string, content: string) {
 
 test("clean project produces no issues", async () => {
   await write(".readrun/scripts/demo.py", "print('hello')");
-  await write("index.md", "# Hello\n\n:::python\nprint('hi')\n:::\n");
+  await write("index.md", "# Hello\n\n[python]\nprint('hi')\n[/python]\n");
   const result = await validateFolder(tmpDir);
   expect(result.errors).toHaveLength(0);
   expect(result.warnings).toHaveLength(0);
