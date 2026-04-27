@@ -339,67 +339,6 @@ const guideCmd = defineCommand({
   },
 });
 
-const exportCmd = defineCommand({
-  meta: { name: "export", description: "Export a built static site to PDF (one PDF per page) using system Chromium." },
-  args: {
-    path: { type: "positional", required: false, description: "Content folder to build (default: cwd)" },
-    out: { type: "string", description: "PDF output directory (default: ./pdf)" },
-    dist: { type: "string", description: "Existing dist folder to print (skips build)" },
-    port: { type: "string", description: "Static server port (default: 3009)", default: "3009" },
-  },
-  async run({ args }) {
-    const { detectChromium, chromiumInstallHints, exportPagesAsPdf } = await import("./exportPdf");
-    const chromium = await detectChromium();
-    if (!chromium) {
-      console.error(chromiumInstallHints());
-      process.exit(1);
-    }
-
-    const contentDir = resolvePath(args.path);
-    const pdfOut = args.out ? resolvePath(args.out) : resolve(process.cwd(), "pdf");
-    const distDir = args.dist ? resolvePath(args.dist) : resolve(contentDir, "dist");
-
-    if (!args.dist) {
-      const { build } = await import("./build");
-      await build({ contentDir, outDir: distDir, platform: null });
-    }
-
-    const { startStaticServer } = await import("./serve-static");
-    const port = parsePort(args.port);
-    const server = await startStaticServer({ rootDir: distDir, port, host: "localhost" });
-
-    const { buildNavTree } = await import("./nav");
-    const tree = await buildNavTree(contentDir);
-    const pages: { url: string; relPath: string }[] = [];
-    function walk(nodes: any[]) {
-      for (const n of nodes) {
-        if (!n.isDir) pages.push({ url: n.path, relPath: n.path.replace(/^\//, "") });
-        if (n.children) walk(n.children);
-      }
-    }
-    walk(tree);
-
-    if (pages.length === 0) {
-      console.error("No pages found to export.");
-      server.stop();
-      process.exit(1);
-    }
-
-    console.log(`Exporting ${pages.length} page(s) to PDF in ${pdfOut} ...`);
-    const result = await exportPagesAsPdf({
-      chromium,
-      baseUrl: `http://${server.host}:${server.port}`,
-      pages,
-      outDir: pdfOut,
-    });
-    server.stop();
-
-    for (const w of result.written) console.log(`  ${w}`);
-    for (const f of result.failed) console.error(`  ! ${f.page}: ${f.reason}`);
-    if (result.failed.length > 0) process.exit(1);
-  },
-});
-
 const shareCmd = defineCommand({
   meta: { name: "share", description: "Serve a folder and tunnel it to a public URL via cloudflared or bore." },
   args: {
@@ -519,7 +458,7 @@ const reinstallCmd = defineCommand({
 // ─────────────────────────────────────────────────────────────
 
 const KNOWN = new Set([
-  "serve", "dashboard", "watch", "init", "validate", "build", "export",
+  "serve", "dashboard", "watch", "init", "validate", "build",
   "preview", "new", "today", "share", "clean", "doctor", "guide", "reinstall",
   "help", "--help", "-h", "--version", "-v",
 ]);
@@ -557,7 +496,6 @@ const main = defineCommand({
     new: newCmd,
     today: todayCmd,
     share: shareCmd,
-    export: exportCmd,
     clean: cleanCmd,
     doctor: doctorCmd,
     guide: guideCmd,

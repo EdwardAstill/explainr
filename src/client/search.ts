@@ -6,7 +6,10 @@ export const searchCode = `
     const searchPrev = document.getElementById("search-prev");
     const searchNext = document.getElementById("search-next");
     const searchClose = document.getElementById("search-close");
-    const markdownBody = document.querySelector(".markdown-body");
+    let markdownBody = document.querySelector(".markdown-body");
+    document.addEventListener("readrun:remount", () => {
+      markdownBody = document.querySelector(".markdown-body");
+    });
     let searchMarks = [];
     let searchActiveIdx = -1;
 

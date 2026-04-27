@@ -42,14 +42,20 @@ export const navigationCode = `
     }
 
     // --- TOC scroll spy ---
-    const tocLinks = document.querySelectorAll(".toc-link");
-    if (tocLinks.length > 0) {
+    let tocScrollHandler = null;
+    function initTocScrollSpy() {
+      if (tocScrollHandler) {
+        window.removeEventListener("scroll", tocScrollHandler);
+        tocScrollHandler = null;
+      }
+      const tocLinks = document.querySelectorAll(".toc-link");
+      if (tocLinks.length === 0) return;
       const headingEls = Array.from(tocLinks).map(link => {
         const id = decodeURIComponent(link.getAttribute("href").slice(1));
         return document.getElementById(id);
       }).filter(Boolean);
 
-      function updateActiveToc() {
+      tocScrollHandler = function updateActiveToc() {
         let active = 0;
         const scrollY = window.scrollY + 80;
         for (let i = 0; i < headingEls.length; i++) {
@@ -58,11 +64,13 @@ export const navigationCode = `
         tocLinks.forEach((link, i) => {
           link.classList.toggle("toc-link--active", i === active);
         });
-      }
+      };
 
-      window.addEventListener("scroll", updateActiveToc, { passive: true });
-      updateActiveToc();
+      window.addEventListener("scroll", tocScrollHandler, { passive: true });
+      tocScrollHandler();
     }
+    initTocScrollSpy();
+    document.addEventListener("readrun:remount", initTocScrollSpy);
 
     // --- Resize handles ---
     function initResize(handleId, targetId, side) {

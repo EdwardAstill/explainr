@@ -29,9 +29,37 @@ export interface ServerHandle {
 
 const RELOAD_SCRIPT = `<script>
 (function(){
+  function fullReload() { location.reload(); }
+  async function softReload() {
+    try {
+      var path = location.pathname;
+      // .jsx pages and synthetic pages — just full reload (no in-place swap).
+      if (path.endsWith(".jsx") || path === "/" || path.startsWith("/tags") || path === "/__stats" || path === "/guide") {
+        fullReload(); return;
+      }
+      var res = await fetch("/__render?path=" + encodeURIComponent(path), { cache: "no-store" });
+      if (!res.ok) { fullReload(); return; }
+      var html = await res.text();
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var newArticle = doc.querySelector("article.markdown-body");
+      var oldArticle = document.querySelector("article.markdown-body");
+      if (!newArticle || !oldArticle) { fullReload(); return; }
+      oldArticle.replaceWith(newArticle);
+      var newToc = doc.querySelector(".toc-sidebar");
+      var oldToc = document.querySelector(".toc-sidebar");
+      if (newToc && oldToc) oldToc.replaceWith(newToc);
+      var newNav = doc.querySelector(".sidebar-nav");
+      var oldNav = document.querySelector(".sidebar-nav");
+      if (newNav && oldNav) oldNav.replaceWith(newNav);
+      document.title = doc.title;
+      document.dispatchEvent(new CustomEvent("readrun:remount"));
+    } catch (e) {
+      fullReload();
+    }
+  }
   try {
     var es = new EventSource("/__reload");
-    es.addEventListener("reload", function(){ location.reload(); });
+    es.addEventListener("reload", softReload);
     es.onerror = function(){ /* server likely stopped; let next keepalive reconnect */ };
   } catch (e) {}
 })();
@@ -279,6 +307,33 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       if (pathname === "/_readrun/search-index.json") {
         const idx = await getSiteIndex(dir);
         return Response.json(buildSearchIndex(idx));
+      }
+
+      // Soft-reload render: returns the same HTML the page would, used by
+      // the watch-mode client to swap article/toc/nav in place instead of
+      // a full reload. Preserves Pyodide state and module-level globals.
+      if (watch && pathname === "/__render") {
+        const url = new URL(req.url);
+        const requested = url.searchParams.get("path") ?? "/";
+        const cleanPath = requested.replace(/\/$/, "") || "/";
+        if (cleanPath === "/") return new Response("Not found", { status: 404 });
+        try {
+          const source = await Bun.file(join(dir, cleanPath + ".md")).text();
+          const siteIdx = await getSiteIndex(dir);
+          const { renderPage } = await import("./renderPage");
+          const { html } = await renderPage({
+            contentDir: dir,
+            pagePath: cleanPath,
+            source,
+            siteIndex: siteIdx,
+            config,
+            embeddedFiles: await listEmbeddedFiles(dir),
+            tree: await buildNavTree(dir),
+          });
+          return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+        } catch {
+          return new Response("Not found", { status: 404 });
+        }
       }
 
       // Bundled client
