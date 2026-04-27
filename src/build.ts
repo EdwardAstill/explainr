@@ -92,7 +92,7 @@ export async function build(options: BuildOptions) {
   await mkdir(join(outDir, "_readrun"), { recursive: true });
   await Bun.write(join(outDir, "_readrun", "search-index.json"), JSON.stringify(buildSearchIndex(siteIdx)));
   console.log(`  _readrun/search-index.json`);
-  await Bun.write(join(outDir, "_readrun", "client.js"), getClientJs());
+  await Bun.write(join(outDir, "_readrun", "client.js"), await getClientJs());
   await Bun.write(join(outDir, "_readrun", "client.css"), getClientCss());
   console.log(`  _readrun/client.js`);
   console.log(`  _readrun/client.css`);

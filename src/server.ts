@@ -338,7 +338,7 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
 
       // Bundled client
       if (pathname === "/_readrun/client.js") {
-        return new Response(getClientJs(), {
+        return new Response(await getClientJs(), {
           headers: { "Content-Type": "text/javascript", "Cache-Control": "max-age=300" },
         });
       }

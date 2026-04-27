@@ -1,4 +1,4 @@
-export const siteSearchCode = `
+// @ts-nocheck
 (() => {
   let idxPromise = null;
   function getIdx() {
@@ -13,7 +13,7 @@ export const siteSearchCode = `
   function score(query, entry) {
     const q = query.toLowerCase().trim();
     if (!q) return 0;
-    const tokens = q.split(/\\s+/).filter(Boolean);
+    const tokens = q.split(/\s+/).filter(Boolean);
     if (tokens.length === 0) return 0;
     const title = entry.title.toLowerCase();
     const body = entry.body.toLowerCase();
@@ -29,7 +29,7 @@ export const siteSearchCode = `
   }
 
   function snippet(body, query) {
-    const q = query.toLowerCase().split(/\\s+/).filter(Boolean)[0];
+    const q = query.toLowerCase().split(/\s+/).filter(Boolean)[0];
     if (!q) return body.slice(0, 140);
     const idx = body.toLowerCase().indexOf(q);
     if (idx < 0) return body.slice(0, 140);
@@ -43,12 +43,12 @@ export const siteSearchCode = `
     const el = document.createElement("div");
     el.id = "site-search-palette";
     el.className = "site-search-palette";
-    el.innerHTML = \`
+    el.innerHTML = `
       <div class="site-search-palette__scrim"></div>
       <div class="site-search-palette__card">
         <input class="site-search-palette__input" type="text" placeholder="Search all pages…" autocomplete="off">
         <div class="site-search-palette__results"></div>
-      </div>\`;
+      </div>`;
     document.body.appendChild(el);
 
     const scrim = el.querySelector(".site-search-palette__scrim");
@@ -105,4 +105,3 @@ export const siteSearchCode = `
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { open(); e.preventDefault(); }
   });
 })();
-`;

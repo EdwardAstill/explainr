@@ -1,4 +1,6 @@
-export const quizCode = `
+// @ts-nocheck
+import { escapeHtml } from "./dom-utils";
+
     // --- Pure utility functions (no side effects, no global state) ---
 
     function flattenQuizItems(items) {
@@ -143,7 +145,7 @@ export const quizCode = `
           }
           var showCheck = submitted ? (Array.isArray(ans.userAnswer) && ans.userAnswer.indexOf(i) >= 0) : (pending.indexOf(i) >= 0);
           h += '<button class="' + cls + '" data-option="' + i + '" data-type="multi" data-qid="' + escapeHtml(qId) + '"' + (submitted ? ' disabled' : '') + '>';
-          h += '<span class="quiz__option-check">' + (showCheck ? '\\u2713' : '') + '</span>';
+          h += '<span class="quiz__option-check">' + (showCheck ? '✓' : '') + '</span>';
           h += '<span class="quiz__option-text">' + (q.optionsHtml ? q.optionsHtml[i] : escapeHtml(q.options[i])) + '</span>';
           h += '</button>';
         }
@@ -350,7 +352,7 @@ export const quizCode = `
               var ans = quizAnswers[part.id];
               var isCorrect = ans && ans.correct;
               h += '<div class="quiz__result-item quiz__result-item--' + (isCorrect ? 'correct' : 'wrong') + '">';
-              h += '<span class="quiz__result-marker">' + (isCorrect ? '\\u2713' : '\\u2717') + '</span>';
+              h += '<span class="quiz__result-marker">' + (isCorrect ? '✓' : '✗') + '</span>';
               h += '<span class="quiz__result-num">Q' + qNum + '</span>';
               h += '<span class="quiz__result-text">' + part.questionHtml + '</span>';
               h += '</div>';
@@ -360,7 +362,7 @@ export const quizCode = `
             var ans = quizAnswers[item.id];
             var isCorrect = ans && ans.correct;
             h += '<div class="quiz__result-item quiz__result-item--' + (isCorrect ? 'correct' : 'wrong') + '">';
-            h += '<span class="quiz__result-marker">' + (isCorrect ? '\\u2713' : '\\u2717') + '</span>';
+            h += '<span class="quiz__result-marker">' + (isCorrect ? '✓' : '✗') + '</span>';
             h += '<span class="quiz__result-num">Q' + qNum + '</span>';
             h += '<span class="quiz__result-text">' + item.questionHtml + '</span>';
             h += '</div>';
@@ -456,7 +458,7 @@ export const quizCode = `
 
           multiBtn.classList.toggle("quiz__option--selected");
           var checkEl = multiBtn.querySelector(".quiz__option-check");
-          if (checkEl) checkEl.textContent = multiBtn.classList.contains("quiz__option--selected") ? "\\u2713" : "";
+          if (checkEl) checkEl.textContent = multiBtn.classList.contains("quiz__option--selected") ? "✓" : "";
 
           var submitBtn = multiBtn.closest(".quiz__question").querySelector('[data-submit="multi"]');
           if (submitBtn) submitBtn.disabled = arr.length === 0;
@@ -562,4 +564,3 @@ export const quizCode = `
         }
       });
     });
-`;
