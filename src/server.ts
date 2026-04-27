@@ -4,6 +4,7 @@ import { ensureMarkdownReady } from "./markdown";
 import { getSiteIndex } from "./siteIndex";
 import { tagsIndexBody, tagPageBody, statsBody } from "./synthetic-pages";
 import { buildSearchIndex } from "./searchIndex";
+import { getClientJs, getClientCss } from "./clientBundle";
 import { buildNavTree, renderNav } from "./nav";
 import { htmlPage } from "./template";
 import { MIME, findAvailablePort, listEmbeddedFiles, pathExists } from "./utils";
@@ -278,6 +279,18 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       if (pathname === "/_readrun/search-index.json") {
         const idx = await getSiteIndex(dir);
         return Response.json(buildSearchIndex(idx));
+      }
+
+      // Bundled client
+      if (pathname === "/_readrun/client.js") {
+        return new Response(getClientJs(), {
+          headers: { "Content-Type": "text/javascript", "Cache-Control": "max-age=300" },
+        });
+      }
+      if (pathname === "/_readrun/client.css") {
+        return new Response(getClientCss(), {
+          headers: { "Content-Type": "text/css", "Cache-Control": "max-age=300" },
+        });
       }
 
       // Runtime file route for Pyodide preload

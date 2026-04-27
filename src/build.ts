@@ -4,6 +4,7 @@ import { ensureMarkdownReady } from "./markdown";
 import { getSiteIndex } from "./siteIndex";
 import { tagsIndexBody, tagPageBody, statsBody } from "./synthetic-pages";
 import { buildSearchIndex } from "./searchIndex";
+import { getClientJs, getClientCss } from "./clientBundle";
 import { buildNavTree, renderNav, type NavNode } from "./nav";
 import { htmlPage } from "./template";
 import { findFirstFile, listEmbeddedFiles } from "./utils";
@@ -87,10 +88,14 @@ export async function build(options: BuildOptions) {
   }
   await emitSyntheticPage(outDir, "/__stats", statsBody(siteIdx), tree, basePath, config, embeddedFiles);
 
-  // Search index
+  // Search index + client bundle
   await mkdir(join(outDir, "_readrun"), { recursive: true });
   await Bun.write(join(outDir, "_readrun", "search-index.json"), JSON.stringify(buildSearchIndex(siteIdx)));
   console.log(`  _readrun/search-index.json`);
+  await Bun.write(join(outDir, "_readrun", "client.js"), getClientJs());
+  await Bun.write(join(outDir, "_readrun", "client.css"), getClientCss());
+  console.log(`  _readrun/client.js`);
+  console.log(`  _readrun/client.css`);
 
   // Index redirect
   if (firstPage) {

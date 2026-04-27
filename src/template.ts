@@ -1,6 +1,5 @@
 import { escapeHtml as escape } from "./utils";
-import { styles } from "./styles/index";
-import { executionScript, settingsScript } from "./client/index";
+import { bundleVersion } from "./clientBundle";
 import { type ReadrunConfig, defaultConfig } from "./config";
 import { type TocEntry } from "./markdown";
 
@@ -267,7 +266,7 @@ export function htmlPage(nav: string, content: string, title: string, basePath?:
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.43/dist/katex.min.css" crossorigin="anonymous">
-  <style>${styles}</style>
+  <link rel="stylesheet" href="/_readrun/client.css?v=${bundleVersion()}">
 </head>
 <body>
   <script id="readrun-shortcuts" type="application/json">${configJson}</script>
@@ -324,8 +323,7 @@ ${themePickerOverlayHtml}
       <div class="exec-output code-modal__output" id="code-modal-output"></div>
     </div>
   </div>
-${executionScript}
-${settingsScript}
+  <script type="module" src="/_readrun/client.js?v=${bundleVersion()}"></script>
 </body>
 </html>`;
 }
