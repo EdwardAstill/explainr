@@ -1,5 +1,5 @@
 import { join, resolve } from "path";
-import { mkdir, writeFile, stat } from "fs/promises";
+import { mkdir } from "fs/promises";
 import { homedir } from "os";
 
 export interface ShortcutConfig {
@@ -101,7 +101,7 @@ export async function saveConfig(config: ReadrunConfig): Promise<void> {
   const configPath = getConfigPath();
   const configDir = join(homedir(), ".config", "readrun");
   await mkdir(configDir, { recursive: true });
-  await writeFile(configPath, configToToml(config));
+  await Bun.write(configPath, configToToml(config));
 }
 
 export async function addRecent(path: string): Promise<void> {
@@ -115,12 +115,9 @@ export async function loadConfig(): Promise<ReadrunConfig> {
   const configPath = getConfigPath();
   const configDir = join(homedir(), ".config", "readrun");
 
-  try {
-    await stat(configPath);
-  } catch {
-    // File doesn't exist — create it with defaults
+  if (!(await Bun.file(configPath).exists())) {
     await mkdir(configDir, { recursive: true });
-    await writeFile(configPath, shortcutsToToml(defaultShortcuts));
+    await Bun.write(configPath, shortcutsToToml(defaultShortcuts));
     return structuredClone(defaultConfig);
   }
 
@@ -132,9 +129,10 @@ export async function loadConfig(): Promise<ReadrunConfig> {
     const config = structuredClone(defaultConfig);
 
     if (parsed.shortcuts && typeof parsed.shortcuts === "object") {
+      const shortcuts = config.shortcuts as unknown as Record<string, string>;
       for (const [key, value] of Object.entries(parsed.shortcuts)) {
-        if (key in config.shortcuts && typeof value === "string") {
-          (config.shortcuts as Record<string, string>)[key] = value;
+        if (key in shortcuts && typeof value === "string") {
+          shortcuts[key] = value;
         }
       }
     }

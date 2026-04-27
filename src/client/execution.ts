@@ -58,10 +58,14 @@ export const executionCode = `
         if (filesEl) {
           try {
             const files = JSON.parse(filesEl.textContent);
-            for (const f of files) {
-              const bytes = Uint8Array.from(atob(f.data), c => c.charCodeAt(0));
-              pyodide.FS.writeFile(f.name, bytes);
-            }
+            await Promise.all(files.map(async (f) => {
+              try {
+                const res = await fetch("/_readrun/files/" + encodeURIComponent(f.name));
+                if (!res.ok) return;
+                const bytes = new Uint8Array(await res.arrayBuffer());
+                pyodide.FS.writeFile(f.name, bytes);
+              } catch {}
+            }));
           } catch {}
         }
 

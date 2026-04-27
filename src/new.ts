@@ -1,5 +1,6 @@
-import { join, dirname } from "path";
-import { mkdir, writeFile, access } from "fs/promises";
+import { dirname } from "path";
+import { mkdir } from "fs/promises";
+import { pathExists } from "./utils";
 
 export interface NewPageOptions {
   targetFile: string;
@@ -21,22 +22,18 @@ function titleFromFilename(file: string): string {
 }
 
 function pageTemplate(title: string): string {
-  return `# ${title}\n\nOne-sentence summary of what this page is.\n\n## Overview\n\nExplanatory prose here.\n\n\`\`\`python\nprint("plain code block — not runnable")\n\`\`\`\n\n:::python\nprint("runnable — click Run")\n:::\n`;
-}
-
-async function exists(path: string): Promise<boolean> {
-  try { await access(path); return true; } catch { return false; }
+  return `# ${title}\n\nOne-sentence summary of what this page is.\n\n## Overview\n\nExplanatory prose here.\n\n\`\`\`python\nprint("plain code block — not runnable")\n\`\`\`\n\n[python]\nprint("runnable — click Run")\n[/python]\n`;
 }
 
 export async function newPage(opts: NewPageOptions): Promise<NewPageResult> {
   const file = opts.targetFile.endsWith(".md") ? opts.targetFile : opts.targetFile + ".md";
 
-  if (await exists(file) && !opts.force) {
+  if (await pathExists(file) && !opts.force) {
     return { path: file, created: false, skipped: "exists" };
   }
 
   const title = opts.title ?? titleFromFilename(file);
   await mkdir(dirname(file), { recursive: true });
-  await writeFile(file, pageTemplate(title));
+  await Bun.write(file, pageTemplate(title));
   return { path: file, created: true };
 }

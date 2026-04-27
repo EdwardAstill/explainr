@@ -34,6 +34,30 @@ function parsePort(raw: unknown): number {
   return n;
 }
 
+// Shared arg specs and helpers for HTTP-server subcommands.
+const serverArgs = {
+  port: { type: "string", description: "Port (default: 3001)", default: "3001" },
+  host: { type: "string", description: "Hostname (default: localhost)", default: "localhost" },
+  "no-open": { type: "boolean", description: "Do not auto-open a browser", default: false },
+} as const;
+
+interface ServerArgsValues {
+  port?: string;
+  host?: string;
+  "no-open"?: boolean;
+}
+
+async function finishHttp(opts: { url: string; noOpen: boolean; banner?: string }): Promise<never> {
+  if (!opts.noOpen) openBrowser(opts.url);
+  if (opts.banner) console.log(opts.banner);
+  console.log("Press Ctrl+C to stop.");
+  return keepAlive();
+}
+
+function httpOpts(args: ServerArgsValues): { port: number; host: string; noOpen: boolean } {
+  return { port: parsePort(args.port), host: args.host ?? "localhost", noOpen: !!args["no-open"] };
+}
+
 // ─────────────────────────────────────────────────────────────
 // Subcommands
 // ─────────────────────────────────────────────────────────────
@@ -42,9 +66,7 @@ const serveCmd = defineCommand({
   meta: { name: "serve", description: "Serve a folder or .md file with runnable blocks." },
   args: {
     path: { type: "positional", required: false, description: "Folder or .md file (default: cwd)" },
-    port: { type: "string", description: "Port (default: 3001)", default: "3001" },
-    host: { type: "string", description: "Hostname (default: localhost)", default: "localhost" },
-    "no-open": { type: "boolean", description: "Do not auto-open a browser", default: false },
+    ...serverArgs,
   },
   async run({ args }) {
     const abs = resolvePath(args.path);
@@ -52,9 +74,8 @@ const serveCmd = defineCommand({
     let filePath: string | undefined;
     try {
       const s = statSync(abs);
-      if (s.isDirectory()) {
-        contentDir = abs;
-      } else if (s.isFile() && abs.endsWith(".md")) {
+      if (s.isDirectory()) contentDir = abs;
+      else if (s.isFile() && abs.endsWith(".md")) {
         contentDir = resolve(abs, "..");
         filePath = abs;
       } else {
@@ -67,39 +88,32 @@ const serveCmd = defineCommand({
     }
 
     await addRecent(contentDir);
-
+    const opts = httpOpts(args);
     const { startServer } = await import("./server");
-    const handle = await startServer({
-      contentDir,
-      port: parsePort(args.port),
-      host: args.host,
-    });
-
+    const handle = await startServer({ contentDir, port: opts.port, host: opts.host });
     let openPath = "/";
     if (filePath) {
       const rel = filePath.slice(contentDir.length).replace(/\.md$/, "");
       openPath = rel.startsWith("/") ? rel : "/" + rel;
     }
-    if (!args["no-open"]) openBrowser(`http://${handle.host}:${handle.port}${openPath}`);
-    console.log("\nPress Ctrl+C to stop.");
-    await keepAlive();
+    await finishHttp({ url: `http://${handle.host}:${handle.port}${openPath}`, noOpen: opts.noOpen });
   },
 });
 
+async function runDashboard(opts: { port: number; host: string; noOpen: boolean }): Promise<void> {
+  const { startServer } = await import("./server");
+  const handle = await startServer({ port: opts.port, host: opts.host });
+  if (!opts.noOpen) openBrowser(`http://${handle.host}:${handle.port}`);
+  console.log(`readrun dashboard at http://${handle.host}:${handle.port}`);
+  console.log("Press Ctrl+C to stop.");
+  await keepAlive();
+}
+
 const dashboardCmd = defineCommand({
   meta: { name: "dashboard", description: "Open the web dashboard (saved paths, recent folders, guide)." },
-  args: {
-    port: { type: "string", description: "Port (default: 3001)", default: "3001" },
-    host: { type: "string", description: "Hostname (default: localhost)", default: "localhost" },
-    "no-open": { type: "boolean", description: "Do not auto-open a browser", default: false },
-  },
+  args: { ...serverArgs },
   async run({ args }) {
-    const { startServer } = await import("./server");
-    const handle = await startServer({ port: parsePort(args.port), host: args.host });
-    if (!args["no-open"]) openBrowser(`http://${handle.host}:${handle.port}`);
-    console.log(`readrun dashboard at http://${handle.host}:${handle.port}`);
-    console.log("Press Ctrl+C to stop.");
-    await keepAlive();
+    await runDashboard(httpOpts(args));
   },
 });
 
@@ -107,9 +121,7 @@ const watchCmd = defineCommand({
   meta: { name: "watch", description: "Serve a folder and auto-reload the page when files change." },
   args: {
     path: { type: "positional", required: false, description: "Folder to watch (default: cwd)" },
-    port: { type: "string", description: "Port (default: 3001)", default: "3001" },
-    host: { type: "string", description: "Hostname (default: localhost)", default: "localhost" },
-    "no-open": { type: "boolean", description: "Do not auto-open a browser", default: false },
+    ...serverArgs,
   },
   async run({ args }) {
     const contentDir = resolvePath(args.path);
@@ -125,15 +137,10 @@ const watchCmd = defineCommand({
     }
 
     await addRecent(contentDir);
+    const opts = httpOpts(args);
     const { startWatchServer } = await import("./watch");
-    const handle = await startWatchServer({
-      contentDir,
-      port: parsePort(args.port),
-      host: args.host,
-    });
-    if (!args["no-open"]) openBrowser(`http://${handle.host}:${handle.port}`);
-    console.log("Press Ctrl+C to stop.");
-    await keepAlive();
+    const handle = await startWatchServer({ contentDir, port: opts.port, host: opts.host });
+    await finishHttp({ url: `http://${handle.host}:${handle.port}`, noOpen: opts.noOpen });
   },
 });
 
@@ -248,11 +255,10 @@ const serveStaticCmd = defineCommand({
   },
   async run({ args }) {
     const dir = args.path ? resolvePath(args.path) : resolve(process.cwd(), "dist");
+    const opts = httpOpts(args);
     const { startStaticServer } = await import("./serve-static");
-    const handle = await startStaticServer({ rootDir: dir, port: parsePort(args.port), host: args.host });
-    if (!args["no-open"]) openBrowser(`http://${handle.host}:${handle.port}`);
-    console.log("Press Ctrl+C to stop.");
-    await keepAlive();
+    const handle = await startStaticServer({ rootDir: dir, port: opts.port, host: opts.host });
+    await finishHttp({ url: `http://${handle.host}:${handle.port}`, noOpen: opts.noOpen });
   },
 });
 
@@ -320,41 +326,62 @@ const doctorCmd = defineCommand({
 
 const guideCmd = defineCommand({
   meta: { name: "guide", description: "Open the built-in architecture guide in a browser." },
-  args: {
-    port: { type: "string", description: "Port (default: 3001)", default: "3001" },
-    host: { type: "string", description: "Hostname (default: localhost)", default: "localhost" },
-    "no-open": { type: "boolean", description: "Do not auto-open a browser", default: false },
-  },
+  args: { ...serverArgs },
   async run({ args }) {
+    const opts = httpOpts(args);
     const { startServer } = await import("./server");
-    const handle = await startServer({ port: parsePort(args.port), host: args.host });
-    const url = `http://${handle.host}:${handle.port}/guide`;
-    if (!args["no-open"]) openBrowser(url);
-    console.log(`\nGuide at ${url}`);
-    console.log("Press Ctrl+C to stop.");
-    await keepAlive();
+    const handle = await startServer({ port: opts.port, host: opts.host });
+    await finishHttp({
+      url: `http://${handle.host}:${handle.port}/guide`,
+      noOpen: opts.noOpen,
+      banner: `\nGuide at http://${handle.host}:${handle.port}/guide`,
+    });
   },
 });
 
-const migrateCmd = defineCommand({
-  meta: { name: "migrate", description: "Rewrite ::: block syntax to [block] syntax in all .md files." },
+const todayCmd = defineCommand({
+  meta: { name: "today", description: "Open today's daily note (creates journal/YYYY-MM-DD.md if missing)." },
   args: {
     path: { type: "positional", required: false, description: "Content folder (default: cwd)" },
-    "dry-run": { type: "boolean", description: "Print what would change without writing files", default: false },
+    folder: { type: "string", description: "Subfolder for daily notes (default: journal)", default: "journal" },
   },
   async run({ args }) {
     const contentDir = resolvePath(args.path);
-    const { migrate } = await import("./migrate");
-    const res = await migrate({ contentDir, dryRun: args["dry-run"] });
-    const prefix = args["dry-run"] ? "[dry-run] " : "";
-    for (const f of res.filesModified) console.log(`${prefix}modified  ${f}`);
-    for (const f of res.filesSkipped) console.log(`${prefix}skipped   ${f}`);
-    console.log(`\n${res.filesScanned} file(s) scanned, ${res.filesModified.length} modified, ${res.filesSkipped.length} skipped.`);
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const stem = `${yyyy}-${mm}-${dd}`;
+    const target = resolve(contentDir, args.folder, `${stem}.md`);
+
+    const { newPage } = await import("./new");
+    const tmplPath = resolve(contentDir, ".readrun", "templates", "daily.md");
+    let title: string | undefined;
+    let templateContent: string | undefined;
+    try {
+      templateContent = await Bun.file(tmplPath).text();
+    } catch {}
+    if (templateContent) {
+      const filled = templateContent
+        .replace(/\{\{date\}\}/g, stem)
+        .replace(/\{\{title\}\}/g, stem);
+      const dirname = (await import("path")).dirname;
+      const { mkdir } = await import("fs/promises");
+      await mkdir(dirname(target), { recursive: true });
+      const exists = await Bun.file(target).exists();
+      if (!exists) await Bun.write(target, filled);
+      console.log(exists ? `  exists   ${target}` : `  created  ${target}`);
+    } else {
+      title = stem;
+      const res = await newPage({ targetFile: target, title });
+      const rel = relative(process.cwd(), res.path) || res.path;
+      console.log(res.created ? `  created  ${rel}` : `  exists   ${rel}`);
+    }
   },
 });
 
-const selfUpdateCmd = defineCommand({
-  meta: { name: "self-update", description: "Reinstall readrun dependencies in place (runs `bun install` in the readrun install dir)." },
+const reinstallCmd = defineCommand({
+  meta: { name: "reinstall", description: "Reinstall readrun dependencies in place (runs `bun install` in the readrun install dir). Does not pull new code." },
   async run() {
     const readrunRoot = resolve(import.meta.dirname, "..");
     console.log(`Installing dependencies in ${readrunRoot}...\n`);
@@ -374,7 +401,7 @@ const selfUpdateCmd = defineCommand({
 
 const KNOWN = new Set([
   "serve", "dashboard", "watch", "init", "validate", "build",
-  "preview", "new", "clean", "doctor", "guide", "self-update", "migrate",
+  "preview", "new", "today", "clean", "doctor", "guide", "reinstall",
   "help", "--help", "-h", "--version", "-v",
 ]);
 
@@ -409,16 +436,16 @@ const main = defineCommand({
     build: buildCmd,
     preview: serveStaticCmd,
     new: newCmd,
+    today: todayCmd,
     clean: cleanCmd,
     doctor: doctorCmd,
     guide: guideCmd,
-    "self-update": selfUpdateCmd,
-    migrate: migrateCmd,
+    reinstall: reinstallCmd,
   },
   async run({ args }) {
     // `rr` with no subcommand — fall back to dashboard so the bare command stays useful.
     if ((args._ as string[]).length === 0) {
-      await dashboardCmd.run!({ args: { port: "3001", host: "localhost", "no-open": false } as any, cmd: dashboardCmd, rawArgs: [] });
+      await runDashboard({ port: 3001, host: "localhost", noOpen: false });
     }
   },
 });

@@ -52,7 +52,8 @@ describe("parseFrontmatter", () => {
   it("emits unknown_field for unrecognised keys", () => {
     const r = parseFrontmatter(["---", "title: X", "author: me", "tags: [a, b]", "---", "body"].join("\n"));
     const unknown = r.issues.filter((i) => i.kind === "unknown_field").map((i) => (i as { name: string }).name);
-    expect(unknown.sort()).toEqual(["author", "tags"]);
+    expect(unknown.sort()).toEqual(["author"]);
+    expect(r.fm.tags).toEqual(["a", "b"]);
   });
 
   it("emits wrong_type when title is not a string", () => {

@@ -3,6 +3,7 @@ import { parse as parseYaml, YAMLParseError } from "yaml";
 export interface Frontmatter {
   title?: string;
   virtualPath?: string;
+  tags?: string[];
   raw?: Record<string, unknown>;
 }
 
@@ -19,7 +20,7 @@ export type FrontmatterIssue =
 
 const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
-const KNOWN_FIELDS = new Set(["title", "virtual_path"]);
+const KNOWN_FIELDS = new Set(["title", "virtual_path", "tags"]);
 
 export function splitFrontmatter(source: string): { block: string | null; body: string } {
   const m = source.match(FM_RE);
@@ -61,6 +62,17 @@ export function parseFrontmatter(source: string): FrontmatterParse {
     const v = raw.virtual_path;
     if (typeof v === "string") fm.virtualPath = v;
     else if (v !== null && v !== undefined) issues.push({ kind: "wrong_type", name: "virtual_path", expected: "string", got: typeName(v) });
+  }
+
+  if ("tags" in raw) {
+    const v = raw.tags;
+    if (Array.isArray(v) && v.every((t) => typeof t === "string")) {
+      fm.tags = v.map((t) => (t as string).trim()).filter(Boolean);
+    } else if (typeof v === "string") {
+      fm.tags = v.split(/[, ]+/).map((t) => t.trim()).filter(Boolean);
+    } else if (v !== null && v !== undefined) {
+      issues.push({ kind: "wrong_type", name: "tags", expected: "string[] or comma-separated string", got: typeName(v) });
+    }
   }
 
   for (const key of Object.keys(raw)) {

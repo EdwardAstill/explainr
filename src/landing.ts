@@ -1,36 +1,30 @@
-export function dashboardHtml(): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>readrun</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 48px 24px; }
-  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: #58a6ff; margin-bottom: 8px; }
-  .subtitle { color: #8b949e; font-size: 0.875rem; margin-bottom: 48px; }
+import { landingShell } from "./shell";
+
+const styles = `
+  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 48px 24px; }
+  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--shell-accent); margin-bottom: 8px; }
+  .subtitle { color: var(--shell-fg-muted); font-size: 0.875rem; margin-bottom: 48px; }
   .container { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 32px; }
-  section h2 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8b949e; margin-bottom: 12px; }
+  section h2 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--shell-fg-muted); margin-bottom: 12px; }
   .list { display: flex; flex-direction: column; gap: 6px; }
-  .item { display: flex; align-items: center; gap: 8px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; }
-  .item-path { flex: 1; font-size: 0.875rem; color: #e6edf3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .item-name { font-size: 0.8rem; color: #8b949e; margin-bottom: 2px; }
+  .item { display: flex; align-items: center; gap: 8px; background: var(--shell-bg-alt); border: 1px solid var(--shell-border); border-radius: 8px; padding: 10px 14px; }
+  .item-path { flex: 1; font-size: 0.875rem; color: var(--shell-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-name { font-size: 0.8rem; color: var(--shell-fg-muted); margin-bottom: 2px; }
   .btn { padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; border: none; cursor: pointer; transition: background 0.15s; }
-  .btn-primary { background: #238636; color: #fff; }
-  .btn-primary:hover { background: #2ea043; }
-  .btn-ghost { background: transparent; color: #8b949e; border: 1px solid #30363d; }
-  .btn-ghost:hover { color: #e6edf3; border-color: #8b949e; }
-  .btn-danger { background: transparent; color: #f85149; border: 1px solid #30363d; }
-  .btn-danger:hover { border-color: #f85149; }
+  .btn-primary { background: var(--shell-success); color: #fff; }
+  .btn-primary:hover { background: var(--shell-success-hover); }
+  .btn-ghost { background: transparent; color: var(--shell-fg-muted); border: 1px solid var(--shell-border); }
+  .btn-ghost:hover { color: var(--shell-fg); border-color: var(--shell-fg-muted); }
+  .btn-danger { background: transparent; color: var(--shell-danger); border: 1px solid var(--shell-border); }
+  .btn-danger:hover { border-color: var(--shell-danger); }
   .add-row { display: flex; gap: 8px; }
-  .add-row input { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 0.875rem; outline: none; }
-  .add-row input:focus { border-color: #58a6ff; }
-  .empty { color: #8b949e; font-size: 0.875rem; padding: 12px 0; }
-  .error { color: #f85149; font-size: 0.8rem; margin-top: 6px; min-height: 18px; }
-</style>
-</head>
-<body>
+  .add-row input { flex: 1; background: var(--shell-bg); border: 1px solid var(--shell-border); border-radius: 6px; padding: 8px 12px; color: var(--shell-fg); font-size: 0.875rem; outline: none; }
+  .add-row input:focus { border-color: var(--shell-accent); }
+  .empty { color: var(--shell-fg-muted); font-size: 0.875rem; padding: 12px 0; }
+  .error { color: var(--shell-danger); font-size: 0.8rem; margin-top: 6px; min-height: 18px; }
+`;
+
+const body = `
 <h1>readrun</h1>
 <p class="subtitle">Turn Markdown folders into interactive sites</p>
 <div class="container">
@@ -134,7 +128,8 @@ export function dashboardHtml(): string {
   }
 
   load();
-</script>
-</body>
-</html>`;
+</script>`;
+
+export function dashboardHtml(): string {
+  return landingShell({ title: "readrun", bodyHtml: body, extraCss: styles });
 }

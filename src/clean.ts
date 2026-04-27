@@ -1,5 +1,5 @@
 import { join, resolve } from "path";
-import { rm, readdir, readFile, stat } from "fs/promises";
+import { rm, readdir, stat } from "fs/promises";
 
 export interface CleanOptions {
   contentDir: string;
@@ -70,7 +70,7 @@ export async function clean(opts: CleanOptions): Promise<CleanResult> {
     const images = await listFiles(imagesDir);
 
     const mdFiles = await listMarkdown(opts.contentDir);
-    const allText = (await Promise.all(mdFiles.map((f) => readFile(f, "utf-8").catch(() => "")))).join("\n");
+    const allText = (await Promise.all(mdFiles.map((f) => Bun.file(f).text().catch(() => "")))).join("\n");
 
     const referenced = new Set<string>();
     for (const m of allText.matchAll(/:::([a-zA-Z0-9_./-]+\.[a-zA-Z0-9]+)/g)) {

@@ -1,54 +1,15 @@
 import { join, normalize, resolve, extname, basename } from "path";
-import { readFile, readdir, stat, access } from "fs/promises";
-import { renderMarkdown, resolveFileReferences, extractToc } from "./markdown";
-import { getWikilinkIndex, rewriteWikilinks } from "./wikilinks";
+import { readdir, stat } from "fs/promises";
+import { ensureMarkdownReady } from "./markdown";
+import { getSiteIndex } from "./siteIndex";
+import { tagsIndexBody, tagPageBody, statsBody } from "./synthetic-pages";
+import { buildSearchIndex } from "./searchIndex";
 import { buildNavTree, renderNav } from "./nav";
 import { htmlPage } from "./template";
-import { extractTitle } from "./utils";
+import { MIME, findAvailablePort, listEmbeddedFiles, pathExists } from "./utils";
 import { loadConfig, saveConfig } from "./config";
 import { dashboardHtml } from "./landing";
 import { guideHtml } from "./guide";
-
-const MIME: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css",
-  ".js": "text/javascript",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".webp": "image/webp",
-  ".py": "text/x-python",
-  ".ts": "text/typescript",
-  ".csv": "text/csv",
-  ".toml": "text/plain",
-  ".md": "text/markdown",
-  ".txt": "text/plain",
-};
-
-async function isPortAvailable(port: number): Promise<boolean> {
-  try {
-    const { createServer } = await import("net");
-    return new Promise((resolve) => {
-      const server = createServer();
-      server.once("error", () => resolve(false));
-      server.listen(port, "localhost", () => {
-        server.close(() => resolve(true));
-      });
-    });
-  } catch {
-    return false;
-  }
-}
-
-async function findAvailablePort(start: number): Promise<number> {
-  for (let port = start; port < start + 20; port++) {
-    if (await isPortAvailable(port)) return port;
-  }
-  throw new Error(`No available port found in range ${start}–${start + 19}`);
-}
 
 
 export interface ServerOptions {
@@ -75,9 +36,74 @@ const RELOAD_SCRIPT = `<script>
 })();
 </script>`;
 
+function jsxPageHtml(source: string): string {
+  const escaped = source.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+  return `
+<div id="jsx-page-mount" style="width:100%;min-height:200px;"></div>
+<script>
+(async () => {
+  const CDN = {
+    babel:    "https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js",
+    react:    "https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js",
+    reactdom: "https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js",
+  };
+  function loadScript(src) {
+    return new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = src; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  const mount = document.getElementById("jsx-page-mount");
+  try {
+    await loadScript(CDN.babel);
+    await loadScript(CDN.react);
+    await loadScript(CDN.reactdom);
+    const { React, ReactDOM, Babel } = globalThis;
+    const jsxSource = \`${escaped}\`;
+    const jsCode = Babel.transform(jsxSource, { presets: ["react"] }).code;
+    const root = ReactDOM.createRoot(mount);
+    const fn = new Function("React", "ReactDOM", "render", jsCode);
+    fn(React, ReactDOM, (el) => root.render(el));
+  } catch (err) {
+    mount.textContent = err.message;
+  }
+})();
+</script>`;
+}
+
 function injectReload(html: string): string {
   if (!html.includes("</body>")) return html + RELOAD_SCRIPT;
   return html.replace("</body>", RELOAD_SCRIPT + "</body>");
+}
+
+async function renderSynthetic(
+  pathname: string,
+  dir: string,
+  tree: any,
+  config: any,
+  embeddedFiles: any[],
+  wrap: (html: string) => string,
+): Promise<Response | null> {
+  if (pathname !== "/tags" && !pathname.startsWith("/tags/") && pathname !== "/__stats") return null;
+
+  const idx = await getSiteIndex(dir);
+  let body: { title: string; html: string } | null = null;
+
+  if (pathname === "/tags") {
+    body = tagsIndexBody(idx);
+  } else if (pathname === "/__stats") {
+    body = statsBody(idx);
+  } else {
+    const tag = decodeURIComponent(pathname.slice("/tags/".length));
+    body = tagPageBody(idx, tag);
+  }
+
+  if (!body) return null;
+
+  const nav = renderNav(tree, pathname);
+  const raw = htmlPage(nav, body.html, body.title, undefined, config, embeddedFiles, [], {});
+  return new Response(wrap(raw), { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
 export async function startServer(options: ServerOptions): Promise<ServerHandle> {
@@ -96,21 +122,7 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
   const isDashboard = () => contentDir === undefined;
 
   const config = await loadConfig();
-
-  async function loadEmbeddedFiles(dir: string) {
-    const filesDir = join(dir, ".readrun", "files");
-    try {
-      const entries = await readdir(filesDir);
-      const files: { name: string; data: string }[] = [];
-      for (const name of entries) {
-        const content = await readFile(join(filesDir, name));
-        files.push({ name, data: content.toString("base64") });
-      }
-      return files;
-    } catch {
-      return [];
-    }
-  }
+  await ensureMarkdownReady();
 
   const server = Bun.serve({
     port,
@@ -159,7 +171,7 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         const abs = resolve(p);
         const cfg = await loadConfig();
         if (action === "add") {
-          try { await access(abs); } catch {
+          if (!(await pathExists(abs))) {
             return Response.json({ error: `Path not found: ${abs}` }, { status: 400 });
           }
           if (!cfg.saved.find(e => e.path === abs)) {
@@ -177,9 +189,26 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       }
 
       if (isDashboard() && pathname === "/api/open" && req.method === "POST") {
+        // Origin check — block cross-site requests (e.g. malicious page hitting localhost).
+        const origin = req.headers.get("origin");
+        const expectedOrigin = `http://${host}:${port}`;
+        if (origin && origin !== expectedOrigin) {
+          return Response.json({ error: "Forbidden origin" }, { status: 403 });
+        }
         const { path: p } = await req.json() as { path: string };
         const abs = normalize(resolve(p));
-        try { await access(abs); } catch {
+        // Allowlist: must be already in saved or recent. Adding new folders requires
+        // /api/saved POST first — keeps the dashboard from being repointed at any
+        // user-readable directory by another local process.
+        const cfg = await loadConfig();
+        const allowed = new Set<string>([
+          ...cfg.saved.map(e => normalize(e.path)),
+          ...cfg.recent.map((p2: string) => normalize(p2)),
+        ]);
+        if (!allowed.has(abs)) {
+          return Response.json({ error: `Path not in saved or recent list: ${abs}` }, { status: 403 });
+        }
+        if (!(await pathExists(abs))) {
           return Response.json({ error: `Path not found: ${abs}` }, { status: 400 });
         }
         contentDir = abs;
@@ -200,8 +229,6 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       // --- Content mode (existing logic) ---
       const dir = contentDir!;
       const normalizedContent = normalize(resolve(dir));
-      const scriptsDir = join(dir, ".readrun", "scripts");
-      const imagesDir = join(dir, ".readrun", "images");
 
       // Resource browser API
       if (pathname.startsWith("/api/resources/") && req.method === "GET") {
@@ -247,10 +274,34 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         }
       }
 
+      // Site search index
+      if (pathname === "/_readrun/search-index.json") {
+        const idx = await getSiteIndex(dir);
+        return Response.json(buildSearchIndex(idx));
+      }
+
+      // Runtime file route for Pyodide preload
+      if (pathname.startsWith("/_readrun/files/")) {
+        const fileName = decodeURIComponent(pathname.slice("/_readrun/files/".length));
+        const filesDir = join(normalizedContent, ".readrun", "files");
+        const filePath = normalize(resolve(filesDir, fileName));
+        if (filePath !== filesDir && !filePath.startsWith(filesDir + "/")) {
+          return new Response("Forbidden", { status: 403 });
+        }
+        const file = Bun.file(filePath);
+        if (!(await file.exists())) return new Response("Not found", { status: 404 });
+        const ext = extname(filePath).toLowerCase();
+        return new Response(file, { headers: { "Content-Type": MIME[ext] ?? "application/octet-stream" } });
+      }
+
       // Render markdown pages
       let pagePath = pathname === "/" ? null : pathname.replace(/\/$/, "");
       const tree = await buildNavTree(dir);
-      const embeddedFiles = await loadEmbeddedFiles(dir);
+      const embeddedFiles = await listEmbeddedFiles(dir);
+
+      // Synthetic pages: /tags, /tags/<tag>, /__stats
+      const synthetic = await renderSynthetic(pathname, dir, tree, config, embeddedFiles, watch ? injectReload : (s) => s);
+      if (synthetic) return synthetic;
 
       if (!pagePath || pagePath === "/") {
         const { findFirstFile } = await import("./utils");
@@ -266,21 +317,39 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
 
       const mdPath = join(dir, pagePath + ".md");
       try {
-        const source = await readFile(mdPath, "utf-8");
-        const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
-        const wikiIndex = await getWikilinkIndex(dir);
-        const linked = rewriteWikilinks(resolved, wikiIndex);
-        const rendered = renderMarkdown(linked);
-        const toc = extractToc(linked);
-        const nav = renderNav(tree, pagePath);
-        const title = extractTitle(source, pagePath.split("/").pop() || "readrun");
-        const raw = htmlPage(nav, rendered, title, undefined, config, embeddedFiles, toc);
+        const source = await Bun.file(mdPath).text();
+        const siteIdx = await getSiteIndex(dir);
+        const pageUrl = "/" + pagePath.replace(/^\/+/, "");
+        const { renderPage } = await import("./renderPage");
+        const { html: raw } = await renderPage({
+          contentDir: dir,
+          pagePath: pageUrl,
+          source,
+          siteIndex: siteIdx,
+          config,
+          embeddedFiles,
+          tree,
+        });
         const html = watch ? injectReload(raw) : raw;
         return new Response(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
       } catch {
-        return new Response("Not found", { status: 404 });
+        // Try .jsx page
+        const jsxPath = join(dir, pagePath + ".jsx");
+        try {
+          const jsxSource = await Bun.file(jsxPath).text();
+          const stem = pagePath.split("/").pop() ?? "page";
+          const nav = renderNav(tree, pagePath);
+          const content = jsxPageHtml(jsxSource);
+          const raw = htmlPage(nav, content, stem, undefined, config, embeddedFiles, []);
+          const html = watch ? injectReload(raw) : raw;
+          return new Response(html, {
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+        } catch {
+          return new Response("Not found", { status: 404 });
+        }
       }
     },
   });

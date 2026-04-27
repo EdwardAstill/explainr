@@ -1,10 +1,12 @@
 import { join, dirname } from "path";
-import { readFile, readdir, mkdir, writeFile } from "fs/promises";
-import { renderMarkdown, resolveFileReferences, extractToc } from "./markdown";
-import { getWikilinkIndex, rewriteWikilinks } from "./wikilinks";
+import { mkdir } from "fs/promises";
+import { ensureMarkdownReady } from "./markdown";
+import { getSiteIndex } from "./siteIndex";
+import { tagsIndexBody, tagPageBody, statsBody } from "./synthetic-pages";
+import { buildSearchIndex } from "./searchIndex";
 import { buildNavTree, renderNav, type NavNode } from "./nav";
-import { htmlPage, type EmbeddedFile } from "./template";
-import { extractTitle, findFirstFile } from "./utils";
+import { htmlPage } from "./template";
+import { findFirstFile, listEmbeddedFiles } from "./utils";
 import { loadConfig } from "./config";
 
 export type Platform = "github" | "vercel" | "netlify" | null;
@@ -26,12 +28,22 @@ export async function build(options: BuildOptions) {
   if (basePath) console.log(`  Base path: ${basePath}`);
 
   const config = await loadConfig();
-  const scriptsDir = join(contentDir, ".readrun", "scripts");
-  const imagesDir = join(contentDir, ".readrun", "images");
+  await ensureMarkdownReady();
   const tree = await buildNavTree(contentDir);
   const pages = collectPages(tree);
-  const embeddedFiles = await loadEmbeddedFiles(contentDir);
-  const wikiIndex = await getWikilinkIndex(contentDir);
+  const embeddedFiles = await listEmbeddedFiles(contentDir);
+  if (embeddedFiles.length > 0) {
+    // Copy files into dist/_readrun/files/ for runtime fetch
+    const distFilesDir = join(outDir, "_readrun", "files");
+    await mkdir(distFilesDir, { recursive: true });
+    const srcFilesDir = join(contentDir, ".readrun", "files");
+    for (const f of embeddedFiles) {
+      const data = await Bun.file(join(srcFilesDir, f.name)).bytes();
+      await Bun.write(join(distFilesDir, f.name), data);
+    }
+    console.log(`  Copied ${embeddedFiles.length} file(s) into _readrun/files/`);
+  }
+  const siteIdx = await getSiteIndex(contentDir);
 
   if (pages.length === 0) {
     console.log("No .md files found.");
@@ -44,31 +56,48 @@ export async function build(options: BuildOptions) {
     const mdPath = join(contentDir, page.path + ".md");
 
     try {
-      const source = await readFile(mdPath, "utf-8");
-      const resolved = await resolveFileReferences(source, scriptsDir, imagesDir);
-      const linked = rewriteWikilinks(resolved, wikiIndex);
-      const rendered = renderMarkdown(linked);
-      const toc = extractToc(linked);
-      const nav = renderNav(tree, page.path);
-      const title = extractTitle(source, page.name);
-
-      const html = htmlPage(nav, rendered, title, basePath, config, embeddedFiles, toc);
+      const source = await Bun.file(mdPath).text();
+      const { renderPage } = await import("./renderPage");
+      const { html } = await renderPage({
+        contentDir,
+        pagePath: page.path,
+        source,
+        siteIndex: siteIdx,
+        config,
+        embeddedFiles,
+        tree,
+        basePath,
+        fallbackTitle: page.name,
+      });
 
       const outPath = join(outDir, page.path, "index.html");
       await mkdir(dirname(outPath), { recursive: true });
-      await writeFile(outPath, html);
+      await Bun.write(outPath, html);
       console.log(`  ${page.path}/index.html`);
     } catch (err) {
       console.error(`  Error building ${page.path}:`, err);
     }
   }
 
+  // Synthetic pages
+  await emitSyntheticPage(outDir, "/tags", tagsIndexBody(siteIdx), tree, basePath, config, embeddedFiles);
+  for (const tag of siteIdx.tags.keys()) {
+    const body = tagPageBody(siteIdx, tag);
+    if (body) await emitSyntheticPage(outDir, `/tags/${tag}`, body, tree, basePath, config, embeddedFiles);
+  }
+  await emitSyntheticPage(outDir, "/__stats", statsBody(siteIdx), tree, basePath, config, embeddedFiles);
+
+  // Search index
+  await mkdir(join(outDir, "_readrun"), { recursive: true });
+  await Bun.write(join(outDir, "_readrun", "search-index.json"), JSON.stringify(buildSearchIndex(siteIdx)));
+  console.log(`  _readrun/search-index.json`);
+
   // Index redirect
   if (firstPage) {
     const base = basePath?.replace(/\/$/, "") ?? "";
     const redirectUrl = base + firstPage;
     const indexHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${redirectUrl}"></head></html>`;
-    await writeFile(join(outDir, "index.html"), indexHtml);
+    await Bun.write(join(outDir, "index.html"), indexHtml);
     console.log(`  index.html -> ${firstPage}`);
   }
 
@@ -80,35 +109,34 @@ export async function build(options: BuildOptions) {
   console.log(`\nBuilt ${pages.length} pages.`);
 }
 
-async function loadEmbeddedFiles(contentDir: string): Promise<EmbeddedFile[]> {
-  const filesDir = join(contentDir, ".readrun", "files");
-  try {
-    const entries = await readdir(filesDir);
-    const files: EmbeddedFile[] = [];
-    for (const name of entries) {
-      const content = await readFile(join(filesDir, name));
-      files.push({ name, data: content.toString("base64") });
-    }
-    if (files.length > 0) {
-      console.log(`  Embedded ${files.length} file(s) from .readrun/files/`);
-    }
-    return files;
-  } catch {
-    return [];
-  }
+async function emitSyntheticPage(
+  outDir: string,
+  urlPath: string,
+  body: { title: string; html: string },
+  tree: NavNode[],
+  basePath: string | undefined,
+  config: any,
+  embeddedFiles: any[],
+): Promise<void> {
+  const nav = renderNav(tree, urlPath);
+  const html = htmlPage(nav, body.html, body.title, basePath, config, embeddedFiles, [], {});
+  const outPath = join(outDir, urlPath, "index.html");
+  await mkdir(dirname(outPath), { recursive: true });
+  await Bun.write(outPath, html);
+  console.log(`  ${urlPath}/index.html`);
 }
 
-async function writePlatformFiles(outDir: string, platform: Platform, basePath?: string) {
+async function writePlatformFiles(outDir: string, platform: Platform, _basePath?: string) {
   switch (platform) {
     case "github": {
       // .nojekyll prevents GitHub Pages from processing with Jekyll
-      await writeFile(join(outDir, ".nojekyll"), "");
+      await Bun.write(join(outDir, ".nojekyll"), "");
       console.log(`  .nojekyll`);
 
       // Generate GitHub Actions workflow
       const workflowDir = join(outDir, ".github", "workflows");
       await mkdir(workflowDir, { recursive: true });
-      await writeFile(join(workflowDir, "deploy.yml"), githubActionsWorkflow());
+      await Bun.write(join(workflowDir, "deploy.yml"), githubActionsWorkflow());
       console.log(`  .github/workflows/deploy.yml`);
       break;
     }
@@ -117,7 +145,7 @@ async function writePlatformFiles(outDir: string, platform: Platform, basePath?:
         buildCommand: "bunx rr build vercel",
         outputDirectory: "dist",
       };
-      await writeFile(join(outDir, "vercel.json"), JSON.stringify(config, null, 2) + "\n");
+      await Bun.write(join(outDir, "vercel.json"), JSON.stringify(config, null, 2) + "\n");
       console.log(`  vercel.json`);
       break;
     }
@@ -126,7 +154,7 @@ async function writePlatformFiles(outDir: string, platform: Platform, basePath?:
   command = "bunx rr build netlify"
   publish = "dist"
 `;
-      await writeFile(join(outDir, "netlify.toml"), toml);
+      await Bun.write(join(outDir, "netlify.toml"), toml);
       console.log(`  netlify.toml`);
       break;
     }

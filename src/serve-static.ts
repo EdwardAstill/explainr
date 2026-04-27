@@ -1,22 +1,6 @@
-import { join, normalize, resolve, extname } from "path";
+import { join, normalize, resolve, extname, sep } from "path";
 import { statSync } from "fs";
-
-const MIME: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css",
-  ".js": "text/javascript",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".webp": "image/webp",
-  ".ico": "image/x-icon",
-  ".txt": "text/plain",
-  ".md": "text/markdown",
-  ".csv": "text/csv",
-};
+import { MIME } from "./utils";
 
 export interface StaticServerOptions {
   rootDir: string;
@@ -46,7 +30,8 @@ export async function startStaticServer(opts: StaticServerOptions): Promise<Stat
       if (pathname.endsWith("/")) pathname += "index.html";
 
       const filePath = normalize(resolve(join(rootDir, pathname)));
-      if (!filePath.startsWith(rootDir)) {
+      const rootBoundary = rootDir.endsWith(sep) ? rootDir : rootDir + sep;
+      if (filePath !== rootDir && !filePath.startsWith(rootBoundary)) {
         return new Response("Forbidden", { status: 403 });
       }
 
@@ -60,7 +45,7 @@ export async function startStaticServer(opts: StaticServerOptions): Promise<Stat
         }
         // Fallback to <path>/index.html for directory-style requests
         const indexPath = normalize(resolve(join(rootDir, pathname, "index.html")));
-        if (indexPath.startsWith(rootDir)) {
+        if (indexPath === rootDir || indexPath.startsWith(rootBoundary)) {
           const indexFile = Bun.file(indexPath);
           if (await indexFile.exists()) {
             return new Response(indexFile, {

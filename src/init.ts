@@ -1,5 +1,6 @@
 import { join } from "path";
-import { mkdir, writeFile, access } from "fs/promises";
+import { mkdir } from "fs/promises";
+import { pathExists } from "./utils";
 
 export interface InitResult {
   created: string[];
@@ -10,15 +11,6 @@ const IGNORE_CONTENT = `# Files and folders to exclude from navigation (one patt
 # Supports glob patterns, e.g.: drafts/, *.tmp
 `;
 
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function initReadrun(targetDir: string): Promise<InitResult> {
   const created: string[] = [];
   const existing: string[] = [];
@@ -27,7 +19,7 @@ export async function initReadrun(targetDir: string): Promise<InitResult> {
 
   for (const subdir of ["images", "scripts", "files"]) {
     const full = join(readrunDir, subdir);
-    if (await exists(full)) {
+    if (await pathExists(full)) {
       existing.push(`.readrun/${subdir}`);
     } else {
       await mkdir(full, { recursive: true });
@@ -36,10 +28,10 @@ export async function initReadrun(targetDir: string): Promise<InitResult> {
   }
 
   const ignorePath = join(readrunDir, ".ignore");
-  if (await exists(ignorePath)) {
+  if (await pathExists(ignorePath)) {
     existing.push(".readrun/.ignore");
   } else {
-    await writeFile(ignorePath, IGNORE_CONTENT);
+    await Bun.write(ignorePath, IGNORE_CONTENT);
     created.push(".readrun/.ignore");
   }
 

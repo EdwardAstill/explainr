@@ -1,29 +1,22 @@
-export function guideHtml(): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>readrun guide</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0d1117; color: #e6edf3; max-width: 740px; margin: 0 auto; padding: 48px 24px; line-height: 1.7; }
-  h1 { font-size: 1.75rem; font-weight: 700; color: #58a6ff; margin-bottom: 8px; }
-  h2 { font-size: 1.1rem; font-weight: 600; color: #e6edf3; margin: 36px 0 12px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
-  h3 { font-size: 0.95rem; font-weight: 600; color: #8b949e; margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
-  p { margin-bottom: 12px; color: #c9d1d9; }
-  code { font-family: "SF Mono", Consolas, monospace; font-size: 0.85em; background: #161b22; border: 1px solid #30363d; border-radius: 4px; padding: 2px 6px; color: #79c0ff; }
-  pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0 20px; }
-  pre code { background: none; border: none; padding: 0; color: #e6edf3; font-size: 0.875rem; }
+import { landingShell } from "./shell";
+
+const styles = `
+  body { max-width: 740px; margin: 0 auto; padding: 48px 24px; line-height: 1.7; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: var(--shell-accent); margin-bottom: 8px; }
+  h2 { font-size: 1.1rem; font-weight: 600; color: var(--shell-fg); margin: 36px 0 12px; border-bottom: 1px solid var(--shell-border); padding-bottom: 8px; }
+  h3 { font-size: 0.95rem; font-weight: 600; color: var(--shell-fg-muted); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  p { margin-bottom: 12px; color: var(--shell-fg-soft); }
+  code { font-family: "SF Mono", Consolas, monospace; font-size: 0.85em; background: var(--shell-bg-alt); border: 1px solid var(--shell-border); border-radius: 4px; padding: 2px 6px; color: var(--shell-accent-soft); }
+  pre { background: var(--shell-bg-alt); border: 1px solid var(--shell-border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0 20px; }
+  pre code { background: none; border: none; padding: 0; color: var(--shell-fg); font-size: 0.875rem; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 0.875rem; }
-  th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #30363d; color: #8b949e; font-weight: 600; }
-  td { padding: 8px 12px; border-bottom: 1px solid #21262d; color: #c9d1d9; }
-  td:first-child { color: #79c0ff; font-family: monospace; }
-  .subtitle { color: #8b949e; margin-bottom: 36px; }
-</style>
-</head>
-<body>
-<h1>readrun</h1>
+  th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--shell-border); color: var(--shell-fg-muted); font-weight: 600; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--shell-border-soft); color: var(--shell-fg-soft); }
+  td:first-child { color: var(--shell-accent-soft); font-family: monospace; }
+  .subtitle { color: var(--shell-fg-muted); margin-bottom: 36px; }
+`;
+
+const body = `<h1>readrun</h1>
 <p class="subtitle">Architecture guide — how a readrun project is structured</p>
 
 <h2>Project Structure</h2>
@@ -100,8 +93,14 @@ render(&lt;Counter /&gt;);
 <p><code>label</code> sets the button text. <code>accept</code> filters the file picker by extension. <code>rename</code> saves the file under a fixed name. <code>multiple</code> allows selecting more than one file.</p>
 
 <h3>Transclusion</h3>
-<p>Embeds another markdown file inline at build time. Self-closing.</p>
-<pre><code>[include=partials/intro.md]</code></pre>
+<p>Embeds another markdown file inline at build time. Self-closing. Add a <code>#section</code> anchor to inline only one section.</p>
+<pre><code>[include=partials/intro.md]
+[include=notes/topic.md#derivation]</code></pre>
+
+<h3>Live queries</h3>
+<p>Render a list of pages matching a frontmatter filter. Self-closing.</p>
+<pre><code>[query tag=python]
+[query folder=notes/math sort=updated limit=10]</code></pre>
 
 <h3>Raw / Verbatim</h3>
 <p>Displays block syntax literally without executing or interpreting it. Useful for documenting block syntax itself.</p>
@@ -177,6 +176,17 @@ This is a reading page. Use **markdown** freely here.
 
 <p><code>[hint]...[/hint]</code> shows a hint the reader can reveal. <code>[explain]...[/explain]</code> shows an explanation after the question is answered. <code>[group]</code> wraps related questions under shared context text. <code>[info]</code> renders a non-question reading block — full markdown is supported inside.</p>
 
+<h2>Frontmatter</h2>
+
+<p>Optional YAML frontmatter at the top of any <code>.md</code> file:</p>
+<pre><code>---
+title: My note
+virtual_path: math/analysis/contour-integration
+tags: [python, demo]
+---</code></pre>
+
+<p><code>title</code> overrides the page title. <code>virtual_path</code> places the note in a virtual nav tree independent of disk layout. <code>tags</code> drive the <code>/tags</code> index, tag pills on each page, and <code>[query tag=…]</code>.</p>
+
 <h2>Commands</h2>
 <table>
   <tr><th>Command</th><th>What it does</th></tr>
@@ -185,22 +195,18 @@ This is a reading page. Use **markdown** freely here.
   <tr><td>rr build &lt;folder&gt;</td><td>Build static site for deployment</td></tr>
   <tr><td>rr init [folder]</td><td>Scaffold .readrun/ structure</td></tr>
   <tr><td>rr validate [folder]</td><td>Validate content and structure</td></tr>
-  <tr><td>rr migrate [folder]</td><td>Convert ::: block syntax to [block] syntax</td></tr>
-  <tr><td>rr update</td><td>Update dependencies</td></tr>
+  <tr><td>rr today [folder]</td><td>Open today's daily note</td></tr>
+  <tr><td>rr reinstall</td><td>Reinstall readrun dependencies in place</td></tr>
   <tr><td>rr guide</td><td>Show this guide</td></tr>
   <tr><td>rr help</td><td>Print command reference</td></tr>
 </table>
-
-<h3>Migration</h3>
-<p>Convert old <code>:::</code> block syntax to the new <code>[block]</code> syntax across an entire folder of markdown files:</p>
-<pre><code>rr migrate [folder]       # rewrite ::: syntax to [block] syntax in all .md files
-rr migrate --dry-run      # preview changes without writing</code></pre>
 
 <h2>.ignore Patterns</h2>
 <p>Create <code>.readrun/.ignore</code> to exclude files and folders from navigation. One glob pattern per line:</p>
 <pre><code>drafts/
 *.tmp
-private-notes.md</code></pre>
-</body>
-</html>`;
+private-notes.md</code></pre>`;
+
+export function guideHtml(): string {
+  return landingShell({ title: "readrun guide", bodyHtml: body, extraCss: styles });
 }

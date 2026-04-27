@@ -29,7 +29,7 @@ const settingsHtml = `
           <button class="settings__theme-arrow" id="theme-next" aria-label="Next theme">&#9654;</button>
         </div>
       </div>
-      <div class="settings__section">
+      <div class="settings__section" id="width-section">
         <span class="settings__label" id="width-label">Content width \\u2014 880px</span>
         <input class="settings__range" id="width-range" type="range" min="500" max="1400" step="20" value="880">
       </div>
@@ -224,13 +224,39 @@ function tocSidebar(toc: TocEntry[]): string {
 
 export interface EmbeddedFile {
   name: string;
-  data: string; // base64
 }
 
-export function htmlPage(nav: string, content: string, title: string, basePath?: string, config: ReadrunConfig = defaultConfig, embeddedFiles: EmbeddedFile[] = [], toc: TocEntry[] = []): string {
+export interface BacklinkEntry {
+  url: string;
+  title: string;
+}
+
+export interface PageMeta {
+  tags?: string[];
+  backlinks?: BacklinkEntry[];
+}
+
+function tagPillsHtml(tags: string[] | undefined): string {
+  if (!tags || tags.length === 0) return "";
+  const items = tags.map((t) => `<a class="tag-pill" href="/tags/${escape(t)}">${escape(t)}</a>`).join("");
+  return `<div class="tag-pills">${items}</div>`;
+}
+
+function backlinksHtml(entries: BacklinkEntry[] | undefined): string {
+  if (!entries || entries.length === 0) return "";
+  const items = entries.map((e) => `<li><a href="${escape(e.url)}">${escape(e.title)}</a></li>`).join("");
+  return `<aside class="backlinks">
+      <h2>Linked from</h2>
+      <ul>${items}</ul>
+    </aside>`;
+}
+
+export function htmlPage(nav: string, content: string, title: string, basePath?: string, config: ReadrunConfig = defaultConfig, embeddedFiles: EmbeddedFile[] = [], toc: TocEntry[] = [], pageMeta: PageMeta = {}): string {
   const baseTag = basePath ? `\n  <base href="${escape(basePath)}">` : "";
   const configJson = JSON.stringify(config.shortcuts).replace(/<\//g, "<\\/");
   const filesJson = JSON.stringify(embeddedFiles).replace(/<\//g, "<\\/");
+  const tagsHtml = tagPillsHtml(pageMeta.tags);
+  const backHtml = backlinksHtml(pageMeta.backlinks);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -246,6 +272,12 @@ export function htmlPage(nav: string, content: string, title: string, basePath?:
 <body>
   <script id="readrun-shortcuts" type="application/json">${configJson}</script>
   <script id="readrun-files" type="application/json">${filesJson}</script>
+  <header class="mobile-topbar" id="mobile-topbar">
+    <button class="mobile-topbar__btn" id="mobile-menu-btn" aria-label="Open menu">&#9776;</button>
+    <span class="mobile-topbar__title">${escape(title)}</span>
+    <button class="mobile-topbar__btn" id="mobile-search-btn" aria-label="Search">&#128269;</button>
+  </header>
+  <div class="drawer-scrim" id="drawer-scrim"></div>
   <aside class="sidebar" id="sidebar">
     ${nav}
 ${resourceSwitcherHtml()}
@@ -260,7 +292,9 @@ ${resourceSwitcherHtml()}
       <button class="search-bar__close" id="search-close" aria-label="Close search">&times;</button>
     </div>
     <article class="markdown-body">
+      ${tagsHtml}
       ${content}
+      ${backHtml}
     </article>
   </main>
   <div class="resize-handle resize-handle--toc" id="resize-toc"></div>

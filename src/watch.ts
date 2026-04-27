@@ -1,6 +1,7 @@
 import { watch } from "fs";
-import { join } from "path";
+import { join, extname } from "path";
 import { startServer, type ServerHandle } from "./server";
+import { invalidateSiteIndex } from "./siteIndex";
 
 export interface WatchOptions {
   contentDir: string;
@@ -19,10 +20,15 @@ export async function startWatchServer(opts: WatchOptions): Promise<ServerHandle
 
   const debounceMs = opts.debounceMs ?? 120;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let needsLinkInvalidation = false;
   const fire = () => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
+      if (needsLinkInvalidation) {
+        invalidateSiteIndex(opts.contentDir);
+        needsLinkInvalidation = false;
+      }
       handle.reload();
     }, debounceMs);
   };
@@ -41,6 +47,8 @@ export async function startWatchServer(opts: WatchOptions): Promise<ServerHandle
         if (!filename) return;
         // Ignore transient editor files
         if (filename.endsWith("~") || filename.startsWith(".#") || filename.endsWith(".swp")) return;
+        const ext = extname(filename).toLowerCase();
+        if (ext === ".md" || ext === ".jsx") needsLinkInvalidation = true;
         fire();
       });
       watchers.push(w);

@@ -1,7 +1,7 @@
 import { join } from "path";
-import { access } from "fs/promises";
 import { homedir } from "os";
 import { resolve as resolvePath } from "path";
+import { pathExists, isPortAvailable } from "./utils";
 
 export interface DoctorCheck {
   name: string;
@@ -12,19 +12,6 @@ export interface DoctorCheck {
 export interface DoctorResult {
   checks: DoctorCheck[];
   ok: boolean;
-}
-
-async function fileExists(p: string): Promise<boolean> {
-  try { await access(p); return true; } catch { return false; }
-}
-
-async function isPortAvailable(port: number): Promise<boolean> {
-  const { createServer } = await import("net");
-  return new Promise((resolve) => {
-    const s = createServer();
-    s.once("error", () => resolve(false));
-    s.listen(port, "localhost", () => s.close(() => resolve(true)));
-  });
 }
 
 export async function doctor(): Promise<DoctorResult> {
@@ -54,7 +41,7 @@ export async function doctor(): Promise<DoctorResult> {
 
   // KaTeX package (optional)
   const katexPkg = join(readrunRoot, "node_modules", "@vscode", "markdown-it-katex", "package.json");
-  const hasKatex = await fileExists(katexPkg);
+  const hasKatex = await pathExists(katexPkg);
   checks.push({
     name: "KaTeX (optional — math rendering)",
     status: hasKatex ? "ok" : "warn",
@@ -64,7 +51,7 @@ export async function doctor(): Promise<DoctorResult> {
   // Config dir writable
   const configDir = join(homedir(), ".config", "readrun");
   const configFile = join(configDir, "settings.toml");
-  const hasConfig = await fileExists(configFile);
+  const hasConfig = await pathExists(configFile);
   checks.push({
     name: "Config file",
     status: hasConfig ? "ok" : "warn",
@@ -83,7 +70,7 @@ export async function doctor(): Promise<DoctorResult> {
   checks.push({
     name: "Block syntax",
     status: "ok",
-    detail: 'Use [name]/[/name] syntax. Run "readrun validate" to detect deprecated ::: blocks.',
+    detail: 'Use [name]/[/name] syntax. Run "readrun validate" to surface block errors.',
   });
 
   const ok = checks.every((c) => c.status !== "fail");

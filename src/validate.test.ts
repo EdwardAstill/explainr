@@ -28,10 +28,16 @@ test("clean project produces no issues", async () => {
   expect(result.warnings).toHaveLength(0);
 });
 
-test("detects unclosed ::: block", async () => {
-  await write("index.md", "# Hello\n\n:::python\nprint('hi')\n");
+test("detects unclosed [block]", async () => {
+  await write("index.md", "# Hello\n\n[python]\nprint('hi')\n");
   const result = await validateFolder(tmpDir);
   expect(result.errors.some(e => e.message.includes("unclosed") && e.file === "index.md")).toBe(true);
+});
+
+test("errors on legacy ::: block syntax", async () => {
+  await write("index.md", "# Hello\n\n:::python\nprint('hi')\n:::\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.errors.some(e => e.message.includes("legacy") && e.file === "index.md")).toBe(true);
 });
 
 test("detects unclosed fenced code block", async () => {
@@ -46,21 +52,15 @@ test("detects malformed heading", async () => {
   expect(result.warnings.some(w => w.message.includes("heading") && w.file === "index.md")).toBe(true);
 });
 
-test("warns on unknown block identifier", async () => {
-  await write("index.md", "# Hello\n\n:::mermaid\ngraph LR\n:::\n");
-  const result = await validateFolder(tmpDir);
-  expect(result.warnings.some(w => w.message.includes("mermaid") && w.file === "index.md")).toBe(true);
-});
-
 test("errors on missing file reference", async () => {
-  await write("index.md", "# Hello\n\n:::missing.py\n:::\n");
+  await write("index.md", "# Hello\n\n[python=missing.py]\n");
   const result = await validateFolder(tmpDir);
   expect(result.errors.some(e => e.message.includes("missing.py") && e.file === "missing.py")).toBe(true);
 });
 
 test("resolves valid file reference in scripts/", async () => {
   await write(".readrun/scripts/plot.py", "import matplotlib");
-  await write("index.md", "# Hello\n\n:::plot.py\n:::\n");
+  await write("index.md", "# Hello\n\n[python=plot.py]\n");
   const result = await validateFolder(tmpDir);
   expect(result.errors).toHaveLength(0);
 });
@@ -72,7 +72,7 @@ test("warns on unexpected .readrun/ subdir", async () => {
 });
 
 test("errors when file ref target is missing", async () => {
-  await write("index.md", "# Hello\n\n:::demo.py\n:::\n");
+  await write("index.md", "# Hello\n\n[python=demo.py]\n");
   const result = await validateFolder(tmpDir);
   expect(result.errors.some(e => e.message.includes("demo.py"))).toBe(true);
 });

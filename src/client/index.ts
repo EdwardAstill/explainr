@@ -4,6 +4,8 @@ import { settingsCode } from "./settings";
 import { navigationCode } from "./navigation";
 import { searchCode } from "./search";
 import { quizCode } from "./quiz";
+import { mobileCode } from "./mobile";
+import { siteSearchCode } from "./site-search";
 
 export const executionScript = `
   <script type="module">
@@ -16,5 +18,7 @@ export const settingsScript = `
 ${settingsCode}
 ${navigationCode}
 ${searchCode}
+${mobileCode}
 ${quizCode}
+${siteSearchCode}
   </script>`;
