@@ -339,6 +339,125 @@ const guideCmd = defineCommand({
   },
 });
 
+const exportCmd = defineCommand({
+  meta: { name: "export", description: "Export a built static site to PDF (one PDF per page) using system Chromium." },
+  args: {
+    path: { type: "positional", required: false, description: "Content folder to build (default: cwd)" },
+    out: { type: "string", description: "PDF output directory (default: ./pdf)" },
+    dist: { type: "string", description: "Existing dist folder to print (skips build)" },
+    port: { type: "string", description: "Static server port (default: 3009)", default: "3009" },
+  },
+  async run({ args }) {
+    const { detectChromium, chromiumInstallHints, exportPagesAsPdf } = await import("./exportPdf");
+    const chromium = await detectChromium();
+    if (!chromium) {
+      console.error(chromiumInstallHints());
+      process.exit(1);
+    }
+
+    const contentDir = resolvePath(args.path);
+    const pdfOut = args.out ? resolvePath(args.out) : resolve(process.cwd(), "pdf");
+    const distDir = args.dist ? resolvePath(args.dist) : resolve(contentDir, "dist");
+
+    if (!args.dist) {
+      const { build } = await import("./build");
+      await build({ contentDir, outDir: distDir, platform: null });
+    }
+
+    const { startStaticServer } = await import("./serve-static");
+    const port = parsePort(args.port);
+    const server = await startStaticServer({ rootDir: distDir, port, host: "localhost" });
+
+    const { buildNavTree } = await import("./nav");
+    const tree = await buildNavTree(contentDir);
+    const pages: { url: string; relPath: string }[] = [];
+    function walk(nodes: any[]) {
+      for (const n of nodes) {
+        if (!n.isDir) pages.push({ url: n.path, relPath: n.path.replace(/^\//, "") });
+        if (n.children) walk(n.children);
+      }
+    }
+    walk(tree);
+
+    if (pages.length === 0) {
+      console.error("No pages found to export.");
+      server.stop();
+      process.exit(1);
+    }
+
+    console.log(`Exporting ${pages.length} page(s) to PDF in ${pdfOut} ...`);
+    const result = await exportPagesAsPdf({
+      chromium,
+      baseUrl: `http://${server.host}:${server.port}`,
+      pages,
+      outDir: pdfOut,
+    });
+    server.stop();
+
+    for (const w of result.written) console.log(`  ${w}`);
+    for (const f of result.failed) console.error(`  ! ${f.page}: ${f.reason}`);
+    if (result.failed.length > 0) process.exit(1);
+  },
+});
+
+const shareCmd = defineCommand({
+  meta: { name: "share", description: "Serve a folder and tunnel it to a public URL via cloudflared or bore." },
+  args: {
+    path: { type: "positional", required: false, description: "Folder to serve (default: cwd)" },
+    ...serverArgs,
+  },
+  async run({ args }) {
+    const contentDir = resolvePath(args.path);
+    try {
+      const s = statSync(contentDir);
+      if (!s.isDirectory()) {
+        console.error(`Not a folder: ${contentDir}`);
+        process.exit(1);
+      }
+    } catch {
+      console.error(`Folder not found: ${contentDir}`);
+      process.exit(1);
+    }
+
+    const { detectTunnel, startTunnel, tunnelInstallHints } = await import("./share");
+    const kind = await detectTunnel();
+    if (!kind) {
+      console.error(tunnelInstallHints());
+      process.exit(1);
+    }
+
+    const opts = httpOpts(args);
+    await addRecent(contentDir);
+    const { startServer } = await import("./server");
+    const handle = await startServer({ contentDir, port: opts.port, host: opts.host });
+    console.log(`local:   http://${handle.host}:${handle.port}`);
+    console.log(`tunnel:  starting ${kind}...`);
+
+    let tunnelHandle: { stop: () => void } | null = null;
+    const t = await startTunnel({
+      kind,
+      port: handle.port,
+      onReady: (th) => {
+        tunnelHandle = th;
+        console.log(`public:  ${th.publicUrl}`);
+        if (!opts.noOpen) openBrowser(th.publicUrl);
+      },
+      onError: (msg) => {
+        console.error(`tunnel error: ${msg}`);
+      },
+    });
+    tunnelHandle = t;
+
+    process.on("SIGINT", () => {
+      if (tunnelHandle) try { tunnelHandle.stop(); } catch {}
+      process.exit(0);
+    });
+
+    console.log("Press Ctrl+C to stop.");
+    await keepAlive();
+  },
+});
+
 const todayCmd = defineCommand({
   meta: { name: "today", description: "Open today's daily note (creates journal/YYYY-MM-DD.md if missing)." },
   args: {
@@ -400,8 +519,8 @@ const reinstallCmd = defineCommand({
 // ─────────────────────────────────────────────────────────────
 
 const KNOWN = new Set([
-  "serve", "dashboard", "watch", "init", "validate", "build",
-  "preview", "new", "today", "clean", "doctor", "guide", "reinstall",
+  "serve", "dashboard", "watch", "init", "validate", "build", "export",
+  "preview", "new", "today", "share", "clean", "doctor", "guide", "reinstall",
   "help", "--help", "-h", "--version", "-v",
 ]);
 
@@ -437,6 +556,8 @@ const main = defineCommand({
     preview: serveStaticCmd,
     new: newCmd,
     today: todayCmd,
+    share: shareCmd,
+    export: exportCmd,
     clean: cleanCmd,
     doctor: doctorCmd,
     guide: guideCmd,
