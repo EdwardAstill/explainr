@@ -49,6 +49,7 @@ See `rr --help` for the full command list or `rr <command> --help` for per-comma
 - **Image lightbox** -- click any image to view it enlarged
 - **Enter folder** -- right-click a folder in the nav to zoom into it with breadcrumb navigation
 - **Saved documents** -- save frequently used folders or files from the dashboard for quick access
+- **Site manifest** -- `.readrun/virtual-paths.yaml` controls which pages appear in the rendered site and how they're organised in the sidebar. Use `include`/`exclude` with glob patterns to show only a subset of your repo, and `mappings` to rename folder prefixes to cleaner reader-facing labels (e.g. `courses: Courses`). Run `rr init` to scaffold a commented template. Per-page `virtual_path` frontmatter overrides manifest mappings for individual pages.
 - **Ignore patterns** -- `.readrun/.ignore` file to exclude files and folders from navigation
 - **Smart port detection** -- dev server automatically finds an available port
 - **Platform builds** -- `rr build <folder> --platform=github|vercel|netlify` with auto-detected base paths for GitHub Pages
@@ -90,6 +91,8 @@ my-notes/
   reference/
     api.md
   .readrun/
+    virtual-paths.yaml  # optional: include/exclude + sidebar label remapping
+    .ignore             # optional: gitignore-style patterns to hide content
     scripts/            # code files referenced from markdown
       demo.py
       widget.html
