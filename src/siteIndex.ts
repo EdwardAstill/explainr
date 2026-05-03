@@ -4,6 +4,7 @@
 
 import { basename } from "path";
 import { walkContent } from "./utils";
+import { loadManifest, applyManifestFilter, applyManifestMappings } from "./manifest";
 
 export interface PageRecord {
   url: string;          // /notes/intro
@@ -87,12 +88,18 @@ export async function buildSiteIndex(contentDir: string): Promise<SiteIndex> {
     });
   }
 
+  const { config: manifestConfig } = await loadManifest(contentDir);
+  const sitePages = applyManifestMappings(
+    applyManifestFilter(pages, manifestConfig),
+    manifestConfig,
+  );
+
   const byUrl = new Map<string, PageRecord>();
   const byKey = new Map<string, WikilinkEntry | "ambiguous">();
   const all: WikilinkEntry[] = [];
   const tags = new Map<string, PageRecord[]>();
 
-  for (const p of pages) {
+  for (const p of sitePages) {
     byUrl.set(p.url, p);
     const entry: WikilinkEntry = { url: p.url, title: p.title, filename: p.filename };
     all.push(entry);
@@ -108,7 +115,7 @@ export async function buildSiteIndex(contentDir: string): Promise<SiteIndex> {
 
   // Resolve backlinks now that the URL/key indices exist.
   const backlinks = new Map<string, PageRecord[]>();
-  for (const src of pages) {
+  for (const src of sitePages) {
     for (const target of src.outboundLinks) {
       const resolved = resolveLink(target, byUrl, byKey, all);
       if (!resolved) continue;
@@ -118,7 +125,7 @@ export async function buildSiteIndex(contentDir: string): Promise<SiteIndex> {
     }
   }
 
-  return { contentDir, pages, byUrl, byKey, all, backlinks, tags, builtAt: Date.now() };
+  return { contentDir, pages: sitePages, byUrl, byKey, all, backlinks, tags, builtAt: Date.now() };
 }
 
 function resolveLink(

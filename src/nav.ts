@@ -1,5 +1,5 @@
 import { basename } from "path";
-import { escapeHtml, walkContent } from "./utils";
+import { escapeHtml } from "./utils";
 import { getSiteIndex } from "./siteIndex";
 
 export interface NavNode {
@@ -16,30 +16,26 @@ interface FileMeta {
 }
 
 async function collectFiles(contentDir: string): Promise<FileMeta[]> {
-  const out: FileMeta[] = [];
   const idx = await getSiteIndex(contentDir);
-  const byUrl = idx.byUrl;
+  const out: FileMeta[] = [];
 
-  for await (const f of walkContent(contentDir, { exts: [".md", ".jsx"] })) {
-    const stem = f.relPath.replace(new RegExp(`\\${f.ext}$`), "");
-    const urlPath = "/" + stem;
-    const fileStemPath = stem;
+  for (const page of idx.pages) {
+    const stem = page.relPath.replace(new RegExp(`\\${page.ext}$`), "");
+    const urlPath = page.url;
 
-    if (f.ext === ".jsx") {
-      const segments = fileStemPath.split("/");
-      const leaf = segments[segments.length - 1] ?? basename(f.absPath, ".jsx");
+    if (page.ext === ".jsx") {
+      const segments = stem.split("/");
+      const leaf = segments[segments.length - 1] ?? basename(page.filePath, ".jsx");
       out.push({ urlPath, segments, displayName: leaf });
       continue;
     }
 
-    const page = byUrl.get(urlPath);
-    const virtualPath = page?.virtualPath ?? null;
-    const title = page?.title;
+    const virtualPath = page.virtualPath;
     const segments = virtualPath && virtualPath.length > 0
       ? virtualPath.split("/").filter(Boolean)
-      : fileStemPath.split("/");
-    const leaf = segments[segments.length - 1] ?? basename(f.absPath, ".md");
-    const displayName = title && title.length > 0 ? title : leaf;
+      : stem.split("/");
+    const leaf = segments[segments.length - 1] ?? basename(page.filePath, ".md");
+    const displayName = page.title.length > 0 ? page.title : leaf;
     out.push({ urlPath, segments, displayName });
   }
 
