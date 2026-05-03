@@ -3,6 +3,7 @@ import { readdir, stat } from "fs/promises";
 import { pathExists } from "./utils";
 import { getSiteIndex, invalidateSiteIndex } from "./siteIndex";
 import { parseFrontmatter } from "./frontmatter";
+import { loadManifest } from "./manifest";
 
 export interface Issue {
   file: string;
@@ -164,6 +165,16 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
     }
   }
 
+  // Validate .readrun/virtual-paths.yaml if present.
+  const { issues: manifestIssues } = await loadManifest(folderPath);
+  for (const issue of manifestIssues) {
+    if (issue.kind === "parse_error" || issue.kind === "wrong_type") {
+      errors.push({ file: ".readrun/virtual-paths.yaml", message: issue.message });
+    } else if (issue.kind === "unknown_field") {
+      warnings.push({ file: ".readrun/virtual-paths.yaml", message: issue.message });
+    }
+  }
+
   // Validate .readrun/ structure
   if (await pathExists(readrunDir)) {
     const entries = await readdir(readrunDir).catch(() => [] as string[]);
@@ -179,6 +190,22 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
   // Wikilink dangling-ref check via siteIndex.
   invalidateSiteIndex(folderPath);
   const siteIdx = await getSiteIndex(folderPath);
+
+  // Virtual path collision check across all pages (includes manifest-mapped ones).
+  const allVirtualPaths = new Map<string, string>();
+  for (const page of siteIdx.pages) {
+    if (!page.virtualPath) continue;
+    const prior = allVirtualPaths.get(page.virtualPath);
+    if (prior && prior !== page.relPath) {
+      errors.push({
+        file: page.relPath,
+        message: `virtual_path "${page.virtualPath}" collides with ${prior}`,
+      });
+    } else {
+      allVirtualPaths.set(page.virtualPath, page.relPath);
+    }
+  }
+
   const wikilinkRe = /\[\[([^\]\|#\n]+?)(\|[^\]\n]+)?(#[^\]\n]+)?\]\]/g;
   for (const page of siteIdx.pages) {
     if (!page.body) continue;

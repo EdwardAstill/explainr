@@ -101,3 +101,31 @@ test("errors on wrong type for title", async () => {
   const result = await validateFolder(tmpDir);
   expect(result.errors.some(e => e.file === "num.md" && e.message.includes("must be string"))).toBe(true);
 });
+
+test("no errors when manifest is absent", async () => {
+  await write("notes.md", "# Hello");
+  const r = await validateFolder(tmpDir);
+  expect(r.errors).toHaveLength(0);
+});
+
+test("reports error for malformed manifest YAML", async () => {
+  await write("notes.md", "# Hello");
+  await write(".readrun/virtual-paths.yaml", "include: [unterminated");
+  const r = await validateFolder(tmpDir);
+  expect(r.errors.some((e) => e.file === ".readrun/virtual-paths.yaml")).toBe(true);
+});
+
+test("reports warning for unknown manifest field", async () => {
+  await write("notes.md", "# Hello");
+  await write(".readrun/virtual-paths.yaml", "sections:\n  - home\n");
+  const r = await validateFolder(tmpDir);
+  expect(r.warnings.some((w) => w.file === ".readrun/virtual-paths.yaml")).toBe(true);
+});
+
+test("reports error for manifest-mapped virtual path collision", async () => {
+  await write("courses/intro.md", "# Intro");
+  await write("units/intro.md", "# Intro");
+  await write(".readrun/virtual-paths.yaml", "mappings:\n  courses: Learning\n  units: Learning\n");
+  const r = await validateFolder(tmpDir);
+  expect(r.errors.some((e) => e.message.includes("collides"))).toBe(true);
+});
