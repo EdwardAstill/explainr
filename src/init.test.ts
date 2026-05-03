@@ -48,3 +48,18 @@ test("reports existing dirs as already present", async () => {
   expect(result.created).toHaveLength(0);
   expect(result.existing.length).toBeGreaterThan(0);
 });
+
+test("creates .readrun/virtual-paths.yaml on init", async () => {
+  const result = await initReadrun(tmpDir);
+  expect(result.created).toContain(".readrun/virtual-paths.yaml");
+  const content = await readFile(join(tmpDir, ".readrun", "virtual-paths.yaml"), "utf-8");
+  expect(content).toContain("include:");
+  expect(content).toContain("exclude:");
+  expect(content).toContain("mappings:");
+});
+
+test("reports virtual-paths.yaml as existing on second init", async () => {
+  await initReadrun(tmpDir);
+  const result = await initReadrun(tmpDir);
+  expect(result.existing).toContain(".readrun/virtual-paths.yaml");
+});
