@@ -1,0 +1,88 @@
+version: 1
+plan:
+  slug: virtual-paths-manifest
+  prose: .warden/plans/2026-05-03-virtual-paths-manifest.md
+  goal: Add .readrun/virtual-paths.yaml manifest for folder-level include/exclude and virtual path prefix remapping
+
+nodes:
+  - id: manifest_core
+    type: implement
+    description: "ManifestConfig types, parseManifest(), loadManifest() in src/manifest.ts"
+    files:
+      create:
+        - src/manifest.ts
+        - src/manifest.test.ts
+    verify:
+      - bun test src/manifest.test.ts
+
+  - id: manifest_filter
+    type: implement
+    depends_on: [manifest_core]
+    description: "applyManifestFilter() — include/exclude page filtering"
+    verify:
+      - bun test src/manifest.test.ts
+
+  - id: manifest_mappings
+    type: implement
+    depends_on: [manifest_filter]
+    description: "applyManifestMappings() — prefix-based virtualPath remapping"
+    verify:
+      - bun test src/manifest.test.ts
+
+  - id: init_scaffold
+    type: implement
+    depends_on: [manifest_core]
+    description: "Scaffold .readrun/virtual-paths.yaml with commented template in rr init"
+    files:
+      modify:
+        - src/init.ts
+        - src/init.test.ts
+    verify:
+      - bun test src/init.test.ts
+      - bun test
+
+  - id: siteindex_nav_wire
+    type: implement
+    depends_on: [manifest_filter, manifest_mappings]
+    description: "Wire manifest into buildSiteIndex(); fix nav.ts collectFiles() to iterate SiteIndex.pages"
+    files:
+      modify:
+        - src/siteIndex.ts
+        - src/nav.ts
+      create:
+        - src/nav.test.ts
+    verify:
+      - bun test src/nav.test.ts
+      - bun test
+
+  - id: watch_manifest
+    type: implement
+    depends_on: [siteindex_nav_wire]
+    description: "Add .readrun/ root to watch paths; extract shouldInvalidateOnFile; invalidate index on virtual-paths.yaml change"
+    files:
+      modify:
+        - src/watch.ts
+      create:
+        - src/watch.test.ts
+    verify:
+      - bun test src/watch.test.ts
+      - bun test
+
+  - id: validate_manifest
+    type: implement
+    depends_on: [siteindex_nav_wire]
+    description: "Load and validate virtual-paths.yaml in validateFolder(); detect manifest-derived collisions"
+    files:
+      modify:
+        - src/validate.ts
+        - src/validate.test.ts
+    verify:
+      - bun test src/validate.test.ts
+      - bun test
+
+  - id: spec_acceptance
+    type: verify
+    depends_on: [siteindex_nav_wire, watch_manifest, validate_manifest, init_scaffold]
+    description: "Run spec success criteria against real mixed-purpose repo; fill post-implementation review"
+    verify:
+      - bun test
