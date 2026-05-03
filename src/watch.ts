@@ -3,6 +3,12 @@ import { join, extname } from "path";
 import { startServer, type ServerHandle } from "./server";
 import { invalidateSiteIndex } from "./siteIndex";
 
+export function shouldInvalidateOnFile(filename: string): boolean {
+  if (filename.endsWith("~") || filename.startsWith(".#") || filename.endsWith(".swp")) return false;
+  const ext = extname(filename).toLowerCase();
+  return ext === ".md" || ext === ".jsx" || filename === "virtual-paths.yaml";
+}
+
 export interface WatchOptions {
   contentDir: string;
   port: number;
@@ -36,6 +42,7 @@ export async function startWatchServer(opts: WatchOptions): Promise<ServerHandle
   const watchers: { close: () => void }[] = [];
   const toWatch = [
     opts.contentDir,
+    join(opts.contentDir, ".readrun"),
     join(opts.contentDir, ".readrun", "scripts"),
     join(opts.contentDir, ".readrun", "images"),
     join(opts.contentDir, ".readrun", "files"),
@@ -45,10 +52,7 @@ export async function startWatchServer(opts: WatchOptions): Promise<ServerHandle
     try {
       const w = watch(dir, { recursive: true }, (_event, filename) => {
         if (!filename) return;
-        // Ignore transient editor files
-        if (filename.endsWith("~") || filename.startsWith(".#") || filename.endsWith(".swp")) return;
-        const ext = extname(filename).toLowerCase();
-        if (ext === ".md" || ext === ".jsx") needsLinkInvalidation = true;
+        if (shouldInvalidateOnFile(filename)) needsLinkInvalidation = true;
         fire();
       });
       watchers.push(w);
