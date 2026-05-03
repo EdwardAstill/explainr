@@ -49,3 +49,75 @@ describe("parseManifest", () => {
     expect(r.issues.some((i) => i.kind === "wrong_type")).toBe(true);
   });
 });
+
+import type { PageRecord } from "./siteIndex";
+import { applyManifestFilter } from "./manifest";
+
+function mkPage(relPath: string, virtualPath: string | null = null): PageRecord {
+  const stem = relPath.replace(/\.[^.]+$/, "");
+  return {
+    url: "/" + stem,
+    filePath: "/root/" + relPath,
+    relPath,
+    ext: ".md",
+    title: stem,
+    filename: stem.split("/").at(-1)!,
+    virtualPath,
+    tags: [],
+    body: "",
+    outboundLinks: [],
+    mtimeMs: 0,
+  };
+}
+
+describe("applyManifestFilter", () => {
+  const pages = [
+    mkPage("courses/ai/intro.md"),
+    mkPage("courses/math/basics.md"),
+    mkPage("docs/planning.md"),
+    mkPage("wiki/notes.md"),
+    mkPage("units/algebra.md"),
+  ];
+
+  it("returns all pages when include and exclude are both empty", () => {
+    const r = applyManifestFilter(pages, { include: [], exclude: [], mappings: {} });
+    expect(r).toHaveLength(5);
+  });
+
+  it("keeps only pages matching include patterns", () => {
+    const r = applyManifestFilter(pages, { include: ["courses/**", "units/**"], exclude: [], mappings: {} });
+    expect(r.map((p) => p.relPath).sort()).toEqual([
+      "courses/ai/intro.md",
+      "courses/math/basics.md",
+      "units/algebra.md",
+    ]);
+  });
+
+  it("removes pages matching exclude patterns", () => {
+    const r = applyManifestFilter(pages, { include: [], exclude: ["docs/**", "wiki/**"], mappings: {} });
+    expect(r.map((p) => p.relPath).sort()).toEqual([
+      "courses/ai/intro.md",
+      "courses/math/basics.md",
+      "units/algebra.md",
+    ]);
+  });
+
+  it("applies include then exclude when both are set", () => {
+    const r = applyManifestFilter(pages, {
+      include: ["courses/**", "units/**", "docs/**"],
+      exclude: ["docs/**"],
+      mappings: {},
+    });
+    expect(r.map((p) => p.relPath).sort()).toEqual([
+      "courses/ai/intro.md",
+      "courses/math/basics.md",
+      "units/algebra.md",
+    ]);
+  });
+
+  it("does not mutate the input array", () => {
+    const original = [...pages];
+    applyManifestFilter(pages, { include: ["courses/**"], exclude: [], mappings: {} });
+    expect(pages).toHaveLength(original.length);
+  });
+});

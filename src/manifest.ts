@@ -1,5 +1,6 @@
 import { join } from "path";
 import { parse as parseYaml, YAMLParseError } from "yaml";
+import type { PageRecord } from "./siteIndex";
 
 export interface ManifestConfig {
   include: string[];
@@ -94,4 +95,18 @@ export async function loadManifest(contentDir: string): Promise<ManifestLoad> {
   } catch {
     return { config: { ...EMPTY_CONFIG }, issues: [] };
   }
+}
+
+export function applyManifestFilter(pages: PageRecord[], config: ManifestConfig): PageRecord[] {
+  if (config.include.length === 0 && config.exclude.length === 0) return pages;
+
+  const includeGlobs = config.include.map((p) => new Bun.Glob(p));
+  const excludeGlobs = config.exclude.map((p) => new Bun.Glob(p));
+
+  return pages.filter((page) => {
+    const rel = page.relPath;
+    if (includeGlobs.length > 0 && !includeGlobs.some((g) => g.match(rel))) return false;
+    if (excludeGlobs.length > 0 && excludeGlobs.some((g) => g.match(rel))) return false;
+    return true;
+  });
 }
