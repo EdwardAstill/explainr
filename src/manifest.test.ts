@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
-import { parseManifest } from "./manifest";
+import type { PageRecord } from "./siteIndex";
+import { parseManifest, applyManifestFilter, applyManifestMappings } from "./manifest";
 
 describe("parseManifest", () => {
   it("returns empty config for null/empty YAML", () => {
@@ -49,9 +50,6 @@ describe("parseManifest", () => {
     expect(r.issues.some((i) => i.kind === "wrong_type")).toBe(true);
   });
 });
-
-import type { PageRecord } from "./siteIndex";
-import { applyManifestFilter } from "./manifest";
 
 function mkPage(relPath: string, virtualPath: string | null = null): PageRecord {
   const stem = relPath.replace(/\.[^.]+$/, "");
@@ -119,5 +117,69 @@ describe("applyManifestFilter", () => {
     const original = [...pages];
     applyManifestFilter(pages, { include: ["courses/**"], exclude: [], mappings: {} });
     expect(pages).toHaveLength(original.length);
+  });
+});
+
+describe("applyManifestMappings", () => {
+  it("returns pages unchanged when mappings is empty", () => {
+    const pages = [mkPage("courses/ai/intro.md")];
+    const r = applyManifestMappings(pages, { include: [], exclude: [], mappings: {} });
+    expect(r[0]!.virtualPath).toBeNull();
+  });
+
+  it("remaps relPath prefix to virtual prefix", () => {
+    const pages = [mkPage("courses/ai/intro.md")];
+    const r = applyManifestMappings(pages, {
+      include: [],
+      exclude: [],
+      mappings: { courses: "Courses" },
+    });
+    expect(r[0]!.virtualPath).toBe("Courses/ai/intro");
+  });
+
+  it("strips the file extension from the remapped path", () => {
+    const pages = [mkPage("units/math/algebra.md")];
+    const r = applyManifestMappings(pages, {
+      include: [],
+      exclude: [],
+      mappings: { units: "Units" },
+    });
+    expect(r[0]!.virtualPath).toBe("Units/math/algebra");
+  });
+
+  it("frontmatter virtualPath takes precedence over manifest mapping", () => {
+    const pages = [mkPage("courses/ai/intro.md", "manual/override")];
+    const r = applyManifestMappings(pages, {
+      include: [],
+      exclude: [],
+      mappings: { courses: "Courses" },
+    });
+    expect(r[0]!.virtualPath).toBe("manual/override");
+  });
+
+  it("mapping key with trailing slash works the same as without", () => {
+    const pages = [mkPage("courses/ai/intro.md")];
+    const r = applyManifestMappings(pages, {
+      include: [],
+      exclude: [],
+      mappings: { "courses/": "Courses" },
+    });
+    expect(r[0]!.virtualPath).toBe("Courses/ai/intro");
+  });
+
+  it("pages not matching any mapping key are unchanged", () => {
+    const pages = [mkPage("docs/planning.md")];
+    const r = applyManifestMappings(pages, {
+      include: [],
+      exclude: [],
+      mappings: { courses: "Courses" },
+    });
+    expect(r[0]!.virtualPath).toBeNull();
+  });
+
+  it("does not mutate input page objects", () => {
+    const page = mkPage("courses/ai/intro.md");
+    applyManifestMappings([page], { include: [], exclude: [], mappings: { courses: "Courses" } });
+    expect(page.virtualPath).toBeNull();
   });
 });

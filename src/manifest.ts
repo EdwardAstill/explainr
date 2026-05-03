@@ -110,3 +110,22 @@ export function applyManifestFilter(pages: PageRecord[], config: ManifestConfig)
     return true;
   });
 }
+
+export function applyManifestMappings(pages: PageRecord[], config: ManifestConfig): PageRecord[] {
+  if (Object.keys(config.mappings).length === 0) return pages;
+
+  return pages.map((page) => {
+    if (page.virtualPath !== null) return page;
+
+    for (const [rawKey, virtualPrefix] of Object.entries(config.mappings)) {
+      const prefix = rawKey.replace(/\/$/, "");
+      if (!prefix) continue;
+      const withSlash = prefix + "/";
+      if (!page.relPath.startsWith(withSlash)) continue;
+      const remainder = page.relPath.slice(withSlash.length).replace(/\.[^.]+$/, "");
+      return { ...page, virtualPath: `${virtualPrefix}/${remainder}` };
+    }
+
+    return page;
+  });
+}
