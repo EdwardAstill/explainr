@@ -8,13 +8,13 @@ If you haven't already, check out the [getting started tutorial](../tutorials/in
 
 Python figures out types for you. Run the code below to see it in action:
 
-:::variables.py
+[python=variables.py]
 
 ## Lists
 
 Lists are ordered collections that you can loop through, slice, and modify:
 
-:::python
+[python]
 fruits = ["apple", "banana", "cherry", "date"]
 
 print("All fruits:", fruits)
@@ -23,13 +23,13 @@ print("Last one:", fruits[-1])
 
 fruits.append("elderberry")
 print("After adding one:", fruits)
-:::
+[/python]
 
 ## Dictionaries
 
 Dictionaries store key-value pairs. They're useful for structured data:
 
-:::python
+[python]
 student = {
     "name": "Bob",
     "grade": 85,
@@ -38,11 +38,11 @@ student = {
 
 for key, value in student.items():
     print(f"  {key}: {value}")
-:::
+[/python]
 
 The same data rendered as a card:
 
-:::student-card.jsx
+[jsx=student-card.jsx]
 
 ## Regular code blocks
 

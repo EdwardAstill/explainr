@@ -97,29 +97,37 @@ export async function loadManifest(contentDir: string): Promise<ManifestLoad> {
   }
 }
 
+export function shouldIncludeRelPath(relPath: string, config: ManifestConfig): boolean {
+  if (config.include.length > 0) {
+    const includeGlobs = config.include.map((p) => new Bun.Glob(p));
+    if (!includeGlobs.some((g) => g.match(relPath))) return false;
+  }
+
+  if (config.exclude.length > 0) {
+    const excludeGlobs = config.exclude.map((p) => new Bun.Glob(p));
+    if (excludeGlobs.some((g) => g.match(relPath))) return false;
+  }
+
+  return true;
+}
+
 export function applyManifestFilter(pages: PageRecord[], config: ManifestConfig): PageRecord[] {
   if (config.include.length === 0 && config.exclude.length === 0) return pages;
-
-  const includeGlobs = config.include.map((p) => new Bun.Glob(p));
-  const excludeGlobs = config.exclude.map((p) => new Bun.Glob(p));
-
-  return pages.filter((page) => {
-    const rel = page.relPath;
-    if (includeGlobs.length > 0 && !includeGlobs.some((g) => g.match(rel))) return false;
-    if (excludeGlobs.length > 0 && excludeGlobs.some((g) => g.match(rel))) return false;
-    return true;
-  });
+  return pages.filter((page) => shouldIncludeRelPath(page.relPath, config));
 }
 
 export function applyManifestMappings(pages: PageRecord[], config: ManifestConfig): PageRecord[] {
   if (Object.keys(config.mappings).length === 0) return pages;
 
+  const orderedMappings = Object.entries(config.mappings)
+    .map(([rawKey, virtualPrefix]) => [rawKey.replace(/\/$/, ""), virtualPrefix] as const)
+    .filter(([prefix]) => prefix.length > 0)
+    .sort((a, b) => b[0].length - a[0].length);
+
   return pages.map((page) => {
     if (page.virtualPath !== null) return page;
 
-    for (const [rawKey, virtualPrefix] of Object.entries(config.mappings)) {
-      const prefix = rawKey.replace(/\/$/, "");
-      if (!prefix) continue;
+    for (const [prefix, virtualPrefix] of orderedMappings) {
       const withSlash = prefix + "/";
       if (!page.relPath.startsWith(withSlash)) continue;
       const remainder = page.relPath.slice(withSlash.length).replace(/\.[^.]+$/, "");

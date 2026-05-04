@@ -317,13 +317,15 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         const requested = url.searchParams.get("path") ?? "/";
         const cleanPath = requested.replace(/\/$/, "") || "/";
         if (cleanPath === "/") return new Response("Not found", { status: 404 });
+        const siteIdx = await getSiteIndex(dir);
+        const pageUrl = "/" + cleanPath.replace(/^\/+/, "");
+        if (!siteIdx.byUrl.has(pageUrl)) return new Response("Not found", { status: 404 });
         try {
           const source = await Bun.file(join(dir, cleanPath + ".md")).text();
-          const siteIdx = await getSiteIndex(dir);
           const { renderPage } = await import("./renderPage");
           const { html } = await renderPage({
             contentDir: dir,
-            pagePath: cleanPath,
+            pagePath: pageUrl,
             source,
             siteIndex: siteIdx,
             config,
@@ -383,11 +385,15 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
         return new Response("No pages found", { status: 404 });
       }
 
+      const pageUrl = "/" + pagePath.replace(/^\/+/, "");
+      const siteIdx = await getSiteIndex(dir);
+      if (!siteIdx.byUrl.has(pageUrl)) {
+        return new Response("Not found", { status: 404 });
+      }
+
       const mdPath = join(dir, pagePath + ".md");
       try {
         const source = await Bun.file(mdPath).text();
-        const siteIdx = await getSiteIndex(dir);
-        const pageUrl = "/" + pagePath.replace(/^\/+/, "");
         const { renderPage } = await import("./renderPage");
         const { html: raw } = await renderPage({
           contentDir: dir,

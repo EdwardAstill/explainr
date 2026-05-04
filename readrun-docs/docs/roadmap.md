@@ -12,7 +12,7 @@ Declare Python package dependencies in page YAML frontmatter rather than relying
 
 ## Client-side file uploads
 
-`:::upload` directives already render upload buttons that write files into Pyodide's virtual filesystem. Remaining work:
+`[upload]...[/upload]` blocks already render upload buttons that write files into Pyodide's virtual filesystem. Remaining work:
 
 - File scoping — currently global per page; could be scoped per block
 - Size limits and supported type filtering

@@ -71,6 +71,12 @@ test("warns on unexpected .readrun/ subdir", async () => {
   expect(result.warnings.some(w => w.message.includes("cache"))).toBe(true);
 });
 
+test("does not warn on .readrun/quizzes", async () => {
+  await mkdir(join(tmpDir, ".readrun", "quizzes"), { recursive: true });
+  const result = await validateFolder(tmpDir);
+  expect(result.warnings.some((w) => w.message.includes(".readrun/quizzes"))).toBe(false);
+});
+
 test("errors when file ref target is missing", async () => {
   await write("index.md", "# Hello\n\n[python=demo.py]\n");
   const result = await validateFolder(tmpDir);
@@ -87,6 +93,22 @@ test("warns on unknown frontmatter field", async () => {
   await write("page.md", "---\ntitle: X\nauthor: me\n---\n# body\n");
   const result = await validateFolder(tmpDir);
   expect(result.warnings.some(w => w.file === "page.md" && w.message.includes('"author"'))).toBe(true);
+});
+
+test("skips markdown files excluded by .readrun/.ignore", async () => {
+  await write(".readrun/.ignore", "drafts/**\n");
+  await write("drafts/private.md", "---\nauthor: me\n---\n# Private\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.warnings.some((w) => w.file === "drafts/private.md")).toBe(false);
+  expect(result.errors.some((e) => e.file === "drafts/private.md")).toBe(false);
+});
+
+test("skips markdown files excluded by the virtual-paths manifest", async () => {
+  await write(".readrun/virtual-paths.yaml", "exclude:\n  - docs/**\n");
+  await write("docs/internal.md", "---\nauthor: me\n---\n# Internal\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.warnings.some((w) => w.file === "docs/internal.md")).toBe(false);
+  expect(result.errors.some((e) => e.file === "docs/internal.md")).toBe(false);
 });
 
 test("errors on virtual_path collision", async () => {

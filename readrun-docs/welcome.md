@@ -16,7 +16,7 @@ readrun turns folders of Markdown into interactive websites. You're looking at o
 
 ## How it works
 
-:::how-it-works.svg
+[image=how-it-works.svg]
 
 Your existing Markdown notes work as-is. These docs are just `.md` files in a folder:
 

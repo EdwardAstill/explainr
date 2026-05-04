@@ -182,4 +182,17 @@ describe("applyManifestMappings", () => {
     applyManifestMappings([page], { include: [], exclude: [], mappings: { courses: "Courses" } });
     expect(page.virtualPath).toBeNull();
   });
+
+  it("prefers the most specific mapping prefix when multiple match", () => {
+    const pages = [mkPage("courses/math/linear-algebra.md")];
+    const r = applyManifestMappings(pages, {
+      include: [],
+      exclude: [],
+      mappings: {
+        courses: "Courses",
+        "courses/math": "Mathematics",
+      },
+    });
+    expect(r[0]!.virtualPath).toBe("Mathematics/linear-algebra");
+  });
 });

@@ -61,21 +61,21 @@ There are two ways to add executable code blocks.
 
 ### Inline code
 
-Wrap code in `:::language` / `:::` fences and readers can run it inline:
+Wrap code in bracket blocks and readers can run it inline:
 
-:::python
+[python]
 print("Hello from readrun!")
 
 for i in range(1, 6):
     print("*" * i)
-:::
+[/python]
 
 ### File references
 
 You can also keep code in separate files under `.readrun/scripts/` and reference them by filename:
 
 ```
-:::variables.py
+[python=variables.py]
 ```
 
 The code is loaded from `.readrun/scripts/variables.py`, displayed on the page, and made runnable — exactly like an inline block. This keeps your markdown clean when scripts get longer.
@@ -85,33 +85,33 @@ The code is loaded from `.readrun/scripts/variables.py`, displayed on the page, 
 JSX blocks render directly in the page — no iframe, no run button. React and Tailwind are loaded automatically. Use the built-in `render()` helper to mount your component:
 
 ```
-:::jsx
+[jsx]
 function App() {
   return <h1 className="text-2xl font-bold">Hello!</h1>;
 }
 render(<App />);
-:::
+[/jsx]
 ```
 
 Reference a `.jsx` file from `.readrun/scripts/` the same way as any other file — it auto-renders on page load:
 
 ```
-:::counter.jsx
+[jsx=counter.jsx]
 ```
 
-:::counter.jsx
+[jsx=counter.jsx]
 
 ### Images
 
 Place images in `.readrun/images/` and reference them the same way:
 
 ```
-:::diagram.svg
+[image=diagram.svg]
 ```
 
-Here's the "how it works" diagram from the welcome page, embedded via `:::how-it-works.svg`:
+Here's the "how it works" diagram from the welcome page, embedded via `[image=how-it-works.svg]`:
 
-:::how-it-works.svg
+[image=how-it-works.svg]
 
 Images are embedded directly in the page. Click any image to enlarge it.
 

@@ -1,9 +1,9 @@
 import { join } from "path";
 import { readdir, stat } from "fs/promises";
-import { pathExists } from "./utils";
+import { pathExists, walkContent } from "./utils";
 import { getSiteIndex, invalidateSiteIndex } from "./siteIndex";
 import { parseFrontmatter } from "./frontmatter";
-import { loadManifest } from "./manifest";
+import { loadManifest, shouldIncludeRelPath } from "./manifest";
 
 export interface Issue {
   file: string;
@@ -16,26 +16,8 @@ export interface ValidationResult {
   warnings: Issue[];
 }
 
-const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files"]);
+const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files", "quizzes"]);
 
-
-async function collectMdFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  async function walk(current: string) {
-    let entries: string[];
-    try { entries = await readdir(current); } catch { return; }
-    for (const entry of entries) {
-      if (entry.startsWith(".") || entry === "node_modules") continue;
-      const full = join(current, entry);
-      const s = await stat(full).catch(() => null);
-      if (!s) continue;
-      if (s.isDirectory()) await walk(full);
-      else if (entry.endsWith(".md")) results.push(full);
-    }
-  }
-  await walk(dir);
-  return results;
-}
 
 function validateMdContent(
   relPath: string,
@@ -149,10 +131,12 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
   const allFileRefs = new Set<string>();
   const virtualPaths = new Map<string, string>();
 
-  const mdFiles = await collectMdFiles(folderPath);
-  for (const full of mdFiles) {
-    const content = await Bun.file(full).text();
-    const rel = full.slice(folderPath.length + 1);
+  const { config: manifestConfig, issues: manifestIssues } = await loadManifest(folderPath);
+
+  for await (const file of walkContent(folderPath, { exts: [".md"] })) {
+    if (!shouldIncludeRelPath(file.relPath, manifestConfig)) continue;
+    const content = await Bun.file(file.absPath).text();
+    const rel = file.relPath;
     validateMdContent(rel, content, errors, warnings, allFileRefs, virtualPaths);
   }
 
@@ -166,7 +150,6 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
   }
 
   // Validate .readrun/virtual-paths.yaml if present.
-  const { issues: manifestIssues } = await loadManifest(folderPath);
   for (const issue of manifestIssues) {
     if (issue.kind === "parse_error" || issue.kind === "wrong_type") {
       errors.push({ file: ".readrun/virtual-paths.yaml", message: issue.message });

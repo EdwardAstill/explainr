@@ -6,20 +6,20 @@ Building on the [Python Basics](./lecture-1.md) lesson, this page covers definin
 
 Functions group reusable logic. The `def` keyword defines one:
 
-:::python
+[python]
 def greet(name, greeting="Hello"):
     return f"{greeting}, {name}!"
 
 print(greet("World"))
 print(greet("Alice", "Hey"))
 print(greet("Bob", "G'day"))
-:::
+[/python]
 
 ## Functions with multiple returns
 
 Python functions can return multiple values as tuples:
 
-:::python
+[python]
 def analyse(numbers):
     return min(numbers), max(numbers), sum(numbers) / len(numbers)
 
@@ -28,13 +28,13 @@ lo, hi, avg = analyse(data)
 
 print(f"Data: {data}")
 print(f"Min: {lo}, Max: {hi}, Avg: {avg:.1f}")
-:::
+[/python]
 
 ## List comprehensions
 
 A concise way to transform data — often used instead of loops:
 
-:::python
+[python]
 numbers = range(1, 11)
 
 squares = [n ** 2 for n in numbers]
@@ -45,13 +45,13 @@ print("Squares:", squares)
 print("Evens:", evens)
 for label in labels:
     print(f"  {label}")
-:::
+[/python]
 
 ## Putting it together
 
 Here's a slightly more involved example combining functions, lists, and dictionaries from [the basics](./lecture-1.md):
 
-:::python
+[python]
 def summarise_scores(students):
     for student in students:
         avg = sum(student["scores"]) / len(student["scores"])
@@ -67,7 +67,7 @@ class_data = [
 
 print("Class results:")
 summarise_scores(class_data)
-:::
+[/python]
 
 ## That's the demo
 

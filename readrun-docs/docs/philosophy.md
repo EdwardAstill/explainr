@@ -8,13 +8,13 @@ Point readrun at any folder of `.md` files and it renders a navigable website wi
 
 ## Optional enhancements, not requirements
 
-readrun supports executable Python code blocks (`:::python`) and file downloads from generated output. These are **optional layers** on top of plain Markdown — they exist for authors who want interactivity, but they are never required. A site built entirely from standard Markdown is a first-class use case, not a fallback.
+readrun supports executable Python code blocks (`[python]...[/python]`) and file downloads from generated output. These are **optional layers** on top of plain Markdown — they exist for authors who want interactivity, but they are never required. A site built entirely from standard Markdown is a first-class use case, not a fallback.
 
 This matters because:
 
 - Authors shouldn't have to learn a new format to use readrun
 - Notes written for readrun should remain perfectly readable in any Markdown viewer (VS Code, GitHub, Obsidian, etc.)
-- The `:::python` fence is the only non-standard syntax, and it degrades gracefully — readers without readrun just see the code as text
+- The bracket block syntax degrades gracefully — readers without readrun just see the code as text
 
 ## Not a notebook
 

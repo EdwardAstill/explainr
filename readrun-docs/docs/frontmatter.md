@@ -54,20 +54,20 @@ Clicking a leaf still takes the reader to the actual file URL (`/math/eigenvalue
 
 ## Wikilink resolution
 
-Readrun rewrites `[[target]]` and its variants into clickable links before rendering:
+Readrun rewrites code examples like `&lbrack;&lbrack;target&rbrack;&rbrack;` and its variants into clickable links before rendering:
 
 | Syntax | Result |
 |--------|--------|
-| `[[contour-integration]]` | Link to the note whose filename stem is `contour-integration` |
-| `[[contour-integration\|The Residue Theorem]]` | Same link, with custom display label |
-| `[[contour-integration#cauchy-theorem]]` | Same link with `#cauchy-theorem` anchor appended |
-| `[[old/path/contour-integration]]` | Path prefix is stripped; only the final segment is resolved |
+| `&lbrack;&lbrack;contour-integration&rbrack;&rbrack;` | Link to the note whose filename stem is `contour-integration` |
+| `&lbrack;&lbrack;contour-integration\|The Residue Theorem&rbrack;&rbrack;` | Same link, with custom display label |
+| `&lbrack;&lbrack;contour-integration#cauchy-theorem&rbrack;&rbrack;` | Same link with `#cauchy-theorem` anchor appended |
+| `&lbrack;&lbrack;old/path/contour-integration&rbrack;&rbrack;` | Path prefix is stripped; only the final segment is resolved |
 
 **Display label preference.** Explicit alias > target note's frontmatter `title` > filename stem.
 
-**Fuzzy matches.** The index is keyed by the filename stem and by a normalised form: lowercase, with leading numeric prefixes like `01_` or `01-` stripped and underscores folded to hyphens. This means `[[01_absorption]]`, `[[Absorption]]`, and `[[absorption]]` all resolve to the same file when the actual filename is `absorption.md`.
+**Fuzzy matches.** The index is keyed by the filename stem and by a normalised form: lowercase, with leading numeric prefixes like `01_` or `01-` stripped and underscores folded to hyphens. This means `&lbrack;&lbrack;01_absorption&rbrack;&rbrack;`, `&lbrack;&lbrack;Absorption&rbrack;&rbrack;`, and `&lbrack;&lbrack;absorption&rbrack;&rbrack;` all resolve to the same file when the actual filename is `absorption.md`.
 
-**Ambiguity and unresolved.** If the normalised form matches more than one file, or if no file matches at all, the original `[[target]]` is left in the rendered output unchanged. Broken refs stay visible instead of silently failing.
+**Ambiguity and unresolved.** If the normalised form matches more than one file, or if no file matches at all, the original `&lbrack;&lbrack;target&rbrack;&rbrack;` is left in the rendered output unchanged. Broken refs stay visible instead of silently failing.
 
 ## Frontmatter is stripped
 

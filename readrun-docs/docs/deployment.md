@@ -87,19 +87,19 @@ One pattern per line. Lines starting with `#` are comments. The nav tree also au
 your-notes/
   page.md
   .readrun/
-    scripts/       # code files referenced with :::filename.py
-    images/        # images referenced with :::diagram.svg
+    scripts/       # code files referenced with [python=file.py], [jsx=file.jsx], etc.
+    images/        # images referenced with [image=diagram.svg]
     files/         # data files preloaded into Pyodide's filesystem
     .ignore        # patterns to exclude from navigation
 ```
 
-- **scripts/** — code files in any supported language (`.py`, `.js`, `.ts`, `.html`, `.rb`, `.rs`, `.go`, `.java`, `.c`, `.cpp`, `.sh`, `.sql`, `.r`, `.jl`, `.lua`, `.php`, `.swift`, `.kt`, `.scala`). Referenced from markdown with `:::filename.ext`
-- **images/** — image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`). Referenced with `:::filename.ext`, base64-embedded into HTML. Click any image to enlarge it in a lightbox
+- **scripts/** — code files in any supported language (`.py`, `.js`, `.ts`, `.html`, `.rb`, `.rs`, `.go`, `.java`, `.c`, `.cpp`, `.sh`, `.sql`, `.r`, `.jl`, `.lua`, `.php`, `.swift`, `.kt`, `.scala`). Referenced from markdown with file blocks such as `[python=filename.py]`, `[jsx=widget.jsx]`, or `[html=widget.html]`
+- **images/** — image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`). Referenced with `[image=filename.ext]`, base64-embedded into HTML. Click any image to enlarge it in a lightbox
 - **files/** — data files embedded into static builds and preloaded into Pyodide's virtual filesystem, so Python code can read them with `open("data.csv")`
 
 ## How code execution works
 
-### Python blocks (`:::python`)
+### Python blocks (`[python]...[/python]`)
 
 Python code blocks run entirely in the browser via [Pyodide](https://pyodide.org/) (Python compiled to WebAssembly). No server is involved.
 
@@ -108,23 +108,23 @@ Python code blocks run entirely in the browser via [Pyodide](https://pyodide.org
 - **Shared session** — all code blocks on a page share a single Python session. Variables and imports persist between blocks, like cells in a Jupyter notebook
 - **Matplotlib** — the Agg backend is configured automatically. Plots render inline as images when `plt.show()` is called
 - **File generation** — files created by scripts are detected by comparing Pyodide's virtual filesystem before and after execution. New files are offered as downloads via Blob URLs
-- **File uploads** — `:::upload` directives render upload buttons that write files into Pyodide's virtual filesystem via the browser File API, making them available to Python code with standard file I/O
+- **File uploads** — `[upload]...[/upload]` blocks render upload buttons that write files into Pyodide's virtual filesystem via the browser File API, making them available to Python code with standard file I/O
 - **Embedded data** — files placed in `.readrun/files/` are embedded into the static build (base64 encoded) and preloaded into Pyodide's virtual filesystem
 
-### JSX blocks (`:::jsx`)
+### JSX blocks (`[jsx]...[/jsx]`)
 
 JSX blocks run React/JSX code in the browser and auto-render on page load (no Run button needed). React 18, ReactDOM, Babel, and Tailwind CSS are loaded automatically.
 
 Use the `render()` function to mount a component:
 
 ```
-:::jsx
+[jsx]
 function Counter() {
   const [n, setN] = React.useState(0);
   return <button onClick={() => setN(n + 1)} className="p-2 bg-blue-500 text-white rounded">Clicked {n} times</button>;
 }
 render(<Counter />);
-:::
+[/jsx]
 ```
 
 JSX blocks can also have Hide/Show, Enlarge, and Run controls like Python blocks. Add `hidden` to start collapsed.
@@ -142,7 +142,7 @@ JSX blocks can also have Hide/Show, Enlarge, and Run controls like Python blocks
 - **Image lightbox** — click any image to view it enlarged. Press Escape to close
 - **Resource browser** — sidebar tabs for images, files, and scripts from `.readrun/`. Only works in View mode (dev server); static builds show empty tabs
 - **Enter folder** — right-click any folder in the nav sidebar to zoom into it. A breadcrumb bar appears at the top; click any crumb to navigate back up
-- **Saved documents** — the TUI **Saved** option lets you save folders or files for quick access. Saved paths are stored in `~/.config/readrun/settings.toml` under `[[saved]]` entries
+- **Saved documents** — the TUI **Saved** option lets you save folders or files for quick access. Saved paths are stored in `~/.config/readrun/settings.toml` under `&lbrack;&lbrack;saved&rbrack;&rbrack;` entries
 
 ## Keyboard shortcuts
 
