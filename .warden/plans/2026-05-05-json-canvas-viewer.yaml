@@ -1,0 +1,148 @@
+version: 1
+plan:
+  slug: json-canvas-viewer
+  prose: .warden/plans/2026-05-05-json-canvas-viewer.md
+  goal: Add native read-only JSON Canvas embeds with a documented package fallback
+
+nodes:
+  - id: canvas_core
+    type: implement
+    description: "JSON Canvas types, parseCanvasJson(), validateCanvas(), and color normalization"
+    files:
+      create:
+        - src/canvas.ts
+        - src/canvas.test.ts
+    verify:
+      - bun test src/canvas.test.ts
+
+  - id: canvas_geometry
+    type: implement
+    depends_on: [canvas_core]
+    description: "Bounds, connection points, and SVG edge path geometry"
+    files:
+      modify:
+        - src/canvas.ts
+        - src/canvas.test.ts
+    verify:
+      - bun test src/canvas.test.ts
+
+  - id: canvas_html
+    type: implement
+    depends_on: [canvas_core]
+    description: "Server-safe canvas viewer shell and embedded JSON script rendering"
+    files:
+      modify:
+        - src/canvas.ts
+        - src/canvas.test.ts
+    verify:
+      - bun test src/canvas.test.ts
+
+  - id: markdown_canvas
+    type: implement
+    depends_on: [canvas_html]
+    description: "Markdown integration for inline [canvas] and file-based [canvas=...] blocks"
+    files:
+      create:
+        - src/markdown.test.ts
+      modify:
+        - src/markdown.ts
+        - src/utils.ts
+    verify:
+      - bun test src/markdown.test.ts src/canvas.test.ts
+
+  - id: validate_canvas
+    type: implement
+    depends_on: [canvas_core]
+    description: "rr validate checks for canvas file references and schema validity"
+    files:
+      modify:
+        - src/validate.ts
+        - src/validate.test.ts
+    verify:
+      - bun test src/validate.test.ts src/canvas.test.ts
+
+  - id: client_scene
+    type: implement
+    depends_on: [canvas_geometry, markdown_canvas]
+    description: "Browser DOM/SVG renderer for canvas nodes, links, groups, and edges"
+    files:
+      create:
+        - src/client/canvas.ts
+      modify:
+        - src/client/main.ts
+        - src/canvas.ts
+        - src/canvas.test.ts
+    verify:
+      - bun test src/canvas.test.ts
+      - bun src/cli.ts build readrun-docs --out=/tmp/readrun-canvas-build-smoke
+
+  - id: client_interactions
+    type: implement
+    depends_on: [client_scene]
+    description: "Pan, zoom, fit controls, remount behavior, and canvas file reload semantics"
+    files:
+      modify:
+        - src/client/canvas.ts
+        - src/canvas.ts
+        - src/canvas.test.ts
+        - src/watch.ts
+        - src/watch.test.ts
+    verify:
+      - bun test src/canvas.test.ts src/watch.test.ts
+      - bun src/cli.ts build readrun-docs --out=/tmp/readrun-canvas-build-smoke
+
+  - id: canvas_styles
+    type: implement
+    depends_on: [client_interactions]
+    description: "Theme-aware canvas viewer CSS and style bundle wiring"
+    files:
+      create:
+        - src/styles/canvas.ts
+      modify:
+        - src/styles/index.ts
+    verify:
+      - bun src/cli.ts build readrun-docs --out=/tmp/readrun-canvas-build-smoke
+
+  - id: docs_fixture
+    type: implement
+    depends_on: [canvas_styles, validate_canvas]
+    description: "Readrun docs page, example .canvas file, and README usage snippet"
+    files:
+      create:
+        - readrun-docs/docs/json-canvas.md
+        - readrun-docs/.readrun/files/example-flow.canvas
+      modify:
+        - README.md
+    verify:
+      - bun src/cli.ts validate readrun-docs
+      - bun src/cli.ts build readrun-docs --out=/tmp/readrun-canvas-build
+      - rg -n "canvas-data-|canvas-viewer" /tmp/readrun-canvas-build/docs/json-canvas/index.html
+
+  - id: package_fallback
+    type: implement
+    depends_on: [client_interactions]
+    description: "Optional fallback to json-canvas-viewer@4.2.0 only if native renderer fails acceptance after two attempts"
+    files:
+      modify:
+        - package.json
+        - bun.lock
+        - src/client/canvas.ts
+    verify:
+      - bun test src/canvas.test.ts src/markdown.test.ts src/validate.test.ts
+      - bun src/cli.ts validate readrun-docs
+      - bun src/cli.ts build readrun-docs --out=/tmp/readrun-canvas-build
+
+  - id: final_acceptance
+    type: verify
+    depends_on: [docs_fixture]
+    description: "Run full tests, spec acceptance checks, manual browser check, and post-implementation review"
+    files:
+      modify:
+        - .warden/specs/2026-05-05-json-canvas-viewer-design.md
+    verify:
+      - bun test
+      - bun test src/canvas.test.ts
+      - bun test src/markdown.test.ts
+      - bun test src/validate.test.ts
+      - bun src/cli.ts validate readrun-docs
+      - bun src/cli.ts build readrun-docs --out=/tmp/readrun-canvas-build
