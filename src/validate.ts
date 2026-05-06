@@ -4,6 +4,7 @@ import { pathExists, walkContent } from "./utils";
 import { getSiteIndex, invalidateSiteIndex } from "./siteIndex";
 import { parseFrontmatter } from "./frontmatter";
 import { loadManifest, shouldIncludeRelPath } from "./manifest";
+import { loadNavConfig } from "./navConfig";
 
 export interface Issue {
   file: string;
@@ -173,6 +174,32 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
   // Wikilink dangling-ref check via siteIndex.
   invalidateSiteIndex(folderPath);
   const siteIdx = await getSiteIndex(folderPath);
+
+  // Validate .readrun/nav.yaml if present.
+  const navLoad = await loadNavConfig(folderPath);
+  for (const iss of navLoad.issues) {
+    const file = ".readrun/nav.yaml";
+    if (iss.kind === "parse_error") {
+      errors.push({ file, message: `nav.yaml parse error: ${iss.message}` });
+    } else if (iss.kind === "wrong_type" || iss.kind === "out_of_range") {
+      errors.push({ file, message: `nav.yaml ${iss.field ?? ""}: ${iss.message}` });
+    } else if (iss.kind === "unknown_field") {
+      warnings.push({ file, message: `nav.yaml unknown field "${iss.field}" (readrun ignores it)` });
+    }
+  }
+
+  // Depth-mismatch warning: panes:N exceeds observed folder depth.
+  let maxDepth = 0;
+  for (const page of siteIdx.pages) {
+    const depth = page.url.split("/").filter(Boolean).length;
+    if (depth > maxDepth) maxDepth = depth;
+  }
+  if (navLoad.config.mode === "panes" && (navLoad.config.panes ?? 0) > maxDepth) {
+    warnings.push({
+      file: ".readrun/nav.yaml",
+      message: `panes: ${navLoad.config.panes} exceeds observed folder depth (${maxDepth}); deeper panes will be empty`,
+    });
+  }
 
   // Virtual path collision check across all pages (includes manifest-mapped ones).
   const allVirtualPaths = new Map<string, string>();

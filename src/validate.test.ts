@@ -151,3 +151,34 @@ test("reports error for manifest-mapped virtual path collision", async () => {
   const r = await validateFolder(tmpDir);
   expect(r.errors.some((e) => e.message.includes("collides"))).toBe(true);
 });
+
+test("reports nav.yaml parse errors", async () => {
+  await write(".readrun/nav.yaml", "panes: not-a-number\n");
+  await write("intro.md", "# Intro");
+  const result = await validateFolder(tmpDir);
+  const errs = result.errors.filter(e => e.file === ".readrun/nav.yaml");
+  expect(errs.length).toBeGreaterThan(0);
+});
+
+test("warns when panes exceeds folder depth", async () => {
+  await write(".readrun/nav.yaml", "panes: 4\n");
+  await write("intro.md", "# Intro");  // depth 1
+  const result = await validateFolder(tmpDir);
+  const warn = result.warnings.find(w => w.file === ".readrun/nav.yaml" && w.message.includes("exceeds observed folder depth"));
+  expect(warn).toBeDefined();
+});
+
+test("does not warn when panes matches or is under folder depth", async () => {
+  await write(".readrun/nav.yaml", "panes: 2\n");
+  await write("courses/ai/intro.md", "# Intro");  // depth 3 (/courses/ai/intro)
+  const result = await validateFolder(tmpDir);
+  const warn = result.warnings.find(w => w.message.includes("exceeds observed folder depth"));
+  expect(warn).toBeUndefined();
+});
+
+test("no nav.yaml = no nav-related errors or warnings", async () => {
+  await write("intro.md", "# Intro");
+  const result = await validateFolder(tmpDir);
+  const navIssues = [...result.errors, ...result.warnings].filter(x => x.file === ".readrun/nav.yaml");
+  expect(navIssues).toEqual([]);
+});
