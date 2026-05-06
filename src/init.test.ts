@@ -1,5 +1,5 @@
-import { test, expect, beforeEach, afterEach } from "bun:test";
-import { mkdtemp, rm, stat, readFile } from "fs/promises";
+import { test, expect, beforeEach, afterEach, it } from "bun:test";
+import { mkdtemp, rm, stat, readFile, mkdir } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { initReadrun } from "./init";
@@ -62,4 +62,43 @@ test("reports virtual-paths.yaml as existing on second init", async () => {
   await initReadrun(tmpDir);
   const result = await initReadrun(tmpDir);
   expect(result.existing).toContain(".readrun/virtual-paths.yaml");
+});
+
+it("scaffolds .readrun/nav.yaml when missing", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rr-init-nav-"));
+  try {
+    const result = await initReadrun(dir);
+    expect(result.created).toContain(".readrun/nav.yaml");
+    const file = await Bun.file(join(dir, ".readrun", "nav.yaml")).text();
+    expect(file).toContain("# panes: 3");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+it("does not overwrite an existing .readrun/nav.yaml", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rr-init-nav-keep-"));
+  try {
+    await mkdir(join(dir, ".readrun"), { recursive: true });
+    await Bun.write(join(dir, ".readrun", "nav.yaml"), "panes: 4\n");
+    const result = await initReadrun(dir);
+    expect(result.existing).toContain(".readrun/nav.yaml");
+    const file = await Bun.file(join(dir, ".readrun", "nav.yaml")).text();
+    expect(file).toBe("panes: 4\n");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+it("scaffolded nav.yaml is inert (parses to tree-mode defaults)", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rr-init-nav-inert-"));
+  try {
+    await initReadrun(dir);
+    const { loadNavConfig, DEFAULT_NAV_CONFIG } = await import("./navConfig");
+    const r = await loadNavConfig(dir);
+    expect(r.config.mode).toBe("tree");
+    expect(r.issues).toEqual([]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
