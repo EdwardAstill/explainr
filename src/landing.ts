@@ -7,10 +7,10 @@ const styles = `
   .container { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 32px; }
   section h2 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--shell-fg-muted); margin-bottom: 12px; }
   .list { display: flex; flex-direction: column; gap: 6px; }
-  .item { display: flex; align-items: center; gap: 8px; background: var(--shell-bg-alt); border: 1px solid var(--shell-border); border-radius: 8px; padding: 10px 14px; }
+  .item { display: flex; align-items: center; gap: 8px; background: var(--shell-bg-alt); border: 1px solid var(--shell-border); padding: 10px 14px; }
   .item-path { flex: 1; font-size: 0.875rem; color: var(--shell-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item-name { font-size: 0.8rem; color: var(--shell-fg-muted); margin-bottom: 2px; }
-  .btn { padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; border: none; cursor: pointer; transition: background 0.15s; }
+  .btn { padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border: none; cursor: pointer; transition: background 0.15s; }
   .btn-primary { background: var(--shell-success); color: #fff; }
   .btn-primary:hover { background: var(--shell-success-hover); }
   .btn-ghost { background: transparent; color: var(--shell-fg-muted); border: 1px solid var(--shell-border); }
@@ -18,7 +18,7 @@ const styles = `
   .btn-danger { background: transparent; color: var(--shell-danger); border: 1px solid var(--shell-border); }
   .btn-danger:hover { border-color: var(--shell-danger); }
   .add-row { display: flex; gap: 8px; }
-  .add-row input { flex: 1; background: var(--shell-bg); border: 1px solid var(--shell-border); border-radius: 6px; padding: 8px 12px; color: var(--shell-fg); font-size: 0.875rem; outline: none; }
+  .add-row input { flex: 1; background: var(--shell-bg); border: 1px solid var(--shell-border); padding: 8px 12px; color: var(--shell-fg); font-size: 0.875rem; outline: none; }
   .add-row input:focus { border-color: var(--shell-accent); }
   .empty { color: var(--shell-fg-muted); font-size: 0.875rem; padding: 12px 0; }
   .error { color: var(--shell-danger); font-size: 0.8rem; margin-top: 6px; min-height: 18px; }

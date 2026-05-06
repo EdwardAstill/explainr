@@ -65,7 +65,6 @@ export const quizStyles = `
       padding: 10px 14px;
       background: var(--color-sidebar-bg);
       border: 1px solid var(--color-border);
-      border-radius: 6px;
       cursor: pointer;
       font-family: var(--font-body);
       font-size: 0.875em;
@@ -101,7 +100,6 @@ export const quizStyles = `
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
       font-size: 0.6875em;
       font-weight: 600;
       font-family: var(--font-mono);
@@ -136,7 +134,6 @@ export const quizStyles = `
       align-items: center;
       justify-content: center;
       border: 2px solid var(--color-border);
-      border-radius: 3px;
       font-size: 0.6875em;
       flex-shrink: 0;
     }
@@ -170,7 +167,6 @@ export const quizStyles = `
       flex: 1;
       padding: 14px;
       border: 1px solid var(--color-border);
-      border-radius: 6px;
       background: var(--color-sidebar-bg);
       cursor: pointer;
       font-size: 0.9375em;
@@ -205,7 +201,6 @@ export const quizStyles = `
       width: 100%;
       padding: 10px 14px;
       border: 1px solid var(--color-border);
-      border-radius: 6px;
       background: var(--color-bg);
       color: var(--color-text);
       font-size: 0.875em;
@@ -220,7 +215,6 @@ export const quizStyles = `
     .quiz__freetext-answer {
       padding: 10px 14px;
       border: 1px solid var(--color-border);
-      border-radius: 6px;
       background: var(--color-sidebar-bg);
       font-size: 0.875em;
       color: var(--color-text);
@@ -230,7 +224,6 @@ export const quizStyles = `
     .quiz__submit-btn {
       padding: 7px 20px;
       border: 1px solid var(--color-link);
-      border-radius: 5px;
       background: var(--color-link);
       color: white;
       font-size: 0.8125em;
@@ -249,7 +242,6 @@ export const quizStyles = `
     .quiz__hint-btn {
       padding: 3px 10px;
       border: 1px solid var(--color-border);
-      border-radius: 4px;
       background: transparent;
       color: var(--color-text-muted);
       font-size: 0.6875em;
@@ -278,7 +270,6 @@ export const quizStyles = `
     .quiz__feedback {
       margin-top: 16px;
       padding: 14px;
-      border-radius: 6px;
       background: var(--color-sidebar-bg);
       border: 1px solid var(--color-border);
     }
@@ -322,7 +313,6 @@ export const quizStyles = `
     .quiz__nav-btn {
       padding: 7px 18px;
       border: 1px solid var(--color-border);
-      border-radius: 5px;
       background: var(--color-sidebar-bg);
       color: var(--color-text);
       font-size: 0.75em;
@@ -377,7 +367,6 @@ export const quizStyles = `
       color: var(--color-link);
       background: var(--color-active-bg);
       border: 1px solid var(--color-link);
-      border-radius: 4px;
       padding: 2px 8px;
       margin-bottom: 16px;
     }
@@ -388,7 +377,6 @@ export const quizStyles = `
       color: var(--color-text);
       background: var(--color-sidebar-bg);
       border: 1px solid var(--color-border);
-      border-radius: 8px;
       padding: 20px 24px;
     }
 
@@ -433,7 +421,6 @@ export const quizStyles = `
       font-size: 0.85em;
       background: var(--color-code-bg);
       border: 1px solid var(--color-border);
-      border-radius: 3px;
       padding: 1px 5px;
       color: var(--color-link);
     }
@@ -441,7 +428,6 @@ export const quizStyles = `
     .quiz__info pre {
       background: var(--color-code-bg);
       border: 1px solid var(--color-border);
-      border-radius: 6px;
       padding: 14px 16px;
       overflow-x: auto;
       margin: 12px 0;
@@ -459,7 +445,6 @@ export const quizStyles = `
       padding: 8px 14px;
       margin: 12px 0;
       background: var(--color-active-bg);
-      border-radius: 0 4px 4px 0;
       font-style: italic;
     }
     .quiz__info blockquote p:last-child { margin-bottom: 0; }
@@ -498,7 +483,6 @@ export const quizStyles = `
       align-items: center;
       gap: 8px;
       padding: 6px 10px;
-      border-radius: 4px;
       font-size: 0.8125em;
     }
 

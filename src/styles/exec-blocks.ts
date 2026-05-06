@@ -15,13 +15,12 @@ export const execBlockStyles = `
     .lightbox img {
       max-width: 92vw;
       max-height: 92vh;
-      border-radius: 8px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       cursor: zoom-out;
     }
 
     /* Executable code blocks */
-    .exec-block { border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+    .exec-block { border: 1px solid var(--color-border); margin-bottom: 16px; overflow: hidden; }
 
     .exec-block-header {
       background: var(--color-sidebar-bg);
@@ -37,7 +36,7 @@ export const execBlockStyles = `
 
     .exec-run-btn {
       background: #2da44e; color: #fff; border: none;
-      padding: 2px 10px; border-radius: 4px; font-size: 12px;
+      padding: 2px 10px; font-size: 12px;
       font-family: var(--font-body); cursor: pointer; font-weight: 500;
     }
     .exec-run-btn:hover { background: #218838; }
@@ -49,13 +48,13 @@ export const execBlockStyles = `
     .exec-output .exec-stderr { color: #cf222e; }
     .exec-loading { color: var(--color-text-muted); font-style: italic; }
     .exec-output img { max-width: 100%; margin-top: 8px; }
-    .exec-block pre { margin: 0; border-radius: 0; }
+    .exec-block pre { margin: 0; }
 
     .exec-block-actions { display: flex; gap: 6px; align-items: center; }
 
     .exec-toggle-btn {
       background: none; color: var(--color-text-muted); border: 1px solid var(--color-border);
-      padding: 2px 8px; border-radius: 4px; font-size: 11px;
+      padding: 2px 8px; font-size: 11px;
       font-family: var(--font-mono); cursor: pointer; transition: all 0.12s;
     }
     .exec-toggle-btn:hover { border-color: var(--color-text-muted); color: var(--color-text); }
@@ -76,13 +75,13 @@ export const execBlockStyles = `
 
     .exec-enlarge-btn {
       background: none; color: var(--color-text-muted); border: 1px solid var(--color-border);
-      padding: 2px 8px; border-radius: 4px; font-size: 11px;
+      padding: 2px 8px; font-size: 11px;
       font-family: var(--font-mono); cursor: pointer; transition: all 0.12s;
     }
     .exec-enlarge-btn:hover { border-color: var(--color-text-muted); color: var(--color-text); }
 
     /* File upload blocks */
-    .upload-block { border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+    .upload-block { border: 1px solid var(--color-border); margin-bottom: 16px; overflow: hidden; }
 
     .upload-block-header {
       background: var(--color-sidebar-bg);
@@ -106,7 +105,7 @@ export const execBlockStyles = `
 
     .upload-btn {
       background: var(--color-link); color: #fff; border: none;
-      padding: 6px 16px; border-radius: 4px; font-size: 13px;
+      padding: 6px 16px; font-size: 13px;
       font-family: var(--font-body); cursor: pointer; font-weight: 500;
       display: inline-block;
     }
@@ -125,7 +124,6 @@ export const execBlockStyles = `
     .upload-file-tag {
       background: var(--color-code-bg);
       padding: 2px 8px;
-      border-radius: 4px;
       font-size: 12px;
       font-family: var(--font-mono);
       color: var(--color-text);
@@ -143,8 +141,7 @@ export const execBlockStyles = `
     .code-modal.open { display: flex; }
 
     .code-modal__card {
-      background: var(--color-bg); border: 1px solid var(--color-border);
-      border-radius: 12px; width: 92vw; max-width: 1100px;
+      background: var(--color-bg); border: 1px solid var(--color-border); width: 92vw; max-width: 1100px;
       max-height: 90vh; display: flex; flex-direction: column;
       overflow: hidden; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
     }
@@ -165,7 +162,7 @@ export const execBlockStyles = `
     .code-modal__close:hover { color: var(--color-text); }
 
     .code-modal__code {
-      flex: 1; overflow: auto; margin: 0; border-radius: 0;
+      flex: 1; overflow: auto; margin: 0;
       font-size: 14px; line-height: 1.6;
     }
 

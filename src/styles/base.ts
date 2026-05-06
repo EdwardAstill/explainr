@@ -119,7 +119,6 @@ export const baseStyles = `
       border: 1px solid var(--color-border);
       color: var(--color-text);
       padding: 6px 9px;
-      border-radius: 6px;
       font-size: 12.5px;
       font-family: var(--font-body);
       outline: none;
@@ -131,7 +130,6 @@ export const baseStyles = `
       background: var(--color-bg);
       border: 1px solid var(--color-border);
       color: var(--color-text-muted);
-      border-radius: 6px;
       cursor: pointer;
       font-family: var(--font-mono);
       font-size: 16px;
@@ -160,7 +158,6 @@ export const baseStyles = `
       color: var(--color-text-muted);
       cursor: pointer;
       padding: 2px 6px;
-      border-radius: 4px;
       background: transparent;
       border: none;
       font-family: var(--font-body);
@@ -178,7 +175,6 @@ export const baseStyles = `
       padding: 2px 6px;
       font-size: 14px;
       line-height: 1;
-      border-radius: 4px;
     }
     .rr-crumb-clear:hover { color: var(--color-link); background: var(--color-border); }
 
@@ -198,7 +194,6 @@ export const baseStyles = `
       background: var(--color-highlight-bg);
       color: inherit;
       padding: 0 1px;
-      border-radius: 2px;
     }
 
     /* Main content */
@@ -275,7 +270,6 @@ export const baseStyles = `
     .markdown-body code {
       background: var(--color-code-bg);
       padding: 0.2em 0.4em;
-      border-radius: 6px;
       font-size: 85%;
       font-family: var(--font-mono);
     }
@@ -283,7 +277,6 @@ export const baseStyles = `
     .markdown-body pre {
       background: var(--color-code-bg);
       padding: 16px;
-      border-radius: 6px;
       overflow-x: auto;
       margin-bottom: 16px;
       line-height: 1.45;
@@ -294,8 +287,8 @@ export const baseStyles = `
     .markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
     .markdown-body th, .markdown-body td { border: 1px solid var(--color-border); padding: 6px 13px; }
     .markdown-body th { background: var(--color-sidebar-bg); font-weight: 600; }
-    .markdown-body img { max-width: 100%; cursor: zoom-in; border-radius: 6px; }
+    .markdown-body img { max-width: 100%; cursor: zoom-in; }
     .markdown-body hr { border: none; border-top: 1px solid var(--color-border); margin: 24px 0; }
 
-    .readrun-img { display: block; margin: 16px 0; max-width: 100%; cursor: zoom-in; border-radius: 6px; }
+    .readrun-img { display: block; margin: 16px 0; max-width: 100%; cursor: zoom-in; }
 `;

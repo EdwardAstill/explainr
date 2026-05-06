@@ -126,7 +126,6 @@ export const mobileStyles = `
       /* Overlays: shrink padding, allow more height */
       .overlay__card {
         padding: 16px;
-        border-radius: 10px;
         width: 96%;
         max-height: 92vh;
       }
@@ -156,7 +155,6 @@ export const mobileStyles = `
         height: 100%;
         max-width: none;
         max-height: none;
-        border-radius: 0;
       }
 
       /* Context menu disabled on touch (use long-press tools, etc.) */

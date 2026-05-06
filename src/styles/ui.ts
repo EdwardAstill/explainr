@@ -20,8 +20,7 @@ export const uiStyles = `
     .site-search-palette__scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
     .site-search-palette__card {
       position: relative; max-width: 640px; margin: 12vh auto 0;
-      background: var(--color-bg); border: 1px solid var(--color-border);
-      border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,0.3); overflow: hidden;
+      background: var(--color-bg); border: 1px solid var(--color-border); box-shadow: 0 12px 40px rgba(0,0,0,0.3); overflow: hidden;
     }
     .site-search-palette__input {
       width: 100%; padding: 14px 18px; font-size: 1rem; border: 0;
@@ -42,7 +41,7 @@ export const uiStyles = `
     .tag-pills { margin: 0 0 1.5em 0; display: flex; flex-wrap: wrap; gap: 6px; }
     .tag-pill {
       display: inline-block; font-size: 0.75rem; padding: 2px 10px;
-      border: 1px solid var(--color-border); border-radius: 999px;
+      border: 1px solid var(--color-border);
       color: var(--color-fg-muted); text-decoration: none; background: var(--color-bg-alt);
     }
     .tag-pill:hover { color: var(--color-link); border-color: var(--color-link); }
@@ -207,7 +206,6 @@ export const uiStyles = `
       cursor: pointer;
       color: var(--color-link);
       padding: 1px 3px;
-      border-radius: 3px;
     }
 
     .entered-folder-bar__item:hover {
@@ -241,8 +239,7 @@ export const uiStyles = `
     @keyframes overlay-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
     .overlay__card {
-      background: var(--color-bg); border: 1px solid var(--color-border);
-      border-radius: 16px; padding: 32px 48px; width: 94%; max-width: 1200px;
+      background: var(--color-bg); border: 1px solid var(--color-border); padding: 32px 48px; width: 94%; max-width: 1200px;
       max-height: 90vh; overflow-y: auto;
       box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
     }
@@ -255,7 +252,7 @@ export const uiStyles = `
     .overlay__title { font-size: 18px; font-weight: 700; color: var(--color-text); }
 
     .overlay__close-hint {
-      background: var(--color-code-bg); padding: 3px 10px; border-radius: 6px;
+      background: var(--color-code-bg); padding: 3px 10px;
       font-size: 12px; font-family: var(--font-mono); color: var(--color-text-muted);
     }
 
@@ -276,7 +273,7 @@ export const uiStyles = `
 
     kbd {
       font-family: var(--font-mono); background: var(--color-code-bg);
-      padding: 2px 8px; border-radius: 4px; font-size: 12px;
+      padding: 2px 8px; font-size: 12px;
       border: 1px solid var(--color-border); color: var(--color-text);
       display: inline-block; min-width: 22px; text-align: center;
     }
@@ -287,7 +284,7 @@ export const uiStyles = `
     }
 
     .theme-card {
-      border: 2px solid var(--color-border); border-radius: 12px;
+      border: 2px solid var(--color-border);
       overflow: hidden; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
     }
     .theme-card:hover { transform: translateY(-2px); border-color: var(--color-link); }
@@ -301,7 +298,7 @@ export const uiStyles = `
     }
 
     .theme-card__preview-code {
-      padding: 8px; border-radius: 4px; font-family: var(--font-mono);
+      padding: 8px; font-family: var(--font-mono);
       font-size: 11px; margin-bottom: 6px;
     }
 
@@ -319,8 +316,7 @@ export const uiStyles = `
     }
 
     .settings__theme-arrow {
-      background: var(--color-sidebar-bg); border: 1px solid var(--color-border);
-      border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 14px;
+      background: var(--color-sidebar-bg); border: 1px solid var(--color-border); padding: 2px 8px; cursor: pointer; font-size: 14px;
       color: var(--color-text-muted); transition: all 0.12s; line-height: 1;
     }
     .settings__theme-arrow:hover { border-color: var(--color-text-muted); color: var(--color-text); }
@@ -328,15 +324,14 @@ export const uiStyles = `
     .settings__theme-name {
       flex: 1; text-align: center; font-size: 12px; font-weight: 500;
       color: var(--color-text-muted); cursor: pointer;
-      background: var(--color-sidebar-bg); border: 1px solid var(--color-border);
-      border-radius: 4px; padding: 4px 8px; font-family: var(--font-mono);
+      background: var(--color-sidebar-bg); border: 1px solid var(--color-border); padding: 4px 8px; font-family: var(--font-mono);
       transition: all 0.12s;
     }
     .settings__theme-name:hover { border-color: var(--color-text-muted); color: var(--color-text); }
 
     .settings__shortcuts-btn {
       width: 100%; padding: 6px; background: var(--color-sidebar-bg);
-      border: 1px solid var(--color-border); border-radius: 6px;
+      border: 1px solid var(--color-border);
       font-size: 12px; font-family: var(--font-body); color: var(--color-text-muted);
       cursor: pointer; transition: all 0.12s;
     }
@@ -347,8 +342,7 @@ export const uiStyles = `
 
     .settings__panel {
       position: absolute; top: 0; right: 0; width: 220px;
-      background: var(--color-bg); border: 1px solid var(--color-border);
-      border-radius: 8px; padding: 12px; display: none;
+      background: var(--color-bg); border: 1px solid var(--color-border); padding: 12px; display: none;
       flex-direction: column; gap: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     }
     .settings__panel.open { display: flex; }
@@ -367,13 +361,13 @@ export const uiStyles = `
 
     .settings__switch {
       position: relative; width: 36px; height: 20px; background: var(--color-border);
-      border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; padding: 0;
+      border: none; cursor: pointer; transition: background 0.2s; padding: 0;
     }
     .settings__switch--on { background: var(--color-link); }
 
     .settings__switch-thumb {
       position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-      background: white; border-radius: 50%; transition: transform 0.2s;
+      background: white; transition: transform 0.2s;
     }
     .settings__switch--on .settings__switch-thumb { transform: translateX(16px); }
 `;

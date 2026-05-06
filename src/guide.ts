@@ -6,8 +6,8 @@ const styles = `
   h2 { font-size: 1.1rem; font-weight: 600; color: var(--shell-fg); margin: 36px 0 12px; border-bottom: 1px solid var(--shell-border); padding-bottom: 8px; }
   h3 { font-size: 0.95rem; font-weight: 600; color: var(--shell-fg-muted); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
   p { margin-bottom: 12px; color: var(--shell-fg-soft); }
-  code { font-family: "SF Mono", Consolas, monospace; font-size: 0.85em; background: var(--shell-bg-alt); border: 1px solid var(--shell-border); border-radius: 4px; padding: 2px 6px; color: var(--shell-accent-soft); }
-  pre { background: var(--shell-bg-alt); border: 1px solid var(--shell-border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0 20px; }
+  code { font-family: "SF Mono", Consolas, monospace; font-size: 0.85em; background: var(--shell-bg-alt); border: 1px solid var(--shell-border); padding: 2px 6px; color: var(--shell-accent-soft); }
+  pre { background: var(--shell-bg-alt); border: 1px solid var(--shell-border); padding: 16px; overflow-x: auto; margin: 12px 0 20px; }
   pre code { background: none; border: none; padding: 0; color: var(--shell-fg); font-size: 0.875rem; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 0.875rem; }
   th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--shell-border); color: var(--shell-fg-muted); font-weight: 600; }
