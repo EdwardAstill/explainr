@@ -9,7 +9,6 @@ import { buildNavTree, renderNav, type NavNode } from "./nav";
 import { htmlPage } from "./template";
 import { findFirstFile, listEmbeddedFiles } from "./utils";
 import { loadConfig } from "./config";
-import { loadNavConfig, type NavConfigLoad } from "./navConfig";
 
 export type Platform = "github" | "vercel" | "netlify" | null;
 
@@ -32,7 +31,6 @@ export async function build(options: BuildOptions) {
   const config = await loadConfig();
   await ensureMarkdownReady();
   const tree = await buildNavTree(contentDir);
-  const navConfig = await loadNavConfig(contentDir);
   const pages = collectPages(tree);
   const embeddedFiles = await listEmbeddedFiles(contentDir);
   if (embeddedFiles.length > 0) {
@@ -71,7 +69,6 @@ export async function build(options: BuildOptions) {
         tree,
         basePath,
         fallbackTitle: page.name,
-        navConfig,
       });
 
       const outPath = join(outDir, page.path, "index.html");
@@ -84,12 +81,12 @@ export async function build(options: BuildOptions) {
   }
 
   // Synthetic pages
-  await emitSyntheticPage(outDir, "/tags", tagsIndexBody(siteIdx), tree, basePath, config, embeddedFiles, navConfig);
+  await emitSyntheticPage(outDir, "/tags", tagsIndexBody(siteIdx), tree, basePath, config, embeddedFiles);
   for (const tag of siteIdx.tags.keys()) {
     const body = tagPageBody(siteIdx, tag);
-    if (body) await emitSyntheticPage(outDir, `/tags/${tag}`, body, tree, basePath, config, embeddedFiles, navConfig);
+    if (body) await emitSyntheticPage(outDir, `/tags/${tag}`, body, tree, basePath, config, embeddedFiles);
   }
-  await emitSyntheticPage(outDir, "/__stats", statsBody(siteIdx), tree, basePath, config, embeddedFiles, navConfig);
+  await emitSyntheticPage(outDir, "/__stats", statsBody(siteIdx), tree, basePath, config, embeddedFiles);
 
   // Search index + client bundle
   await mkdir(join(outDir, "_readrun"), { recursive: true });
@@ -125,11 +122,9 @@ async function emitSyntheticPage(
   basePath: string | undefined,
   config: any,
   embeddedFiles: any[],
-  navConfig?: NavConfigLoad,
 ): Promise<void> {
   const nav = renderNav(tree, urlPath);
-  const navConfigJson = navConfig ? JSON.stringify(navConfig.config) : undefined;
-  const html = htmlPage(nav, body.html, body.title, basePath, config, embeddedFiles, [], {}, navConfigJson);
+  const html = htmlPage(nav, body.html, body.title, basePath, config, embeddedFiles, [], {});
   const outPath = join(outDir, urlPath, "index.html");
   await mkdir(dirname(outPath), { recursive: true });
   await Bun.write(outPath, html);

@@ -11,15 +11,6 @@ const IGNORE_CONTENT = `# Files and folders to exclude from navigation (one patt
 # Supports glob patterns, e.g.: drafts/, *.tmp
 `;
 
-const NAV_CONTENT = `# Optional navigation config. Default sidebar is a collapsed tree.
-# Uncomment to opt into multi-pane drill-down (2-4 stacked panes):
-
-# panes: 3
-
-# Pane labels are inferred from folder depth. Override with explicit names if needed:
-# labels: [domains, courses, lessons]
-`;
-
 const MANIFEST_CONTENT = `# Virtual paths manifest — controls which pages the site exposes.
 # Uncomment and edit the sections you need.
 
@@ -67,14 +58,6 @@ export async function initReadrun(targetDir: string): Promise<InitResult> {
   } else {
     await Bun.write(manifestPath, MANIFEST_CONTENT);
     created.push(".readrun/virtual-paths.yaml");
-  }
-
-  const navPath = join(readrunDir, "nav.yaml");
-  if (await pathExists(navPath)) {
-    existing.push(".readrun/nav.yaml");
-  } else {
-    await Bun.write(navPath, NAV_CONTENT);
-    created.push(".readrun/nav.yaml");
   }
 
   return { created, existing };

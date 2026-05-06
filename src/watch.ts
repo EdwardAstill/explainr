@@ -6,7 +6,7 @@ import { invalidateSiteIndex } from "./siteIndex";
 export function shouldInvalidateOnFile(filename: string): boolean {
   if (filename.endsWith("~") || filename.startsWith(".#") || filename.endsWith(".swp")) return false;
   const ext = extname(filename).toLowerCase();
-  return ext === ".md" || ext === ".jsx" || filename === "virtual-paths.yaml" || filename === "nav.yaml";
+  return ext === ".md" || ext === ".jsx" || filename === "virtual-paths.yaml";
 }
 
 export interface WatchOptions {

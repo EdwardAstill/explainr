@@ -100,6 +100,81 @@ export const baseStyles = `
     /* Sidebar-specific */
     .sidebar-nav > ul > li > ul { padding-left: 0; }
 
+    /* Focus mode: pinned search + breadcrumb above the nav-tree */
+    .rr-focus-search-wrap {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .rr-focus-search-wrap input {
+      width: 100%;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      padding: 6px 9px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-family: var(--font-body);
+      outline: none;
+    }
+    .rr-focus-search-wrap input:focus { border-color: var(--color-link); }
+
+    .rr-focus-crumbs {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 12px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--color-border);
+      transition: background 0.12s;
+    }
+    .rr-focus-crumbs.empty { display: none; }
+    .rr-focus-crumbs.has-focus { background: var(--color-highlight-bg); }
+    .rr-crumb {
+      font-size: 11.5px;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: transparent;
+      border: none;
+      font-family: var(--font-body);
+    }
+    .rr-crumb:hover { color: var(--color-text); background: var(--color-border); }
+    .rr-crumb.current { color: var(--color-link); font-weight: 600; cursor: default; }
+    .rr-crumb.current:hover { background: transparent; }
+    .rr-crumb-sep { color: var(--color-text-muted); font-size: 11px; padding: 0 1px; opacity: 0.6; }
+    .rr-crumb-clear {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: 2px 6px;
+      font-size: 14px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .rr-crumb-clear:hover { color: var(--color-link); background: var(--color-border); }
+
+    /* Hide items outside focus scope; collapse the focused folder's own row
+       so its children promote up one indent level. */
+    .nav-tree li.rr-hidden { display: none; }
+    .nav-tree li.rr-focus-self > details > summary { display: none; }
+    .nav-tree li.rr-focus-self > details > ul { padding-left: 0; }
+    .nav-tree li.rr-focus-self { padding-left: 0; }
+
+    /* Search-reorder visual states (focus mode applies these to existing
+       nav-tree items in place — no DOM reordering, just dim/highlight). */
+    .nav-tree .rr-match { color: var(--color-text); }
+    .nav-tree .rr-match-strong { color: var(--color-link); font-weight: 600; }
+    .nav-tree .rr-dim { opacity: 0.45; }
+    .nav-tree mark {
+      background: var(--color-highlight-bg);
+      color: inherit;
+      padding: 0 1px;
+      border-radius: 2px;
+    }
+
     /* Main content */
     .main {
       flex: 1;
