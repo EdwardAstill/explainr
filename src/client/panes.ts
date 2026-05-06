@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { scoreItem } from "./site-search";
+import { escapeHtml } from "./dom-utils";
 
 export function mountPanes() {
   // 1. Read rr-nav-config; abort unless mode === "panes"
@@ -81,12 +82,6 @@ export function mountPanes() {
       escapeHtml(after);
   }
 
-  function escapeHtml(str) {
-    return str.replace(/[<>&"]/g, (c) =>
-      ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c])
-    );
-  }
-
   function reorder(query) {
     ensureCache();
     const q = (query || "").trim();
@@ -141,15 +136,15 @@ export function mountPanes() {
   }
 
   // Wire search input with rAF debounce
-  let rafPending = false;
-  searchInput.addEventListener("input", () => {
-    if (rafPending) return;
-    rafPending = true;
-    requestAnimationFrame(() => {
-      rafPending = false;
+  let rafId = 0;
+  function scheduleReorder() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      rafId = 0;
       reorder(searchInput.value);
     });
-  });
+  }
+  searchInput.addEventListener("input", scheduleReorder);
 
   // 4. Wire click handlers for dir rows (span) to toggle is-active
   nav.addEventListener("click", (e) => {
@@ -164,11 +159,11 @@ export function mountPanes() {
     const ul = li.closest("ul.rr-pane");
     if (!ul) return;
 
-    // Remove is-active from siblings in same pane
+    // Toggle is-active; clicking an already-active row deactivates it
+    const wasActive = li.classList.contains("is-active");
     ul.querySelectorAll("li.rr-pane-row.is-active").forEach((row) => {
       row.classList.remove("is-active");
     });
-
-    li.classList.add("is-active");
+    if (!wasActive) li.classList.add("is-active");
   });
 }
