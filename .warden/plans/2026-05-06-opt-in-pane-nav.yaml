@@ -1,0 +1,113 @@
+version: 1
+plan:
+  slug: opt-in-pane-nav
+  prose: .warden/plans/2026-05-06-opt-in-pane-nav.md
+  goal: Let a content folder opt into multi-pane drill-down sidebar via a one-line .readrun/nav.yaml; default tree mode unchanged; pinned search reorders all panes simultaneously
+
+nodes:
+  - id: nav_config_core
+    type: implement
+    description: "NavConfig types, DEFAULT_NAV_CONFIG, parseNavConfig(), loadNavConfig() in src/navConfig.ts"
+    files:
+      create:
+        - src/navConfig.ts
+        - src/navConfig.test.ts
+    verify:
+      - bun test src/navConfig.test.ts
+
+  - id: render_panes_nav
+    type: implement
+    depends_on: [nav_config_core]
+    description: "Add renderPanesNav(tree, currentPath, config) in src/nav.ts; emit data-pane-depth, data-search-label, ancestor aria-current"
+    files:
+      modify:
+        - src/nav.ts
+        - src/nav.test.ts
+    verify:
+      - bun test src/nav.test.ts
+
+  - id: render_page_dispatch
+    type: implement
+    depends_on: [nav_config_core, render_panes_nav]
+    description: "renderPage.ts loads navConfig once per build, dispatches to renderNav or renderPanesNav, injects rr-nav-config JSON for the client"
+    files:
+      modify:
+        - src/renderPage.ts
+    verify:
+      - bun test
+
+  - id: score_item_extract
+    type: implement
+    description: "Extract reusable scoreItem(query, label) -> { score, firstHitIndex } in src/client/site-search.ts; existing dropdown keeps using it"
+    files:
+      modify:
+        - src/client/site-search.ts
+    verify:
+      - bun test
+      - cd /home/eastill/projects/courses && rr build .
+
+  - id: client_panes_mount
+    type: implement
+    depends_on: [render_panes_nav, render_page_dispatch, score_item_extract]
+    description: "src/client/panes.ts mounts panes mode, click-to-drill, search-reorders-all-panes using scoreItem; main.ts conditionally imports based on rr-nav-config"
+    files:
+      create:
+        - src/client/panes.ts
+      modify:
+        - src/client/main.ts
+    verify:
+      - bun test
+      - cd /home/eastill/projects/courses && echo "panes: 3" > .readrun/nav.yaml && rr build . && rm .readrun/nav.yaml
+
+  - id: panes_css
+    type: implement
+    depends_on: [client_panes_mount]
+    description: "Sidebar CSS: rr-panes grid layouts (2/3/4 cols), rr-pane-row, match-strong/match/dim, mark highlight (added in src/styles/base.ts or new src/styles/panes.ts wired through src/styles/index.ts)"
+    files:
+      modify:
+        - src/styles/base.ts
+        - src/styles/index.ts
+    verify:
+      - cd /home/eastill/projects/courses && echo "panes: 3" > .readrun/nav.yaml && rr build . && rm .readrun/nav.yaml
+
+  - id: watch_and_validate
+    type: implement
+    depends_on: [nav_config_core]
+    description: "Watch .readrun/nav.yaml in watch.ts; load and validate in validate.ts; warn when panes exceeds folder depth"
+    files:
+      modify:
+        - src/watch.ts
+        - src/validate.ts
+        - src/validate.test.ts
+    verify:
+      - bun test src/validate.test.ts
+      - bun test
+
+  - id: init_scaffold
+    type: implement
+    depends_on: [nav_config_core]
+    description: "rr init writes inert commented .readrun/nav.yaml alongside virtual-paths.yaml"
+    files:
+      modify:
+        - src/init.ts
+        - src/init.test.ts
+    verify:
+      - bun test src/init.test.ts
+
+  - id: author_doc
+    type: implement
+    depends_on: [client_panes_mount, panes_css, watch_and_validate, init_scaffold]
+    description: "One short author doc page: when to opt in, the one-line config, search-reorder behavior, no quiz special treatment"
+    files:
+      create:
+        - readrun-docs/nav.md
+    verify:
+      - test -f readrun-docs/nav.md
+
+  - id: spec_acceptance
+    type: verify
+    depends_on: [client_panes_mount, panes_css, watch_and_validate, init_scaffold, author_doc]
+    description: "End-to-end on ~/projects/courses: no nav.yaml = byte-identical sidebar; panes:3 = three-pane drill-down with search reorder; panes:99 = clean fallback with validation warning"
+    verify:
+      - bun test
+      - cd /home/eastill/projects/courses && rr build . && rr validate .
