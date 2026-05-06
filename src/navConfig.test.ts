@@ -8,8 +8,9 @@ describe("parseNavConfig", () => {
   });
 
   it("default mode is 'tree' with search enabled", () => {
-    expect(DEFAULT_NAV_CONFIG.mode).toBe("tree");
-    expect(DEFAULT_NAV_CONFIG.search.enabled).toBe(true);
+    const r = parseNavConfig("");
+    expect(r.config.mode).toBe("tree");
+    expect(r.config.search.enabled).toBe(true);
   });
 
   it("`panes: 3` switches to panes mode with 3 columns", () => {
@@ -49,5 +50,24 @@ describe("parseNavConfig", () => {
   it("flags invalid mode values", () => {
     const r = parseNavConfig("mode: weird");
     expect(r.issues.find(i => i.kind === "wrong_type")?.field).toBe("mode");
+  });
+
+  it("mode: panes alone (no panes:) is incoherent — falls back to tree with an issue", () => {
+    const r = parseNavConfig("mode: panes");
+    expect(r.config.mode).toBe("tree");
+    expect(r.issues.find(i => i.field === "mode")?.kind).toBe("wrong_type");
+  });
+
+  it("mode: tree with panes: 3 is an explicit opt-out — mode stays tree, panes preserved", () => {
+    const r = parseNavConfig("mode: tree\npanes: 3");
+    expect(r.config.mode).toBe("tree");
+    expect(r.config.panes).toBe(3);
+    expect(r.issues).toEqual([]);
+  });
+
+  it("mode: panes with panes: 3 is honored", () => {
+    const r = parseNavConfig("mode: panes\npanes: 3");
+    expect(r.config.mode).toBe("panes");
+    expect(r.config.panes).toBe(3);
   });
 });

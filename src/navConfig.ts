@@ -59,13 +59,14 @@ export function parseNavConfig(text: string | null | undefined): NavConfigLoad {
   const raw = parsed as Record<string, unknown>;
   const config = defaultConfig();
 
-  // mode (informational; actual mode is derived from panes)
+  // mode
   if ("mode" in raw) {
     const v = raw.mode;
     if (v !== "tree" && v !== "panes") {
       issues.push({ kind: "wrong_type", field: "mode", message: `mode must be "tree" or "panes", got ${JSON.stringify(v)}` });
+    } else {
+      config.mode = v;
     }
-    // silently accept valid values — mode is derived from panes, not this field
   }
 
   // panes
@@ -77,9 +78,18 @@ export function parseNavConfig(text: string | null | undefined): NavConfigLoad {
       issues.push({ kind: "out_of_range", field: "panes", message: `panes must be between 2 and 4, got ${v}` });
       // mode stays "tree"
     } else {
-      config.mode = "panes";
+      // panes:N sets panes mode unless mode:tree was explicit (opt-out wins)
+      if (config.mode !== "tree" || !("mode" in raw)) {
+        config.mode = "panes";
+      }
       config.panes = v;
     }
+  }
+
+  // coherence: mode:panes requires panes:N
+  if (config.mode === "panes" && config.panes === undefined) {
+    issues.push({ kind: "wrong_type", field: "mode", message: "mode: panes requires panes: N (2-4)" });
+    config.mode = "tree";
   }
 
   // labels
