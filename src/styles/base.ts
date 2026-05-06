@@ -100,13 +100,21 @@ export const baseStyles = `
     /* Sidebar-specific */
     .sidebar-nav > ul > li > ul { padding-left: 0; }
 
-    /* Focus mode: pinned search + breadcrumb above the nav-tree */
+    /* Focus mode: pinned search + breadcrumb above the nav-tree.
+       When mounted, drop the sidebar's own vertical padding so the search
+       sits flush at the top with symmetric padding inside the wrap. */
+    .sidebar.rr-focus-active { padding-top: 0; padding-bottom: 0; }
+
     .rr-focus-search-wrap {
-      padding: 8px 12px;
+      padding: 8px;
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
       border-bottom: 1px solid var(--color-border);
     }
     .rr-focus-search-wrap input {
-      width: 100%;
+      flex: 1;
+      min-width: 0;
       background: var(--color-bg);
       border: 1px solid var(--color-border);
       color: var(--color-text);
@@ -117,6 +125,24 @@ export const baseStyles = `
       outline: none;
     }
     .rr-focus-search-wrap input:focus { border-color: var(--color-link); }
+    .rr-focus-toggle {
+      flex: 0 0 auto;
+      width: 30px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .rr-focus-toggle:hover { color: var(--color-link); border-color: var(--color-link); }
+    .rr-focus-toggle:active { background: var(--color-active-bg); }
 
     .rr-focus-crumbs {
       display: flex;

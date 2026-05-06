@@ -70,19 +70,49 @@ function findOrCreateBreadcrumbs(nav: HTMLElement): HTMLElement {
   return crumbs;
 }
 
-function findOrCreateSearch(nav: HTMLElement): HTMLInputElement {
+function findOrCreateSearch(nav: HTMLElement): { input: HTMLInputElement; toggle: HTMLButtonElement } {
   let input = document.getElementById("rr-focus-search") as HTMLInputElement | null;
-  if (input) return input;
+  let toggle = document.getElementById("rr-focus-toggle") as HTMLButtonElement | null;
+  if (input && toggle) return { input, toggle };
+
   const wrap = document.createElement("div");
   wrap.className = "rr-focus-search-wrap";
+
   input = document.createElement("input");
   input.id = "rr-focus-search";
   input.type = "text";
   input.placeholder = "Search…";
   input.autocomplete = "off";
+
+  toggle = document.createElement("button");
+  toggle.id = "rr-focus-toggle";
+  toggle.type = "button";
+  toggle.className = "rr-focus-toggle";
+  toggle.setAttribute("aria-label", "Collapse all folders");
+  toggle.title = "Collapse all folders";
+  toggle.innerHTML = "−"; // updated by syncToggleIcon
+
   wrap.appendChild(input);
+  wrap.appendChild(toggle);
   nav.parentElement?.insertBefore(wrap, nav);
-  return input;
+  return { input, toggle };
+}
+
+function anyOpen(nav: HTMLElement): boolean {
+  return !!nav.querySelector("li:not(.rr-hidden) > details[open]");
+}
+
+function syncToggleIcon(nav: HTMLElement, toggle: HTMLButtonElement): void {
+  const open = anyOpen(nav);
+  toggle.innerHTML = open ? "−" : "+";
+  toggle.title = open ? "Collapse all folders" : "Expand all folders";
+  toggle.setAttribute("aria-label", toggle.title);
+}
+
+function setAllOpen(nav: HTMLElement, open: boolean): void {
+  // Only toggle visible (not rr-hidden) details so collapse-all respects focus scope.
+  const details = nav.querySelectorAll("li:not(.rr-hidden) > details");
+  details.forEach((d) => { (d as HTMLDetailsElement).open = open; });
 }
 
 function applyFocus(nav: HTMLElement, focus: string[]): void {
@@ -218,8 +248,11 @@ export function mountFocus(): void {
   if (!nav) return; // not in tree mode (e.g. legacy panes mode page)
   if ((nav as HTMLElement).dataset.rrFocusMounted === "true") return;
   (nav as HTMLElement).dataset.rrFocusMounted = "true";
+  // Tag the parent .sidebar so CSS can drop its top/bottom padding when focus is mounted.
+  const sidebar = nav.closest(".sidebar");
+  if (sidebar) (sidebar as HTMLElement).classList.add("rr-focus-active");
 
-  const search = findOrCreateSearch(nav);
+  const { input: search, toggle } = findOrCreateSearch(nav);
   const crumbs = findOrCreateBreadcrumbs(nav);
 
   let focus = readFocus();
@@ -229,6 +262,7 @@ export function mountFocus(): void {
     writeFocus(focus);
     applyFocus(nav!, focus);
     renderBreadcrumbs(crumbs, focus, setFocus);
+    syncToggleIcon(nav!, toggle);
   }
 
   setFocus(focus);
@@ -257,7 +291,14 @@ export function mountFocus(): void {
     pendingTimer = setTimeout(() => {
       pendingTimer = null;
       details.open = !wasOpen;
+      syncToggleIcon(nav!, toggle);
     }, DBLCLICK_DELAY_MS);
+  });
+
+  toggle.addEventListener("click", () => {
+    const open = anyOpen(nav!);
+    setAllOpen(nav!, !open);
+    syncToggleIcon(nav!, toggle);
   });
 
   search.addEventListener("input", () => applySearch(nav!, search.value));
