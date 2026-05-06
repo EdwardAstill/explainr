@@ -137,9 +137,10 @@ export function renderPanesNav(
       if (parentNode && parentNode.isDir && parentNode.children) {
         nodes = parentNode.children;
       } else if (!parentNode) {
-        // Ancestor chain is shorter than depth — fall back to first dir at previous depth.
-        const prevNodes = depth === 1 ? tree : (ancestors[depth - 2]?.children ?? []);
-        const firstDir = prevNodes.find((n) => n.isDir && n.children);
+        // Ancestor chain is shorter than depth — fall back to children of the deepest known ancestor.
+        const deepestAncestor = ancestors[ancestors.length - 1];
+        const childrenSource = deepestAncestor?.children ?? [];
+        const firstDir = childrenSource.find((n) => n.isDir && n.children);
         nodes = firstDir?.children ?? [];
       } else {
         nodes = [];
@@ -154,10 +155,16 @@ export function renderPanesNav(
       labelHtml = `<div class="rr-pane-label">${escapeHtml(labels[depth]!)}</div>`;
     }
 
-    let listHtml = `<ul class="rr-pane" data-pane-depth="${depth}">`;
+    let listHtml = `<ul class="rr-pane">`;
     for (const node of nodes) {
       const isActive = activeNode ? node.path === activeNode.path : false;
-      const ariaCurrent = isActive ? ' aria-current="page"' : "";
+      let ariaCurrent = "";
+      if (isActive) {
+        // "page" only for the actual current file; ancestor dirs use "true"
+        ariaCurrent = (node.path === currentPath && !node.isDir)
+          ? ' aria-current="page"'
+          : ' aria-current="true"';
+      }
       const searchLabel = escapeHtml(node.name);
       const dataPath = escapeHtml(node.path);
       const inner = node.isDir
@@ -167,7 +174,7 @@ export function renderPanesNav(
     }
     listHtml += `</ul>`;
 
-    paneHtmls.push(labelHtml + listHtml);
+    paneHtmls.push(`<div class="rr-pane-wrapper" data-pane-depth="${depth}">${labelHtml}${listHtml}</div>`);
   }
 
   return `<nav class="sidebar-nav rr-panes" data-panes="${panes}">${paneHtmls.join("")}</nav>`;

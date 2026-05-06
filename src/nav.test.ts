@@ -24,7 +24,7 @@ describe("renderPanesNav", () => {
     }
   });
 
-  it("renders N pane <ul>s with data-pane-depth attributes", async () => {
+  it("renders N pane wrappers with data-pane-depth attributes", async () => {
     const dir = await makeTempRepo({
       "courses/ai/intro.md": "# Intro",
       "courses/math/vectors.md": "# Vectors",
@@ -67,6 +67,15 @@ describe("renderPanesNav", () => {
   it("does not throw on empty tree", () => {
     const html = renderPanesNav([], "/", { panes: 3 });
     expect(html).toContain('rr-panes');
+  });
+
+  it("uses aria-current=\"page\" only on the active file, aria-current=\"true\" on ancestor dirs", async () => {
+    const dir = await makeTempRepo({ "courses/ai/intro.md": "# Intro" });
+    dirs.push(dir);
+    const tree = await buildNavTree(dir);
+    const html = renderPanesNav(tree, "/courses/ai/intro", { panes: 3 });
+    expect((html.match(/aria-current="page"/g) || []).length).toBe(1);
+    expect((html.match(/aria-current="true"/g) || []).length).toBeGreaterThanOrEqual(1);
   });
 });
 
