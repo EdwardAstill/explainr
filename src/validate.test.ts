@@ -152,11 +152,19 @@ test("reports error for manifest-mapped virtual path collision", async () => {
   expect(r.errors.some((e) => e.message.includes("collides"))).toBe(true);
 });
 
-test("reports nav.yaml parse errors", async () => {
+test("reports nav.yaml wrong_type errors", async () => {
   await write(".readrun/nav.yaml", "panes: not-a-number\n");
   await write("intro.md", "# Intro");
   const result = await validateFolder(tmpDir);
   const errs = result.errors.filter(e => e.file === ".readrun/nav.yaml");
+  expect(errs.length).toBeGreaterThan(0);
+});
+
+test("reports nav.yaml YAML parse errors", async () => {
+  await write(".readrun/nav.yaml", "panes: [\n");  // unclosed bracket → YAML parse error
+  await write("intro.md", "# Intro");
+  const result = await validateFolder(tmpDir);
+  const errs = result.errors.filter(e => e.file === ".readrun/nav.yaml" && e.message.includes("parse error"));
   expect(errs.length).toBeGreaterThan(0);
 });
 

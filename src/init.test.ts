@@ -94,7 +94,7 @@ it("scaffolded nav.yaml is inert (parses to tree-mode defaults)", async () => {
   const dir = await mkdtemp(join(tmpdir(), "rr-init-nav-inert-"));
   try {
     await initReadrun(dir);
-    const { loadNavConfig, DEFAULT_NAV_CONFIG } = await import("./navConfig");
+    const { loadNavConfig } = await import("./navConfig");
     const r = await loadNavConfig(dir);
     expect(r.config.mode).toBe("tree");
     expect(r.issues).toEqual([]);

@@ -182,7 +182,8 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
     if (iss.kind === "parse_error") {
       errors.push({ file, message: `nav.yaml parse error: ${iss.message}` });
     } else if (iss.kind === "wrong_type" || iss.kind === "out_of_range") {
-      errors.push({ file, message: `nav.yaml ${iss.field ?? ""}: ${iss.message}` });
+      const prefix = iss.field ? `nav.yaml ${iss.field}: ` : "nav.yaml: ";
+      errors.push({ file, message: `${prefix}${iss.message}` });
     } else if (iss.kind === "unknown_field") {
       warnings.push({ file, message: `nav.yaml unknown field "${iss.field}" (readrun ignores it)` });
     }
