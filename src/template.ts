@@ -250,12 +250,13 @@ function backlinksHtml(entries: BacklinkEntry[] | undefined): string {
     </aside>`;
 }
 
-export function htmlPage(nav: string, content: string, title: string, basePath?: string, config: ReadrunConfig = defaultConfig, embeddedFiles: EmbeddedFile[] = [], toc: TocEntry[] = [], pageMeta: PageMeta = {}): string {
+export function htmlPage(nav: string, content: string, title: string, basePath?: string, config: ReadrunConfig = defaultConfig, embeddedFiles: EmbeddedFile[] = [], toc: TocEntry[] = [], pageMeta: PageMeta = {}, navConfigJson?: string): string {
   const baseTag = basePath ? `\n  <base href="${escape(basePath)}">` : "";
   const configJson = JSON.stringify(config.shortcuts).replace(/<\//g, "<\\/");
   const filesJson = JSON.stringify(embeddedFiles).replace(/<\//g, "<\\/");
   const tagsHtml = tagPillsHtml(pageMeta.tags);
   const backHtml = backlinksHtml(pageMeta.backlinks);
+  const navCfgJson = (navConfigJson ?? '{"mode":"tree"}').replace(/<\//g, "<\\/");
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -269,6 +270,7 @@ export function htmlPage(nav: string, content: string, title: string, basePath?:
   <link rel="stylesheet" href="/_readrun/client.css?v=${bundleVersion()}">
 </head>
 <body>
+  <script id="rr-nav-config" type="application/json">${navCfgJson}</script>
   <script id="readrun-shortcuts" type="application/json">${configJson}</script>
   <script id="readrun-files" type="application/json">${filesJson}</script>
   <header class="mobile-topbar" id="mobile-topbar">

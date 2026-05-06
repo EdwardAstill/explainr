@@ -9,6 +9,7 @@ import { buildNavTree, renderNav, type NavNode } from "./nav";
 import { htmlPage } from "./template";
 import { findFirstFile, listEmbeddedFiles } from "./utils";
 import { loadConfig } from "./config";
+import { loadNavConfig } from "./navConfig";
 
 export type Platform = "github" | "vercel" | "netlify" | null;
 
@@ -31,6 +32,7 @@ export async function build(options: BuildOptions) {
   const config = await loadConfig();
   await ensureMarkdownReady();
   const tree = await buildNavTree(contentDir);
+  const navConfig = await loadNavConfig(contentDir);
   const pages = collectPages(tree);
   const embeddedFiles = await listEmbeddedFiles(contentDir);
   if (embeddedFiles.length > 0) {
@@ -69,6 +71,7 @@ export async function build(options: BuildOptions) {
         tree,
         basePath,
         fallbackTitle: page.name,
+        navConfig,
       });
 
       const outPath = join(outDir, page.path, "index.html");

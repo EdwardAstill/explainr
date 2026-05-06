@@ -11,12 +11,13 @@ import {
 } from "./markdown";
 import { rewriteWikilinks } from "./wikilinks";
 import { expandQueryBlocks } from "./queryBlock";
-import { renderNav, type NavNode } from "./nav";
+import { renderNav, renderPanesNav, type NavNode } from "./nav";
 import { htmlPage, type EmbeddedFile, type PageMeta } from "./template";
 import { extractTitle } from "./utils";
 import { parseFrontmatter } from "./frontmatter";
 import type { ReadrunConfig } from "./config";
 import type { SiteIndex } from "./siteIndex";
+import { loadNavConfig, type NavConfigLoad } from "./navConfig";
 
 export interface RenderPageOptions {
   contentDir: string;
@@ -28,6 +29,7 @@ export interface RenderPageOptions {
   tree: NavNode[];
   basePath?: string;
   fallbackTitle?: string;
+  navConfig?: NavConfigLoad;
 }
 
 export interface RenderedPage {
@@ -37,6 +39,8 @@ export interface RenderedPage {
 
 export async function renderPage(opts: RenderPageOptions): Promise<RenderedPage> {
   const { contentDir, pagePath, source, siteIndex, config, embeddedFiles, tree, basePath, fallbackTitle } = opts;
+
+  const navCfg = opts.navConfig ?? await loadNavConfig(contentDir);
 
   const scriptsDir = join(contentDir, ".readrun", "scripts");
   const imagesDir = join(contentDir, ".readrun", "images");
@@ -56,8 +60,12 @@ export async function renderPage(opts: RenderPageOptions): Promise<RenderedPage>
   const backlinks = (siteIndex.backlinks.get(pagePath) ?? []).map((p) => ({ url: p.url, title: p.title }));
   const pageMeta: PageMeta = { tags, backlinks };
 
-  const nav = renderNav(tree, pagePath);
-  const html = htmlPage(nav, rendered, title, basePath, config, embeddedFiles, toc, pageMeta);
+  const nav = navCfg.config.mode === "panes"
+    ? renderPanesNav(tree, pagePath, { panes: navCfg.config.panes!, labels: navCfg.config.labels })
+    : renderNav(tree, pagePath);
+
+  const navConfigJson = JSON.stringify(navCfg.config);
+  const html = htmlPage(nav, rendered, title, basePath, config, embeddedFiles, toc, pageMeta, navConfigJson);
 
   // Reference body so the linter knows we honour parseFrontmatter's other side.
   void body;
