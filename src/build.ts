@@ -9,7 +9,7 @@ import { buildNavTree, renderNav, type NavNode } from "./nav";
 import { htmlPage } from "./template";
 import { findFirstFile, listEmbeddedFiles } from "./utils";
 import { loadConfig } from "./config";
-import { loadNavConfig } from "./navConfig";
+import { loadNavConfig, type NavConfigLoad } from "./navConfig";
 
 export type Platform = "github" | "vercel" | "netlify" | null;
 
@@ -84,12 +84,12 @@ export async function build(options: BuildOptions) {
   }
 
   // Synthetic pages
-  await emitSyntheticPage(outDir, "/tags", tagsIndexBody(siteIdx), tree, basePath, config, embeddedFiles);
+  await emitSyntheticPage(outDir, "/tags", tagsIndexBody(siteIdx), tree, basePath, config, embeddedFiles, navConfig);
   for (const tag of siteIdx.tags.keys()) {
     const body = tagPageBody(siteIdx, tag);
-    if (body) await emitSyntheticPage(outDir, `/tags/${tag}`, body, tree, basePath, config, embeddedFiles);
+    if (body) await emitSyntheticPage(outDir, `/tags/${tag}`, body, tree, basePath, config, embeddedFiles, navConfig);
   }
-  await emitSyntheticPage(outDir, "/__stats", statsBody(siteIdx), tree, basePath, config, embeddedFiles);
+  await emitSyntheticPage(outDir, "/__stats", statsBody(siteIdx), tree, basePath, config, embeddedFiles, navConfig);
 
   // Search index + client bundle
   await mkdir(join(outDir, "_readrun"), { recursive: true });
@@ -125,9 +125,11 @@ async function emitSyntheticPage(
   basePath: string | undefined,
   config: any,
   embeddedFiles: any[],
+  navConfig?: NavConfigLoad,
 ): Promise<void> {
   const nav = renderNav(tree, urlPath);
-  const html = htmlPage(nav, body.html, body.title, basePath, config, embeddedFiles, [], {});
+  const navConfigJson = navConfig ? JSON.stringify(navConfig.config) : undefined;
+  const html = htmlPage(nav, body.html, body.title, basePath, config, embeddedFiles, [], {}, navConfigJson);
   const outPath = join(outDir, urlPath, "index.html");
   await mkdir(dirname(outPath), { recursive: true });
   await Bun.write(outPath, html);

@@ -9,6 +9,7 @@ import { buildNavTree, renderNav } from "./nav";
 import { htmlPage } from "./template";
 import { MIME, findAvailablePort, listEmbeddedFiles, pathExists } from "./utils";
 import { loadConfig, saveConfig } from "./config";
+import { loadNavConfig } from "./navConfig";
 import { dashboardHtml } from "./landing";
 import { guideHtml } from "./guide";
 
@@ -113,6 +114,7 @@ async function renderSynthetic(
   config: any,
   embeddedFiles: any[],
   wrap: (html: string) => string,
+  navConfigJson?: string,
 ): Promise<Response | null> {
   if (pathname !== "/tags" && !pathname.startsWith("/tags/") && pathname !== "/__stats") return null;
 
@@ -131,7 +133,7 @@ async function renderSynthetic(
   if (!body) return null;
 
   const nav = renderNav(tree, pathname);
-  const raw = htmlPage(nav, body.html, body.title, undefined, config, embeddedFiles, [], {});
+  const raw = htmlPage(nav, body.html, body.title, undefined, config, embeddedFiles, [], {}, navConfigJson);
   return new Response(wrap(raw), { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
@@ -368,9 +370,11 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
       let pagePath = pathname === "/" ? null : pathname.replace(/\/$/, "");
       const tree = await buildNavTree(dir);
       const embeddedFiles = await listEmbeddedFiles(dir);
+      const navCfg = await loadNavConfig(dir);
+      const navConfigJson = JSON.stringify(navCfg.config);
 
       // Synthetic pages: /tags, /tags/<tag>, /__stats
-      const synthetic = await renderSynthetic(pathname, dir, tree, config, embeddedFiles, watch ? injectReload : (s) => s);
+      const synthetic = await renderSynthetic(pathname, dir, tree, config, embeddedFiles, watch ? injectReload : (s) => s, navConfigJson);
       if (synthetic) return synthetic;
 
       if (!pagePath || pagePath === "/") {
@@ -416,7 +420,7 @@ export async function startServer(options: ServerOptions): Promise<ServerHandle>
           const stem = pagePath.split("/").pop() ?? "page";
           const nav = renderNav(tree, pagePath);
           const content = jsxPageHtml(jsxSource);
-          const raw = htmlPage(nav, content, stem, undefined, config, embeddedFiles, []);
+          const raw = htmlPage(nav, content, stem, undefined, config, embeddedFiles, [], {}, navConfigJson);
           const html = watch ? injectReload(raw) : raw;
           return new Response(html, {
             headers: { "Content-Type": "text/html; charset=utf-8" },

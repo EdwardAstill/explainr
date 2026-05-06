@@ -60,9 +60,15 @@ export async function renderPage(opts: RenderPageOptions): Promise<RenderedPage>
   const backlinks = (siteIndex.backlinks.get(pagePath) ?? []).map((p) => ({ url: p.url, title: p.title }));
   const pageMeta: PageMeta = { tags, backlinks };
 
-  const nav = navCfg.config.mode === "panes"
-    ? renderPanesNav(tree, pagePath, { panes: navCfg.config.panes!, labels: navCfg.config.labels })
-    : renderNav(tree, pagePath);
+  const useTreeMode =
+    navCfg.config.mode !== "panes" ||
+    typeof navCfg.config.panes !== "number" ||
+    navCfg.config.panes < 2 ||
+    navCfg.config.panes > 4;
+
+  const nav = useTreeMode
+    ? renderNav(tree, pagePath)
+    : renderPanesNav(tree, pagePath, { panes: navCfg.config.panes, labels: navCfg.config.labels });
 
   const navConfigJson = JSON.stringify(navCfg.config);
   const html = htmlPage(nav, rendered, title, basePath, config, embeddedFiles, toc, pageMeta, navConfigJson);

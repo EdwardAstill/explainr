@@ -104,4 +104,49 @@ describe("renderPage nav dispatch", () => {
     expect(html).toMatch(/<script id="rr-nav-config" type="application\/json">/);
     expect(html).toContain('"mode":"tree"');
   });
+
+  it("respects opts.navConfig and skips loadNavConfig", async () => {
+    const dir = await makeTempRepo({ "intro.md": "# Intro" });
+    dirs.push(dir);
+    const tree = await buildNavTree(dir);
+    const siteIndex = await getSiteIndex(dir);
+    const navConfig = {
+      config: { mode: "panes" as const, panes: 3, search: { enabled: true }, hide: [] },
+      issues: [],
+    };
+    const { html } = await renderPage({
+      contentDir: dir,
+      pagePath: "/intro",
+      source: "# Intro",
+      siteIndex,
+      config: defaultConfig,
+      embeddedFiles: [],
+      tree,
+      navConfig,
+    });
+    expect(html).toContain('class="sidebar-nav rr-panes"');
+    expect(html).toContain('"mode":"panes"');
+  });
+
+  it("falls back to tree when navConfig is malformed (mode:panes without panes:N)", async () => {
+    const dir = await makeTempRepo({ "intro.md": "# Intro" });
+    dirs.push(dir);
+    const tree = await buildNavTree(dir);
+    const siteIndex = await getSiteIndex(dir);
+    const malformed = {
+      config: { mode: "panes" as const, search: { enabled: true }, hide: [] },
+      issues: [],
+    };
+    const { html } = await renderPage({
+      contentDir: dir,
+      pagePath: "/intro",
+      source: "# Intro",
+      siteIndex,
+      config: defaultConfig,
+      embeddedFiles: [],
+      tree,
+      navConfig: malformed as any,
+    });
+    expect(html).toContain('class="sidebar-nav nav-tree"');
+  });
 });
