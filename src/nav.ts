@@ -94,6 +94,85 @@ export async function buildNavTree(contentDir: string): Promise<NavNode[]> {
   return tree;
 }
 
+export interface RenderPanesOptions {
+  panes: number;      // 2-4
+  labels?: string[];  // optional pane headers
+}
+
+/** Return the ancestor chain (array of NavNode) from tree root to the node whose path === currentPath. */
+function findAncestors(nodes: NavNode[], currentPath: string): NavNode[] | null {
+  for (const node of nodes) {
+    if (node.path === currentPath) return [node];
+    if (node.isDir && node.children) {
+      const sub = findAncestors(node.children, currentPath);
+      if (sub) return [node, ...sub];
+    }
+  }
+  return null;
+}
+
+export function renderPanesNav(
+  tree: NavNode[],
+  currentPath: string,
+  options: RenderPanesOptions,
+): string {
+  const { panes } = options;
+  const labels = options.labels && options.labels.length === panes ? options.labels : null;
+
+  // Walk the ancestor chain so we know which node is "active" at each depth.
+  const ancestors = findAncestors(tree, currentPath) ?? [];
+
+  // Build each pane: depth i shows the nodes at level i, where "level" is determined
+  // by the active ancestor chain.
+  const paneHtmls: string[] = [];
+
+  for (let depth = 0; depth < panes; depth++) {
+    // Determine which nodes belong in this pane.
+    let nodes: NavNode[];
+    if (depth === 0) {
+      nodes = tree;
+    } else {
+      // The parent at depth-1 is ancestors[depth-1], or fall back to first node.
+      const parentNode = ancestors[depth - 1];
+      if (parentNode && parentNode.isDir && parentNode.children) {
+        nodes = parentNode.children;
+      } else if (!parentNode) {
+        // Ancestor chain is shorter than depth — fall back to first dir at previous depth.
+        const prevNodes = depth === 1 ? tree : (ancestors[depth - 2]?.children ?? []);
+        const firstDir = prevNodes.find((n) => n.isDir && n.children);
+        nodes = firstDir?.children ?? [];
+      } else {
+        nodes = [];
+      }
+    }
+
+    // The active node at this depth (if any).
+    const activeNode = ancestors[depth];
+
+    let labelHtml = "";
+    if (labels) {
+      labelHtml = `<div class="rr-pane-label">${escapeHtml(labels[depth]!)}</div>`;
+    }
+
+    let listHtml = `<ul class="rr-pane" data-pane-depth="${depth}">`;
+    for (const node of nodes) {
+      const isActive = activeNode ? node.path === activeNode.path : false;
+      const ariaCurrent = isActive ? ' aria-current="page"' : "";
+      const searchLabel = escapeHtml(node.name);
+      const dataPath = escapeHtml(node.path);
+      const inner = node.isDir
+        ? `<span>${escapeHtml(node.name)}</span>`
+        : `<a href="${dataPath}">${escapeHtml(node.name)}</a>`;
+      listHtml += `<li class="rr-pane-row" data-search-label="${searchLabel}" data-path="${dataPath}"${ariaCurrent}>${inner}</li>`;
+    }
+    listHtml += `</ul>`;
+
+    paneHtmls.push(labelHtml + listHtml);
+  }
+
+  return `<nav class="sidebar-nav rr-panes" data-panes="${panes}">${paneHtmls.join("")}</nav>`;
+}
+
 export function renderNav(tree: NavNode[], currentPath: string): string {
   return `<nav class="sidebar-nav nav-tree">${renderNodes(tree, currentPath)}</nav>`;
 }
