@@ -18,12 +18,23 @@ export function mountPanes() {
   const nav = document.querySelector("nav.sidebar-nav.rr-panes");
   if (!nav) return;
 
-  // 3. Inject pinned search input above first pane wrapper
+  // 3. Inject pinned search input above pane wrappers, then wrap wrappers
+  //    in a .rr-panes-row flex container so they sit side-by-side below
+  //    the full-width search input.
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.className = "rr-pane-search";
   searchInput.placeholder = "Search…";
   nav.insertBefore(searchInput, nav.firstChild);
+
+  // Move all .rr-pane-wrapper elements into a new .rr-panes-row container.
+  const panesRow = document.createElement("div");
+  panesRow.className = "rr-panes-row";
+  const wrappers = Array.from(nav.querySelectorAll(".rr-pane-wrapper"));
+  for (const w of wrappers) {
+    panesRow.appendChild(w);
+  }
+  nav.appendChild(panesRow);
 
   // Gather all pane lists
   const paneUls = Array.from(nav.querySelectorAll(".rr-pane"));
