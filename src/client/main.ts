@@ -8,3 +8,5 @@ import "./search";
 import "./mobile";
 import "./quiz";
 import "./site-search";
+import { mountPanes } from "./panes";
+mountPanes();
