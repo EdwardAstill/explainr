@@ -2,6 +2,7 @@ version: 1
 plan:
   slug: opt-in-pane-nav
   prose: .warden/plans/2026-05-06-opt-in-pane-nav.md
+  status: approved
   goal: Let a content folder opt into multi-pane drill-down sidebar via a one-line .readrun/nav.yaml; default tree mode unchanged; pinned search reorders all panes simultaneously
 
 nodes:
