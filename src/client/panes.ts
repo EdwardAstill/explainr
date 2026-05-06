@@ -21,6 +21,8 @@ export function mountPanes() {
   // 3. Inject pinned search input above pane wrappers, then wrap wrappers
   //    in a .rr-panes-row flex container so they sit side-by-side below
   //    the full-width search input.
+  if (nav.querySelector('.rr-panes-row')) return;
+
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.className = "rr-pane-search";

@@ -55,8 +55,8 @@ export const panesStyles = `
     [data-panes="4"] .rr-pane-wrapper[data-pane-depth="2"] { flex: 0 0 160px; min-width: 160px; }
 
     /* 3-pane (default): depth 1 fixed */
-    [data-panes="3"] .rr-pane-wrapper[data-pane-depth="1"],
-    .rr-pane-wrapper[data-pane-depth="1"] { flex: 0 0 150px; min-width: 150px; }
+    [data-panes="3"] .rr-pane-wrapper[data-pane-depth="1"] { flex: 0 0 150px; min-width: 150px; }
+    .rr-panes .rr-pane-wrapper[data-pane-depth="1"] { flex: 0 0 150px; min-width: 150px; }
 
     /* ── Pane list ── */
     .rr-pane {
@@ -99,7 +99,7 @@ export const panesStyles = `
     .rr-pane-row.dim { opacity: 0.5; }
 
     .rr-pane-row mark {
-      background: rgba(9, 105, 218, 0.18);
+      background: var(--color-highlight-bg);
       color: inherit;
       padding: 0 1px;
       border-radius: 2px;

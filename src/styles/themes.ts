@@ -4,6 +4,7 @@ export const themeStyles = `
       --color-bg: #0d1117; --color-sidebar-bg: #161b22; --color-border: #30363d;
       --color-text: #e6edf3; --color-text-muted: #8b949e; --color-link: #58a6ff;
       --color-active-bg: #1f2a38; --color-code-bg: #161b22;
+      --color-highlight-bg: rgba(88, 166, 255, 0.25);
     }
     [data-theme="solarized"] {
       --color-bg: #fdf6e3; --color-sidebar-bg: #eee8d5; --color-border: #d6ccb1;
@@ -14,26 +15,31 @@ export const themeStyles = `
       --color-bg: #2e3440; --color-sidebar-bg: #3b4252; --color-border: #434c5e;
       --color-text: #d8dee9; --color-text-muted: #616e88; --color-link: #88c0d0;
       --color-active-bg: #434c5e; --color-code-bg: #3b4252;
+      --color-highlight-bg: rgba(136, 192, 208, 0.25);
     }
     [data-theme="dracula"] {
       --color-bg: #282a36; --color-sidebar-bg: #21222c; --color-border: #44475a;
       --color-text: #f8f8f2; --color-text-muted: #6272a4; --color-link: #8be9fd;
       --color-active-bg: #44475a; --color-code-bg: #21222c;
+      --color-highlight-bg: rgba(139, 233, 253, 0.22);
     }
     [data-theme="monokai"] {
       --color-bg: #272822; --color-sidebar-bg: #1e1f1c; --color-border: #3e3d32;
       --color-text: #f8f8f2; --color-text-muted: #75715e; --color-link: #66d9ef;
       --color-active-bg: #3e3d32; --color-code-bg: #1e1f1c;
+      --color-highlight-bg: rgba(102, 217, 239, 0.22);
     }
     [data-theme="gruvbox"] {
       --color-bg: #282828; --color-sidebar-bg: #3c3836; --color-border: #504945;
       --color-text: #ebdbb2; --color-text-muted: #928374; --color-link: #83a598;
       --color-active-bg: #504945; --color-code-bg: #3c3836;
+      --color-highlight-bg: rgba(131, 165, 152, 0.25);
     }
     [data-theme="catppuccin"] {
       --color-bg: #1e1e2e; --color-sidebar-bg: #181825; --color-border: #313244;
       --color-text: #cdd6f4; --color-text-muted: #6c7086; --color-link: #89b4fa;
       --color-active-bg: #313244; --color-code-bg: #181825;
+      --color-highlight-bg: rgba(137, 180, 250, 0.25);
     }
 
     /* highlight.js — Light (default) */

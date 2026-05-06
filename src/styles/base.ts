@@ -12,6 +12,7 @@ export const baseStyles = `
       --color-link: #0969da;
       --color-active-bg: #dcdcdc;
       --color-code-bg: #f6f8fa;
+      --color-highlight-bg: rgba(9, 105, 218, 0.18);
       --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     }
