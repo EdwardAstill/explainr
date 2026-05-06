@@ -26,7 +26,7 @@ export const DEFAULT_NAV_CONFIG: NavConfig = {
   hide: ["**/plan.md", "**/glossary.md"],
 };
 
-const KNOWN_FIELDS = new Set(["panes", "labels", "search", "hide"]);
+const KNOWN_FIELDS = new Set(["mode", "panes", "labels", "search", "hide"]);
 
 function defaultConfig(): NavConfig {
   return {
@@ -58,6 +58,15 @@ export function parseNavConfig(text: string | null | undefined): NavConfigLoad {
 
   const raw = parsed as Record<string, unknown>;
   const config = defaultConfig();
+
+  // mode (informational; actual mode is derived from panes)
+  if ("mode" in raw) {
+    const v = raw.mode;
+    if (v !== "tree" && v !== "panes") {
+      issues.push({ kind: "wrong_type", field: "mode", message: `mode must be "tree" or "panes", got ${JSON.stringify(v)}` });
+    }
+    // silently accept valid values — mode is derived from panes, not this field
+  }
 
   // panes
   if ("panes" in raw) {

@@ -39,4 +39,15 @@ describe("parseNavConfig", () => {
     const r = parseNavConfig("panes: 2\nbogus: true");
     expect(r.issues.find(i => i.kind === "unknown_field")?.field).toBe("bogus");
   });
+
+  it("accepts `mode` as a valid YAML key without warning (derived from panes anyway)", () => {
+    const r = parseNavConfig("mode: panes\npanes: 3");
+    expect(r.issues).toEqual([]);
+    expect(r.config.mode).toBe("panes");
+  });
+
+  it("flags invalid mode values", () => {
+    const r = parseNavConfig("mode: weird");
+    expect(r.issues.find(i => i.kind === "wrong_type")?.field).toBe("mode");
+  });
 });
