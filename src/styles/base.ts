@@ -152,7 +152,7 @@ export const baseStyles = `
       transition: background 0.12s;
     }
     .rr-focus-crumbs.empty { display: none; }
-    .rr-focus-crumbs.has-focus { background: var(--color-highlight-bg); }
+    .rr-focus-crumbs.has-focus { background: var(--color-active-bg); }
     .rr-crumb {
       font-size: 11.5px;
       color: var(--color-text-muted);
@@ -160,7 +160,7 @@ export const baseStyles = `
       padding: 2px 6px;
       background: transparent;
       border: none;
-      font-family: var(--font-body);
+      font-family: var(--font-mono);
     }
     .rr-crumb:hover { color: var(--color-text); background: var(--color-border); }
     .rr-crumb.current { color: var(--color-link); font-weight: 600; cursor: default; }
@@ -175,6 +175,7 @@ export const baseStyles = `
       padding: 2px 6px;
       font-size: 14px;
       line-height: 1;
+      font-family: var(--font-mono);
     }
     .rr-crumb-clear:hover { color: var(--color-link); background: var(--color-border); }
 

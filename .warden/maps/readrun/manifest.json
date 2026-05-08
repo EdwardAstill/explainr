@@ -1,0 +1,309 @@
+{
+  "files": {
+    "readrun-docs/.readrun/scripts/counter.jsx": {
+      "content_hash": "dcd7205e60abb484a8222fcdf0fc8b37d30a0f9f1aa294592581a9c8db149fc7",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "readrun-docs/.readrun/scripts/student-card.jsx": {
+      "content_hash": "580a87290039624dec7a6832a273b9a3db5bc16bef6a7547c84d97b89a96088f",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "readrun-docs/.readrun/scripts/variables.py": {
+      "content_hash": "2fe81c94af002f792519bfc459569ad0c72b3dd0a8d0eb23e7674ae029a91f4f",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/blocks.test.ts": {
+      "content_hash": "30ce1d71b25dce9cc5ad1b96364887a670bfed8b10cdad2a9d55f10ca2c53331",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/blocks.ts": {
+      "content_hash": "307b433a9ef1abf07957473c16facd8690ced79e55d0354d7cf41a1b6ce2dfc3",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/build.ts": {
+      "content_hash": "8b02c620d32658d67f6a8f92a40ca9544f41d7ba5112805dc365de17af90f096",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/clean.ts": {
+      "content_hash": "75cd6e21c9155f8cb9f536ce7d28d226113ead50fa06504c077c1ee15292e2c6",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/cli.ts": {
+      "content_hash": "ab50e86ae6b6c9dfe74357eade7ef5af5daf3dd0ef14ec7414d5fddbb3012cc9",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/client/code-ui.ts": {
+      "content_hash": "ae5986e7738be5a91271866ee85e3481980904c17536c224971780792734a027",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/dom-utils.ts": {
+      "content_hash": "d70fd76314716e37acd4e9304dbf3c6fcb0ba7eb73a3e35cd1423a609b75a25e",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/execution.ts": {
+      "content_hash": "7de5c746573c53aa6591670990dba7a30924bdc1e2838acfd5dc6cc6c3f6f950",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/focus.ts": {
+      "content_hash": "ccbc18b00b790f443361aed7d11bb7f98f53c02d192fe68f58ab60a11fccb247",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/index.ts": {
+      "content_hash": "c5b56821d0795759dac4f552fa93d54309b2888da65857e56b1e37005fc761c2",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/main.ts": {
+      "content_hash": "708e21f7e522d5673200dd68067d2ad198e059dc15bcd10bfa4198783c10421a",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/mobile.ts": {
+      "content_hash": "151dc9a923c5fe1e34f5e72f40c923a440d3ca948b3c008693b1bc23769c5b38",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/navigation.ts": {
+      "content_hash": "63341bd31995cee0fc071101e33cc757f0865e662bdfaf9b4f1f8a59f47360f3",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/quiz.ts": {
+      "content_hash": "d89756d0621890100db4902e4352c605cb74cd8fdc7ecbfed502a00b011bbf33",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/search.ts": {
+      "content_hash": "c00920c7dd512cd2928bee46e16b7d4ff6dbb3a60d7d6254201e6a5b459d35a4",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/settings.ts": {
+      "content_hash": "b33b7500b24c2fece5ff0b10c501dbbca2021c3fde70c9b7d9cf845e51f6038a",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/site-search.test.ts": {
+      "content_hash": "86ddeb8d90021f6a1dbf65ce06430d69461794511e83a374a38fbe2256d08dc3",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/site-search.ts": {
+      "content_hash": "cd9354595a8a25504d2277847edbb125b1cf7dd5928e3f3835153aad871dae32",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/clientBundle.ts": {
+      "content_hash": "6312ce3b683093a9651c5b69b98bb3dfbfd8355736b5debfbbb74a423bef37af",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/config.ts": {
+      "content_hash": "1f3c02443e8605cdcb8bde8134f9115ff411eb9ff5629f0bafc1aae21e707b6d",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/doctor.ts": {
+      "content_hash": "5d3b5fcc4e8e472f52bc18f1c9d8235e97554db4b1c5399336314234fa9f1e80",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/frontmatter.test.ts": {
+      "content_hash": "a9e039c573c22ae935c46f4536f8b60d076d50d66b6f87312d2b99dcf73c0303",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/frontmatter.ts": {
+      "content_hash": "54101746735fe83e8d9431f1f1d94da7a018c620f745dc3726e16d58e3913dd8",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/guide.ts": {
+      "content_hash": "509f2072be51cc2ed5d48a90f2d36d7e362ee9a4a6974c9d991e8a640a3405d2",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/init.test.ts": {
+      "content_hash": "d4699d20e74fb1cef9002ce8ab057db712d8b5d272deb76c3bad132a7aecb84a",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/init.ts": {
+      "content_hash": "ea3378b1f4be241bb88412ed208a0e9c636543b5eafb4f58de6aa111031cf313",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/landing.ts": {
+      "content_hash": "59d66e34d5ea3a176ae2795d5775f11891a927e54054db19f99129d406a26272",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/manifest.test.ts": {
+      "content_hash": "8fe8291416204f54df2848a2fb6b5b07d90d9fe55b749efadbbcf6fa4aacae1e",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/manifest.ts": {
+      "content_hash": "32a00450c73021e3628420793e3d5ae2aa2271822a006eddeb39cf924ae9aee0",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/markdown.ts": {
+      "content_hash": "c7584b1493753f996465cb9d599a72e56ec70b8c8b8226a6b2f7523ade9388e0",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/nav.test.ts": {
+      "content_hash": "f426bc2ada321c17b8f9e6065f2bba0a5052b106abe7ee9b4245774576d06657",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/nav.ts": {
+      "content_hash": "e84fe3e8d7385e0c5f0b5e8b5ad9d25aeb93a0b8c5629efe3b2fa56ac0f17ad1",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/new.ts": {
+      "content_hash": "ba8e68954ccfdab30edd1de5921cbccc16cdc49988091cdddb47ed3d5302b22d",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/queryBlock.ts": {
+      "content_hash": "97de1c7ae5b273e475f6bd5a0d4d845281e7e6fe9f0a41995d4f47eb11f3f824",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/quiz/idGenerator.ts": {
+      "content_hash": "eaa1cf70a7a951a79a3c9c22930683dc2197184a8b57ddcb7e14a0e091796a50",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseFreetextAnswer.test.ts": {
+      "content_hash": "f506ee9032220dc926eb9be5ccbc201b01d1d1bdf0fa3147472b8e0df6c50d69",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseFreetextAnswer.ts": {
+      "content_hash": "37d430eb7036e3557f3f5de8e146a32a9e94ef1d6769e947c0ecbf3fbf40eadc",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseMarkdown.test.ts": {
+      "content_hash": "55488740986d9370ec9e56e8bab217266e736f4a785dd8fb4f00f9df96f9ded6",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseMarkdown.ts": {
+      "content_hash": "031b3e5dd51b76b4c168c8b5229146b278d2aa8db932b4d08857757c3c3ff705",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseMarkdownFrontmatter.ts": {
+      "content_hash": "c1a6fa2ffdc71fc392afdf8395e74c728b1d11d8e6d3c39f07b3c865a2b71a84",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseMarkdownGroup.ts": {
+      "content_hash": "a77389d0defe4f4a47ebe2a8bef043b569cf9cf72a881a904225e117e7c3c587",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseMarkdownItem.ts": {
+      "content_hash": "95d54182702f4f182400c2a0fb0f0caa0913cc14f8a74acc0ec5ddef709b9c07",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/parseQuizBlock.ts": {
+      "content_hash": "110d677126325f6fe55cb1c199bd51cc0cec80830ab12a99335b935b4d8b3c01",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/renderQuizForClient.ts": {
+      "content_hash": "14902e2b5c47607c8b51bb5eb16108a348d4a45ea56f57f70188c7b7a503058c",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/types.ts": {
+      "content_hash": "012b5e453e9e82d6881e9e217e1a9668b8e8b666d299e67807ff461444aa18ff",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/quiz/validateQuiz.ts": {
+      "content_hash": "12de45b295caa7e35ddd24a4d35928608eed536aaa815c125633b90b73660c98",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/renderPage.ts": {
+      "content_hash": "18cb188bb71cd35c6c43ffc1fb90b3484a67638e5730cbfd09e9697b817fe8a3",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/searchIndex.ts": {
+      "content_hash": "b30ae7e848fa3dd6f5c3807cdc5f40cc68872b4e7e95806287fda56b5782cc5f",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/serve-static.ts": {
+      "content_hash": "410774d168d1e141a9062cbf2d56a7dc67ae7cdfc4a975d5ff2b68bfa4f624e8",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/server.test.ts": {
+      "content_hash": "65463038fd0406c8218b853e0d5febc8c38fb58697eb73ac194366398f79adaf",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/server.ts": {
+      "content_hash": "09960598441cdfb39ba18ad44e54ec999b8f8cae2b1d666e0ced7fd00a708635",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/share.ts": {
+      "content_hash": "5719ce9449c6d9bd621422a657434122575a3eec4d118ea9031d83861ee0b230",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/shell.ts": {
+      "content_hash": "828562ed24eaf7d0eedbd2b33b79a7a5d999a77906c3938f946b3062d1587adc",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/siteIndex.ts": {
+      "content_hash": "7b29c6a595d7c3d7f325386977e484e8517d0c75400baf69c5ffdc4c50851b7b",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/styles/base.ts": {
+      "content_hash": "92533c9fa7e85d7066059d3233a984fb3f06e21e016bc690a158b79f644c185b",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/styles/exec-blocks.ts": {
+      "content_hash": "7baf16949a0d920e228bed59801f538200456cc9b4f67d488e7e49c45c0d9c04",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/styles/index.ts": {
+      "content_hash": "eb8b229f4b2b945904b854c4ab49b2c901ef961f2a84dd78528f6d5a0b7db5e7",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/styles/mobile.ts": {
+      "content_hash": "a5711e8eea8eb488db3842ded5280bfaa19f8de3f6cd6ae8b8ef51d456ee90a2",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/styles/quiz.ts": {
+      "content_hash": "efa89868df74829d18715a26634ae2fac2e6c57c86993848dc3c5221aa39666b",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/styles/themes.ts": {
+      "content_hash": "db56541671c3142cb53617e551c77e541b3096fc29b01c58a3695ba1e3f9d8fb",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/styles/ui.ts": {
+      "content_hash": "67f548a59fa5636b8f23d8ec1b90b8d3353ccf4870a38dce710363354ddfbac2",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/synthetic-pages.ts": {
+      "content_hash": "1a4f01f0df81817c1107e9a272eafed8893f481e87a9fc6e8425d70c1c5a23ed",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/template.ts": {
+      "content_hash": "6485f7ed2f10867493745623329f8c04923db2405c874a5153529f8f05b1426f",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/utils.test.ts": {
+      "content_hash": "e5d977d4934fa855f1a27f590368b75ad40f5f4f17e962be810ab7943d8e65f8",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/utils.ts": {
+      "content_hash": "e89adcbfaa0fd5e90d4f6e940587c7b83d8729f7930cfac115f6aeb466c09bcd",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/validate.test.ts": {
+      "content_hash": "b08ce5fbce0ce38b7df867aa7b440a275e184e61722883c2fe6d6e95f1bc2ecb",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/validate.ts": {
+      "content_hash": "dcc7fe2ba683355d9e86d2dad84314983bdaae6f2ef2f3be9b4c77995c97cc2c",
+      "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/watch.test.ts": {
+      "content_hash": "40caaca4c803496e207341baaaf7ecfee39a4314e3d658900465e11dbead6a8d",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/watch.ts": {
+      "content_hash": "af3246955c9a7f18fd42e4f092630b3e5f64b98b92a491d074f1803bcd343735",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    },
+    "src/wikilinks.ts": {
+      "content_hash": "aef00500ccdb349d614126cf068a3d991c20a00b143d3f9fdc4145ef3af6935a",
+      "last_indexed": "2026-05-07T10:49:28+00:00"
+    }
+  },
+  "grammar_versions": {
+    "javascript": "unknown",
+    "python": "unknown",
+    "rust": "unknown",
+    "typescript": "unknown"
+  },
+  "languages": [
+    "python",
+    "typescript",
+    "javascript",
+    "rust"
+  ],
+  "last_built": "2026-05-07T10:49:29+00:00"
+}
