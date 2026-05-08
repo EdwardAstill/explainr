@@ -19,6 +19,94 @@ const md = new MarkdownIt({
   },
 });
 
+const TABLE_DISPLAY_MODES = new Set(["auto", "scroll", "sticky", "cards"]);
+
+function addTokenClass(token: any, className: string): void {
+  const idx = token.attrIndex("class");
+  if (idx < 0) {
+    token.attrPush(["class", className]);
+    return;
+  }
+  const current = token.attrs[idx][1] || "";
+  const classes = current.split(/\s+/).filter(Boolean);
+  if (!classes.includes(className)) {
+    token.attrs[idx][1] = [...classes, className].join(" ");
+  }
+}
+
+function inlineText(token: any): string {
+  if (!token) return "";
+  if (!Array.isArray(token.children)) return String(token.content ?? "").trim();
+  return token.children
+    .filter((child: any) => child.type === "text" || child.type === "code_inline")
+    .map((child: any) => child.content)
+    .join("")
+    .trim();
+}
+
+function tableModeDirective(token: any): string | null {
+  if (token?.type !== "html_block") return null;
+  const match = /^\s*<!--\s*rr-table:\s*([a-z-]+)\s*-->\s*$/i.exec(String(token.content ?? ""));
+  if (!match) return null;
+
+  const mode = match[1]!.toLowerCase();
+  return TABLE_DISPLAY_MODES.has(mode) ? mode : null;
+}
+
+function enhanceTableTokens(tokens: any[]): void {
+  for (let tableStart = 0; tableStart < tokens.length; tableStart++) {
+    if (tokens[tableStart]?.type !== "table_open") continue;
+
+    const tableEnd = tokens.findIndex((token, idx) => idx > tableStart && token.type === "table_close");
+    if (tableEnd < 0) continue;
+
+    addTokenClass(tokens[tableStart], "rr-table");
+    const mode = tableModeDirective(tokens[tableStart - 1]);
+    if (mode) {
+      tokens[tableStart].meta = { ...(tokens[tableStart].meta || {}), readrunTableMode: mode };
+    }
+
+    const headers: string[] = [];
+    let inHead = false;
+    let inBody = false;
+    let col = 0;
+
+    for (let i = tableStart + 1; i < tableEnd; i++) {
+      const token = tokens[i]!;
+      if (token.type === "thead_open") inHead = true;
+      if (token.type === "thead_close") inHead = false;
+      if (token.type === "tbody_open") inBody = true;
+      if (token.type === "tbody_close") inBody = false;
+      if (inHead && token.type === "th_open") headers.push(inlineText(tokens[i + 1]));
+      if (inBody && token.type === "tr_open") col = 0;
+      if (inBody && token.type === "td_open") {
+        token.attrSet("data-label", headers[col] || `Column ${col + 1}`);
+        col++;
+      }
+    }
+
+    tableStart = tableEnd;
+  }
+}
+
+md.core.ruler.push("readrun_table_labels", (state: any) => {
+  enhanceTableTokens(state.tokens);
+});
+
+const defaultTableOpen = md.renderer.rules.table_open || ((tokens: any, idx: any, options: any, _env: any, self: any) => self.renderToken(tokens, idx, options));
+const defaultTableClose = md.renderer.rules.table_close || ((tokens: any, idx: any, options: any, _env: any, self: any) => self.renderToken(tokens, idx, options));
+
+md.renderer.rules.table_open = (tokens: any, idx: any, options: any, env: any, self: any) => {
+  addTokenClass(tokens[idx], "rr-table");
+  const tableMode = tokens[idx].meta?.readrunTableMode;
+  const modeAttr = tableMode ? ` data-table-mode="${tableMode}"` : "";
+  return `<div class="rr-table-wrap"${modeAttr} tabindex="0">${defaultTableOpen(tokens, idx, options, env, self)}`;
+};
+
+md.renderer.rules.table_close = (tokens: any, idx: any, options: any, env: any, self: any) => {
+  return `${defaultTableClose(tokens, idx, options, env, self)}</div>`;
+};
+
 let katexEnsured = false;
 async function ensureKatex(): Promise<void> {
   if (katexEnsured) return;

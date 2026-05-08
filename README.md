@@ -37,6 +37,7 @@ See `rr --help` for the full command list or `rr <command> --help` for per-comma
 - **In-page search** -- press `/` to search the current page with highlighted matches and navigation
 - **Context menu** -- right-click in the main content for quick access to Search and Settings
 - **Table of contents** -- auto-generated TOC sidebar from headings, with collapsible sections and scroll spy
+- **Wide tables** -- tables can use Auto, Scroll, Sticky, or Cards display modes from Settings. Auto keeps the first column sticky on desktop and uses card rows on mobile. Put `<!-- rr-table: scroll -->` or `<!-- rr-table: sticky -->` immediately above a table to override that table
 - **Themes** -- 8 built-in themes (Light, Dark, Solarized, Nord, Dracula, Monokai, Gruvbox, Catppuccin) with a visual theme picker
 - **Keyboard shortcuts** -- fully configurable via `~/.config/readrun/settings.toml`, including chord bindings (e.g. `g h` for home). Press `?` to see all shortcuts
 - **Link navigation** -- markdown links between `.md` files are automatically rewritten for site navigation

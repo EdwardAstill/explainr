@@ -9,3 +9,4 @@ import "./mobile";
 import "./quiz";
 import "./site-search";
 import "./focus";
+import "./table-scroll";

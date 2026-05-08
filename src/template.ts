@@ -33,6 +33,15 @@ const settingsHtml = `
         <input class="settings__range" id="width-range" type="range" min="500" max="1400" step="20" value="880">
       </div>
       <div class="settings__section">
+        <span class="settings__label">Table view</span>
+        <div class="settings__segmented" role="group" aria-label="Table view">
+          <button class="settings__segmented-btn" data-table-mode-choice="auto">Auto</button>
+          <button class="settings__segmented-btn" data-table-mode-choice="scroll">Scroll</button>
+          <button class="settings__segmented-btn" data-table-mode-choice="sticky">Sticky</button>
+          <button class="settings__segmented-btn" data-table-mode-choice="cards">Cards</button>
+        </div>
+      </div>
+      <div class="settings__section">
         <div class="settings__toggle-row">
           <span class="settings__label">Show sidebar</span>
           <button class="settings__switch settings__switch--on" id="sidebar-toggle" role="switch" aria-checked="true">

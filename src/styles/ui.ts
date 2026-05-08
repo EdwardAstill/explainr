@@ -357,6 +357,35 @@ export const uiStyles = `
 
     .settings__range { width: 100%; accent-color: var(--color-link); cursor: pointer; }
 
+    .settings__segmented {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .settings__segmented-btn {
+      background: var(--color-sidebar-bg);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 12px;
+      padding: 5px 6px;
+      transition: all 0.12s;
+    }
+
+    .settings__segmented-btn:hover {
+      border-color: var(--color-text-muted);
+      color: var(--color-text);
+    }
+
+    .settings__segmented-btn--active {
+      background: var(--color-active-bg);
+      border-color: var(--color-link);
+      color: var(--color-text);
+      font-weight: 600;
+    }
+
     .settings__toggle-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
 
     .settings__switch {

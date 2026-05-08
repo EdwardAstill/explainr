@@ -5,13 +5,16 @@ import { openOverlay, closeAllOverlays } from "./dom-utils";
 const STORAGE_KEY = "readrun-settings";
 export const THEMES = ["light", "dark", "solarized", "nord", "dracula", "monokai", "gruvbox", "catppuccin"];
 const THEME_LABELS = { light: "Light", dark: "Dark", solarized: "Solarized", nord: "Nord", dracula: "Dracula", monokai: "Monokai", gruvbox: "Gruvbox", catppuccin: "Catppuccin" };
-const defaults = { fontSize: 16, contentWidth: 880, showSidebar: true, theme: "light", focusMode: false };
+const TABLE_MODES = ["auto", "scroll", "sticky", "cards"];
+const defaults = { fontSize: 16, contentWidth: 880, showSidebar: true, theme: "light", focusMode: false, tableMode: "auto" };
 
 export const FONT_SIZES = [12, 14, 16, 18, 20, 24];
 
 export function loadSettings() {
   try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
+    const loaded = { ...defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
+    if (!TABLE_MODES.includes(loaded.tableMode)) loaded.tableMode = defaults.tableMode;
+    return loaded;
   } catch {
     return { ...defaults };
   }
@@ -52,6 +55,14 @@ export function applySettings(s) {
     card.classList.toggle("theme-card--active", card.dataset.themeChoice === s.theme);
   });
 
+  if (!TABLE_MODES.includes(s.tableMode)) s.tableMode = defaults.tableMode;
+  document.documentElement.dataset.tableMode = s.tableMode;
+  document.querySelectorAll("[data-table-mode-choice]").forEach((button) => {
+    const active = button.dataset.tableModeChoice === s.tableMode;
+    button.classList.toggle("settings__segmented-btn--active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+
   if (s.focusMode) document.body.dataset.focus = "true";
   else delete document.body.dataset.focus;
 }
@@ -84,6 +95,14 @@ document.getElementById("sidebar-toggle")?.addEventListener("click", () => {
   settings.showSidebar = !settings.showSidebar;
   saveSettings(settings);
   applySettings(settings);
+});
+
+document.querySelectorAll("[data-table-mode-choice]").forEach((button) => {
+  button.addEventListener("click", () => {
+    settings.tableMode = button.dataset.tableModeChoice;
+    saveSettings(settings);
+    applySettings(settings);
+  });
 });
 
 function cycleTheme(dir) {
