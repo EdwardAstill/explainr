@@ -50,4 +50,10 @@ describe("renderVideoViewer", () => {
     expect(html).toContain("rejects");
     expect(html).not.toContain("<video");
   });
+
+  test("rejects absolute path", () => {
+    const html = renderVideoViewer("/etc/passwd.mp4", []);
+    expect(html).toContain("rejects");
+    expect(html).not.toContain("<video");
+  });
 });
