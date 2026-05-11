@@ -438,6 +438,32 @@ const todayCmd = defineCommand({
   },
 });
 
+const demoCmd = defineCommand({
+  meta: { name: "demo", description: "Serve the built-in readrun demo site." },
+  args: { ...serverArgs },
+  async run({ args }) {
+    const { resolve: res } = await import("path");
+    const demoDir = res(import.meta.dirname, "..", "readrun-docs");
+    try { statSync(demoDir); } catch {
+      console.error("Demo folder not found — is readrun installed from source?");
+      process.exit(1);
+    }
+    await addRecent(demoDir);
+    const opts = httpOpts(args);
+    const { startServer } = await import("./server");
+    const handle = await startServer({ contentDir: demoDir, port: opts.port, host: opts.host });
+    await finishHttp({ url: `http://${handle.host}:${handle.port}`, noOpen: opts.noOpen, banner: `\nDemo at http://${handle.host}:${handle.port}` });
+  },
+});
+
+const menuCmd = defineCommand({
+  meta: { name: "menu", description: "Interactive TUI menu to pick a command." },
+  async run() {
+    const { runMenu } = await import("./menu");
+    await runMenu();
+  },
+});
+
 const reinstallCmd = defineCommand({
   meta: { name: "reinstall", description: "Reinstall readrun dependencies in place (runs `bun install` in the readrun install dir). Does not pull new code." },
   async run() {
@@ -458,7 +484,7 @@ const reinstallCmd = defineCommand({
 // ─────────────────────────────────────────────────────────────
 
 const KNOWN = new Set([
-  "serve", "dashboard", "watch", "init", "validate", "build",
+  "serve", "demo", "menu", "dashboard", "watch", "init", "validate", "build",
   "preview", "new", "today", "share", "clean", "doctor", "guide", "reinstall",
   "help", "--help", "-h", "--version", "-v",
 ]);
@@ -487,6 +513,8 @@ const main = defineCommand({
   },
   subCommands: {
     serve: serveCmd,
+    demo: demoCmd,
+    menu: menuCmd,
     dashboard: dashboardCmd,
     watch: watchCmd,
     init: initCmd,
@@ -502,9 +530,13 @@ const main = defineCommand({
     reinstall: reinstallCmd,
   },
   async run({ args }) {
-    // `rr` with no subcommand — fall back to dashboard so the bare command stays useful.
+    // `rr` with no subcommand — serve the current directory.
     if ((args._ as string[]).length === 0) {
-      await runDashboard({ port: 3001, host: "localhost", noOpen: false });
+      const contentDir = process.cwd();
+      await addRecent(contentDir);
+      const { startServer } = await import("./server");
+      const handle = await startServer({ contentDir, port: 3001, host: "localhost" });
+      await finishHttp({ url: `http://${handle.host}:${handle.port}`, noOpen: false });
     }
   },
 });
