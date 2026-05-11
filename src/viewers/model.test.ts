@@ -51,5 +51,6 @@ describe("renderModelViewer", () => {
   test("rejects absolute path", () => {
     const html = renderModelViewer("/etc/passwd", "stl", []);
     expect(html).toContain("rejects");
+    expect(html).not.toContain("model-viewer");
   });
 });

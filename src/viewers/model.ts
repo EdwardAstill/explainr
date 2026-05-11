@@ -7,7 +7,8 @@ function escAttr(s: string): string {
 }
 
 function detectFormat(filename: string): ModelFormat {
-  const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  const dot = filename.lastIndexOf(".");
+  const ext = dot === -1 ? "" : filename.slice(dot).toLowerCase();
   if (ext === ".glb") return "glb";
   if (ext === ".gltf") return "gltf";
   return "stl";
@@ -24,7 +25,9 @@ export function renderModelViewer(src: string, _blockName: string, attrs: BlockA
 
   const format = detectFormat(src);
   const heightAttr = attrs.find(a => a.key === "height")?.value;
-  const height = typeof heightAttr === "string" ? clamp(parseInt(heightAttr, 10) || 480, 240, 1200) : 480;
+  const height = typeof heightAttr === "string" && /^\d+$/.test(heightAttr)
+    ? clamp(parseInt(heightAttr, 10), 240, 1200)
+    : 480;
   const controls = attrs.find(a => a.key === "controls")?.value !== "false";
   const url = `/_readrun/files/${escAttr(src)}`;
 
