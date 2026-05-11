@@ -14,7 +14,6 @@
 import { scoreItem } from "./site-search";
 
 const STORAGE_KEY = "rr:focus-path";
-const DBLCLICK_DELAY_MS = 230;
 
 interface FocusState {
   focus: string[]; // path segments (e.g. ["courses", "ai"])
@@ -267,33 +266,29 @@ export function mountFocus(): void {
 
   setFocus(focus);
 
-  // Click handlers on summary elements (folder rows).
-  let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+  // Left-click: toggle expand/collapse immediately.
+  // Double-click = 2 single clicks = 2 toggles = net no-op.
   nav.addEventListener("click", (e: MouseEvent) => {
     const summary = (e.target as Element).closest("summary");
     if (!summary || !nav.contains(summary)) return;
     const details = summary.parentElement as HTMLDetailsElement | null;
     if (!details || !details.matches("details[data-nav-path]")) return;
-
-    if (e.detail >= 2) {
-      // double-click: focus
-      e.preventDefault();
-      if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
-      const path = (details.dataset.navPath || "").replace(/^\/+/, "").split("/").filter(Boolean);
-      setFocus(path);
-      return;
-    }
-
-    // single-click: defer expand toggle to wait for possible double-click
     e.preventDefault();
-    if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
-    const wasOpen = details.open;
-    pendingTimer = setTimeout(() => {
-      pendingTimer = null;
-      details.open = !wasOpen;
-      syncToggleIcon(nav!, toggle);
-    }, DBLCLICK_DELAY_MS);
+    details.open = !details.open;
+    syncToggleIcon(nav!, toggle);
   });
+
+  // Right-click: enter/focus folder — suppress browser + sidebar context menus.
+  nav.addEventListener("contextmenu", (e: MouseEvent) => {
+    const summary = (e.target as Element).closest("summary");
+    if (!summary || !nav.contains(summary)) return;
+    const details = summary.parentElement as HTMLDetailsElement | null;
+    if (!details || !details.matches("details[data-nav-path]")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const path = (details.dataset.navPath || "").replace(/^\/+/, "").split("/").filter(Boolean);
+    setFocus(path);
+  }, { capture: true });
 
   toggle.addEventListener("click", () => {
     const open = anyOpen(nav!);

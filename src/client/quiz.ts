@@ -530,25 +530,6 @@ import { escapeHtml } from "./dom-utils";
       return { container: container };
     }
 
-    // --- Sidebar quiz loading ---
-
-    function loadQuiz(fileName) {
-      if (!mainContent) return;
-      mainContent.innerHTML = '<div class="quiz"><div class="quiz__header"><div class="quiz__title">Loading quiz...</div></div></div>';
-
-      fetch("/api/resources/quizzes/" + encodeURIComponent(fileName))
-        .then(function(r) {
-          if (!r.ok) throw new Error("Failed to load quiz");
-          return r.json();
-        })
-        .then(function(data) {
-          createQuizInstance(mainContent, data, false);
-        })
-        .catch(function(err) {
-          mainContent.innerHTML = '<article class="markdown-body"><p>Error: ' + escapeHtml(err.message) + '</p></article>';
-        });
-    }
-
     // --- Inline quiz auto-mount ---
 
     document.addEventListener("DOMContentLoaded", function() {

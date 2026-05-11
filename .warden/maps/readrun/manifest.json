@@ -45,16 +45,16 @@
       "last_indexed": "2026-05-07T10:49:29+00:00"
     },
     "src/client/focus.ts": {
-      "content_hash": "ccbc18b00b790f443361aed7d11bb7f98f53c02d192fe68f58ab60a11fccb247",
-      "last_indexed": "2026-05-07T10:49:29+00:00"
+      "content_hash": "c0fd2cd318551eed8eabe1f5f05e4aff50387faacc1f781b7ab52cf4658428c6",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/client/index.ts": {
       "content_hash": "c5b56821d0795759dac4f552fa93d54309b2888da65857e56b1e37005fc761c2",
       "last_indexed": "2026-05-07T10:49:29+00:00"
     },
     "src/client/main.ts": {
-      "content_hash": "708e21f7e522d5673200dd68067d2ad198e059dc15bcd10bfa4198783c10421a",
-      "last_indexed": "2026-05-07T10:49:29+00:00"
+      "content_hash": "d944a0522c7f62060e398f6d84dc015b98947edcdfc6c28636fc66d18fe8eac4",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/client/mobile.ts": {
       "content_hash": "151dc9a923c5fe1e34f5e72f40c923a440d3ca948b3c008693b1bc23769c5b38",
@@ -73,8 +73,8 @@
       "last_indexed": "2026-05-07T10:49:29+00:00"
     },
     "src/client/settings.ts": {
-      "content_hash": "b33b7500b24c2fece5ff0b10c501dbbca2021c3fde70c9b7d9cf845e51f6038a",
-      "last_indexed": "2026-05-07T10:49:29+00:00"
+      "content_hash": "56e1998784965101b09fab35e703abc773a99796f286a74d42f25a954b52b658",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/client/site-search.test.ts": {
       "content_hash": "86ddeb8d90021f6a1dbf65ce06430d69461794511e83a374a38fbe2256d08dc3",
@@ -83,6 +83,14 @@
     "src/client/site-search.ts": {
       "content_hash": "cd9354595a8a25504d2277847edbb125b1cf7dd5928e3f3835153aad871dae32",
       "last_indexed": "2026-05-07T10:49:29+00:00"
+    },
+    "src/client/table-scroll.test.ts": {
+      "content_hash": "3a9e191ae226c7b98153a21b0a72cad939cacbd0fa23a203d87be2e2659496e4",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
+    },
+    "src/client/table-scroll.ts": {
+      "content_hash": "3ebaea65f4e0a216bb315bda40761e2bea1d6e1f749a6daf891ca3118ec2974c",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/clientBundle.ts": {
       "content_hash": "6312ce3b683093a9651c5b69b98bb3dfbfd8355736b5debfbbb74a423bef37af",
@@ -128,9 +136,13 @@
       "content_hash": "32a00450c73021e3628420793e3d5ae2aa2271822a006eddeb39cf924ae9aee0",
       "last_indexed": "2026-05-07T10:49:29+00:00"
     },
+    "src/markdown.test.ts": {
+      "content_hash": "0f7b1a2aa7735c10ba8077d0cb915940b87ca98566cf032c705791fa77b742b7",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
+    },
     "src/markdown.ts": {
-      "content_hash": "c7584b1493753f996465cb9d599a72e56ec70b8c8b8226a6b2f7523ade9388e0",
-      "last_indexed": "2026-05-07T10:49:29+00:00"
+      "content_hash": "33e06beaada54473c474d27af1c7f82511ba9ea04891cbe66c74d444dfc3371d",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/nav.test.ts": {
       "content_hash": "f426bc2ada321c17b8f9e6065f2bba0a5052b106abe7ee9b4245774576d06657",
@@ -228,9 +240,13 @@
       "content_hash": "7b29c6a595d7c3d7f325386977e484e8517d0c75400baf69c5ffdc4c50851b7b",
       "last_indexed": "2026-05-07T10:49:28+00:00"
     },
+    "src/styles/base.test.ts": {
+      "content_hash": "a78e8b9e519ce6dd58619e9822d59684c1f2d4e8b768d10d6e081aa96f5fe3d1",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
+    },
     "src/styles/base.ts": {
-      "content_hash": "92533c9fa7e85d7066059d3233a984fb3f06e21e016bc690a158b79f644c185b",
-      "last_indexed": "2026-05-07T10:49:29+00:00"
+      "content_hash": "0ae138a462fb0855d35bafc2cad69510b0ed89ced6b360f20eb24064ae5f6960",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/styles/exec-blocks.ts": {
       "content_hash": "7baf16949a0d920e228bed59801f538200456cc9b4f67d488e7e49c45c0d9c04",
@@ -241,8 +257,8 @@
       "last_indexed": "2026-05-07T10:49:29+00:00"
     },
     "src/styles/mobile.ts": {
-      "content_hash": "a5711e8eea8eb488db3842ded5280bfaa19f8de3f6cd6ae8b8ef51d456ee90a2",
-      "last_indexed": "2026-05-07T10:49:29+00:00"
+      "content_hash": "90c667948752949cee4095209d7f3534c13813ad4ab383ea49878e976418abbc",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/styles/quiz.ts": {
       "content_hash": "efa89868df74829d18715a26634ae2fac2e6c57c86993848dc3c5221aa39666b",
@@ -253,16 +269,20 @@
       "last_indexed": "2026-05-07T10:49:29+00:00"
     },
     "src/styles/ui.ts": {
-      "content_hash": "67f548a59fa5636b8f23d8ec1b90b8d3353ccf4870a38dce710363354ddfbac2",
-      "last_indexed": "2026-05-07T10:49:29+00:00"
+      "content_hash": "caf0286f5787add5ff652eb6371a72cd530bd33f69e21f7b22cde26e47c17cda",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/synthetic-pages.ts": {
       "content_hash": "1a4f01f0df81817c1107e9a272eafed8893f481e87a9fc6e8425d70c1c5a23ed",
       "last_indexed": "2026-05-07T10:49:28+00:00"
     },
+    "src/template.test.ts": {
+      "content_hash": "fd0884570a5427cac1d81edc44534395856f7f8b7fe087fd0ac23601d8707462",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
+    },
     "src/template.ts": {
-      "content_hash": "6485f7ed2f10867493745623329f8c04923db2405c874a5153529f8f05b1426f",
-      "last_indexed": "2026-05-07T10:49:28+00:00"
+      "content_hash": "3b12360329e40d0f55176ebc2bbe1db65cb7bc314cc03a4874ac2d3856f3faec",
+      "last_indexed": "2026-05-11T02:08:34+00:00"
     },
     "src/utils.test.ts": {
       "content_hash": "e5d977d4934fa855f1a27f590368b75ad40f5f4f17e962be810ab7943d8e65f8",
@@ -305,5 +325,5 @@
     "javascript",
     "rust"
   ],
-  "last_built": "2026-05-07T10:49:29+00:00"
+  "last_built": "2026-05-11T02:08:34+00:00"
 }
