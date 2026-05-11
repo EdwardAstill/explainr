@@ -1,0 +1,155 @@
+version: 1
+plan:
+  slug: rich-file-viewers
+  prose: .warden/plans/2026-05-11-rich-file-viewers.md
+  goal: Add six embedded viewer block types (stl, model, csv, audio, video, pdf) to readrun
+  assumptions:
+    - id: A1
+      statement: Files under .readrun/files/ are served at /_readrun/files/<filename> in dev and copied to dist/_readrun/files/ in static builds
+      type: repo-state
+      source: src/server.ts:354, src/build.ts:37-45
+      check: grep -n "_readrun/files" src/server.ts src/build.ts
+      if_false: Use actual URL prefix from server route
+      owner: task_2_pdf_media
+    - id: A2
+      statement: Bun --splitting code-splits a dynamic import('three') into a separate chunk
+      type: repo-state
+      source: Bun docs
+      check: bun build src/client/main.ts --splitting --outdir=/tmp/rr-split-test && ls /tmp/rr-split-test/
+      if_false: Use runtime script tag injection instead of dynamic import
+      owner: task_8_model_client
+    - id: A3
+      statement: three is not yet in package.json
+      type: repo-state
+      source: deduction
+      check: cat package.json | grep three
+      if_false: Skip bun add three step
+      owner: task_8_model_client
+    - id: A4
+      statement: clientBundle.ts build command can accept --splitting
+      type: repo-state
+      source: src/clientBundle.ts filename
+      check: cat src/clientBundle.ts
+      if_false: Adjust build command or use CDN fallback
+      owner: task_8_model_client
+    - id: A5
+      statement: src/styles/ uses TypeScript files exporting CSS strings
+      type: repo-state
+      source: directory listing
+      check: cat src/styles/index.ts
+      if_false: Follow actual convention in src/styles/
+      owner: task_9_styles
+
+nodes:
+  - id: task_1_foundation
+    type: implement
+    description: Add viewer block names to KNOWN_BLOCKS, VOID_BLOCKS, and MIME map in utils.ts
+    files:
+      modify: [src/blocks.ts, src/utils.ts]
+      test: [src/blocks.test.ts]
+    verify:
+      - bun test src/blocks.test.ts
+
+  - id: task_2_pdf_media
+    type: implement
+    depends_on: [task_1_foundation]
+    description: Server-side PDF iframe and audio/video HTML emitters
+    assumption_refs: [A1]
+    files:
+      create: [src/viewers/pdf.ts, src/viewers/media.ts, src/viewers/pdf.test.ts, src/viewers/media.test.ts]
+    verify:
+      - bun test src/viewers/pdf.test.ts src/viewers/media.test.ts
+
+  - id: task_3_csv_server
+    type: implement
+    depends_on: [task_1_foundation]
+    description: CSV parser + JSON embedding + table shell HTML emitter
+    files:
+      create: [src/viewers/csv.ts, src/viewers/csv.test.ts]
+    verify:
+      - bun test src/viewers/csv.test.ts
+
+  - id: task_4_model_server
+    type: implement
+    depends_on: [task_1_foundation]
+    description: STL/GLTF/GLB model viewer HTML shell emitter
+    files:
+      create: [src/viewers/model.ts, src/viewers/model.test.ts]
+    verify:
+      - bun test src/viewers/model.test.ts
+
+  - id: task_5_markdown_wiring
+    type: implement
+    depends_on: [task_2_pdf_media, task_3_csv_server, task_4_model_server]
+    description: Wire all six viewer block names into resolveFileReferences in markdown.ts
+    files:
+      modify: [src/markdown.ts, src/renderPage.ts]
+      test: [src/markdown.test.ts]
+    verify:
+      - bun test src/markdown.test.ts
+      - bun test
+
+  - id: task_6_validation
+    type: implement
+    depends_on: [task_1_foundation]
+    description: File-existence, extension, and autoplay-without-muted checks in validate.ts
+    files:
+      modify: [src/validate.ts, src/validate.test.ts]
+    verify:
+      - bun test src/validate.test.ts
+
+  - id: task_7_csv_client
+    type: implement
+    depends_on: [task_3_csv_server]
+    description: Client CSV table with sort, filter, and pagination
+    files:
+      create: [src/client/viewers/csv.ts, src/client/viewers/csv.test.ts]
+    verify:
+      - bun test src/client/viewers/csv.test.ts
+
+  - id: task_8_model_client
+    type: implement
+    depends_on: [task_4_model_server]
+    description: Three.js lazy-loaded STL/GLB client viewer with OrbitControls and fit-to-view
+    assumption_refs: [A2, A3, A4]
+    files:
+      create: [src/client/viewers/model.ts, src/client/viewers/model.test.ts]
+    verify:
+      - bun test src/client/viewers/model.test.ts
+
+  - id: task_9_styles
+    type: implement
+    depends_on: [task_1_foundation]
+    description: CSS for all viewer wrappers, table, canvas, error states
+    assumption_refs: [A5]
+    files:
+      create: [src/styles/viewers.ts, src/styles/viewers.test.ts]
+      modify: [src/styles/index.ts]
+    verify:
+      - bun test src/styles/viewers.test.ts
+
+  - id: task_10_wiring
+    type: implement
+    depends_on: [task_7_csv_client, task_8_model_client, task_9_styles]
+    description: Import client viewers in main.ts and verify Bun code-splitting
+    files:
+      modify: [src/client/main.ts]
+    verify:
+      - bun test
+      - bun build src/client/main.ts --splitting --outdir=/tmp/rr-split-test --target=browser && ls /tmp/rr-split-test/
+
+  - id: task_11_acceptance
+    type: verify
+    depends_on: [task_5_markdown_wiring, task_6_validation, task_10_wiring]
+    description: Run all spec acceptance criteria and fill post-implementation review
+    files:
+      modify: [.warden/specs/2026-05-11-rich-file-viewers-design.md]
+    verify:
+      - bun test
+    on_fail: escalate
+
+  - id: task_12_merge
+    type: implement
+    depends_on: [task_11_acceptance]
+    description: Merge to main, remove worktree, run warden audit
+    on_fail: escalate
