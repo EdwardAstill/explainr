@@ -48,7 +48,7 @@ function parseLine(line: string): string[] {
   return fields;
 }
 
-export function renderCsvViewer(content: string, filename: string, attrs: BlockAttr[]): string {
+export function renderCsvViewer(content: string, _filename: string, attrs: BlockAttr[]): string {
   const data = parseCSV(content);
   const rowsAttr = attrs.find(a => a.key === "rows")?.value;
   const maxRows = typeof rowsAttr === "string" ? parseInt(rowsAttr, 10) || 100 : 100;
