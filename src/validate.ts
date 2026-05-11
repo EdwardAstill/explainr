@@ -4,6 +4,7 @@ import { pathExists, walkContent } from "./utils";
 import { getSiteIndex, invalidateSiteIndex } from "./siteIndex";
 import { parseFrontmatter } from "./frontmatter";
 import { loadManifest, shouldIncludeRelPath } from "./manifest";
+import { KNOWN_BLOCKS, VOID_BLOCKS } from "./blocks";
 
 export interface Issue {
   file: string;
@@ -16,7 +17,25 @@ export interface ValidationResult {
   warnings: Issue[];
 }
 
-const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files", "quizzes"]);
+const VALID_READRUN_SUBDIRS = new Set(["images", "scripts", "files"]);
+
+const VIEWER_NAMES = new Set(["stl", "model", "csv", "audio", "video", "pdf"]);
+
+const VIEWER_EXTENSIONS: Record<string, string[]> = {
+  stl:   [".stl"],
+  model: [".glb", ".gltf"],
+  csv:   [".csv"],
+  audio: [".mp3", ".wav", ".ogg", ".m4a"],
+  video: [".mp4", ".webm", ".ogv"],
+  pdf:   [".pdf"],
+};
+
+interface ViewerRef {
+  name: string;
+  path: string;
+  line: number;
+  file: string;
+}
 
 
 function validateMdContent(
@@ -25,7 +44,8 @@ function validateMdContent(
   errors: Issue[],
   warnings: Issue[],
   fileRefs: Set<string>,
-  virtualPaths: Map<string, string>
+  virtualPaths: Map<string, string>,
+  viewerRefs: ViewerRef[]
 ) {
   const { fm, issues: fmIssues } = parseFrontmatter(content);
   for (const iss of fmIssues) {
@@ -54,7 +74,6 @@ function validateMdContent(
   let fenceLine = 0;
   const bracketStack: { name: string; line: number }[] = [];
 
-  const VOID_BRACKET = new Set(["upload", "include"]);
   const bracketRe = /^\s*\[(?<close>\/)?(?<name>[A-Za-z][A-Za-z0-9-]*)(?<src>=\S+)?[^\]]*\]\s*$/;
 
   for (const [i, line] of lines.entries()) {
@@ -96,16 +115,38 @@ function validateMdContent(
         continue;
       }
 
-      if (isVoidSrc || VOID_BRACKET.has(name)) {
+      if (isVoidSrc || VOID_BLOCKS.has(name)) {
         // Track file refs for [lang=path] / [include=path]
         const srcPart = bracketMatch.groups!.src;
         if (srcPart) {
           const refPath = srcPart.slice(1);
-          if (refPath.includes(".") && name !== "include") fileRefs.add(refPath);
+          if (refPath.includes(".") && name !== "include" && !VIEWER_NAMES.has(name)) fileRefs.add(refPath);
         }
+
+        // Viewer block: collect ref + check autoplay
+        if (VIEWER_NAMES.has(name) && srcPart) {
+          const viewerPath = srcPart.slice(1);
+          viewerRefs.push({ name, path: viewerPath, line: lineNum, file: relPath });
+
+          if (name === "video") {
+            const rawAttrs = line.replace(/^\s*\[[A-Za-z][\w-]*=[^\s\]"]+/, "").replace(/\]\s*$/, "");
+            const hasAutoplay = /\bautoplay=true\b/.test(rawAttrs);
+            const hasMuted = /\bmuted=true\b/.test(rawAttrs);
+            if (hasAutoplay && !hasMuted) {
+              warnings.push({
+                file: relPath, line: lineNum,
+                message: `[video] autoplay=true without muted=true — browsers block unmuted autoplay`,
+              });
+            }
+          }
+        }
+
         continue;
       }
 
+      if (!KNOWN_BLOCKS.has(name)) {
+        warnings.push({ file: relPath, line: lineNum, message: `unknown block "[${name}]" — readrun treats it as a passthrough container; check for typos` });
+      }
       bracketStack.push({ name, line: lineNum });
       continue;
     }
@@ -130,6 +171,7 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
 
   const allFileRefs = new Set<string>();
   const virtualPaths = new Map<string, string>();
+  const allViewerRefs: ViewerRef[] = [];
 
   const { config: manifestConfig, issues: manifestIssues } = await loadManifest(folderPath);
 
@@ -137,7 +179,7 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
     if (!shouldIncludeRelPath(file.relPath, manifestConfig)) continue;
     const content = await Bun.file(file.absPath).text();
     const rel = file.relPath;
-    validateMdContent(rel, content, errors, warnings, allFileRefs, virtualPaths);
+    validateMdContent(rel, content, errors, warnings, allFileRefs, virtualPaths, allViewerRefs);
   }
 
   // Resolve file references
@@ -146,6 +188,29 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
     const inImages = join(imagesDir, ref);
     if (!(await pathExists(inScripts)) && !(await pathExists(inImages))) {
       errors.push({ file: ref, message: `file reference "${ref}" not found in .readrun/scripts/ or .readrun/images/` });
+    }
+  }
+
+  // Resolve viewer file references
+  const filesDir = join(folderPath, ".readrun", "files");
+
+  for (const { name, path: refPath, line, file } of allViewerRefs) {
+    if (refPath.startsWith("/") || refPath.includes("..")) continue;
+
+    const ext = refPath.slice(refPath.lastIndexOf(".")).toLowerCase();
+    const allowed = VIEWER_EXTENSIONS[name];
+    if (allowed && !allowed.includes(ext)) {
+      errors.push({ file, line,
+        message: `[${name}=${refPath}] wrong extension "${ext}" — expected one of: ${allowed.join(", ")}` });
+      continue;
+    }
+
+    const filePath = join(filesDir, refPath);
+    try {
+      await stat(filePath);
+    } catch {
+      errors.push({ file, line,
+        message: `[${name}=${refPath}] file not found in .readrun/files/` });
     }
   }
 

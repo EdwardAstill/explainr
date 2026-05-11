@@ -1,4 +1,4 @@
-import { test, expect, beforeEach, afterEach } from "bun:test";
+import { test, expect, describe, beforeEach, afterEach } from "bun:test";
 import { mkdtemp, rm, mkdir, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -71,10 +71,22 @@ test("warns on unexpected .readrun/ subdir", async () => {
   expect(result.warnings.some(w => w.message.includes("cache"))).toBe(true);
 });
 
-test("does not warn on .readrun/quizzes", async () => {
+test("warns on unknown block name", async () => {
+  await write("index.md", "# Hello\n\n[foobar]\nsome content\n[/foobar]\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.warnings.some(w => w.file === "index.md" && w.message.includes('"[foobar]"'))).toBe(true);
+});
+
+test("does not warn on known block names", async () => {
+  await write("index.md", "# Hello\n\n[python]\nprint('hi')\n[/python]\n\n[quiz]\n[/quiz]\n\n[raw]\nfoo\n[/raw]\n");
+  const result = await validateFolder(tmpDir);
+  expect(result.warnings.some(w => w.message.includes("unknown block"))).toBe(false);
+});
+
+test("warns on .readrun/quizzes as unexpected subdir", async () => {
   await mkdir(join(tmpDir, ".readrun", "quizzes"), { recursive: true });
   const result = await validateFolder(tmpDir);
-  expect(result.warnings.some((w) => w.message.includes(".readrun/quizzes"))).toBe(false);
+  expect(result.warnings.some((w) => w.message.includes("quizzes"))).toBe(true);
 });
 
 test("errors when file ref target is missing", async () => {
@@ -152,3 +164,81 @@ test("reports error for manifest-mapped virtual path collision", async () => {
   expect(r.errors.some((e) => e.message.includes("collides"))).toBe(true);
 });
 
+describe("viewer block validation", () => {
+  async function makeViewerFolder(pages: Record<string, string>, files: string[] = []): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), "rr-validate-viewer-"));
+    const filesDir = join(dir, ".readrun", "files");
+    await mkdir(filesDir, { recursive: true });
+    await mkdir(join(dir, ".readrun", "scripts"), { recursive: true });
+    await mkdir(join(dir, ".readrun", "images"), { recursive: true });
+    for (const [name, content] of Object.entries(pages)) {
+      await writeFile(join(dir, name), content);
+    }
+    for (const f of files) {
+      await writeFile(join(filesDir, f), "placeholder");
+    }
+    return dir;
+  }
+
+  test("error: [stl=missing.stl] file not found", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[stl=missing.stl]" });
+    const result = await validateFolder(dir);
+    expect(result.errors.some(e => e.message.includes("missing.stl"))).toBe(true);
+  });
+
+  test("no error: [stl=bracket.stl] file exists", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[stl=bracket.stl]" }, ["bracket.stl"]);
+    const result = await validateFolder(dir);
+    const stlErrors = result.errors.filter(e => e.message.includes("bracket.stl"));
+    expect(stlErrors).toHaveLength(0);
+  });
+
+  test("error: [stl=doc.pdf] wrong extension for stl block", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[stl=doc.pdf]" }, ["doc.pdf"]);
+    const result = await validateFolder(dir);
+    expect(result.errors.some(e => e.message.includes("doc.pdf") && e.message.includes("extension"))).toBe(true);
+  });
+
+  test("error: [model=missing.glb] file not found", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[model=missing.glb]" });
+    const result = await validateFolder(dir);
+    expect(result.errors.some(e => e.message.includes("missing.glb"))).toBe(true);
+  });
+
+  test("error: [csv=missing.csv] file not found", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[csv=missing.csv]" });
+    const result = await validateFolder(dir);
+    expect(result.errors.some(e => e.message.includes("missing.csv"))).toBe(true);
+  });
+
+  test("error: [audio=track.mp3] file not found", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[audio=track.mp3]" });
+    const result = await validateFolder(dir);
+    expect(result.errors.some(e => e.message.includes("track.mp3"))).toBe(true);
+  });
+
+  test("error: [video=demo.mp4] file not found", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[video=demo.mp4]" });
+    const result = await validateFolder(dir);
+    expect(result.errors.some(e => e.message.includes("demo.mp4"))).toBe(true);
+  });
+
+  test("error: [pdf=spec.pdf] file not found", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[pdf=spec.pdf]" });
+    const result = await validateFolder(dir);
+    expect(result.errors.some(e => e.message.includes("spec.pdf"))).toBe(true);
+  });
+
+  test("warning: [video=demo.mp4 autoplay=true] without muted", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[video=demo.mp4 autoplay=true]" }, ["demo.mp4"]);
+    const result = await validateFolder(dir);
+    expect(result.warnings.some(w => w.message.includes("muted") && w.message.includes("autoplay"))).toBe(true);
+  });
+
+  test("no warning: [video=demo.mp4 autoplay=true muted=true]", async () => {
+    const dir = await makeViewerFolder({ "page.md": "[video=demo.mp4 autoplay=true muted=true]" }, ["demo.mp4"]);
+    const result = await validateFolder(dir);
+    const autoplayWarnings = result.warnings.filter(w => w.message.includes("autoplay"));
+    expect(autoplayWarnings).toHaveLength(0);
+  });
+});
