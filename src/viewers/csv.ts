@@ -5,6 +5,8 @@ export interface CsvData {
   rows: string[][];
 }
 
+// RFC 4180 §2.6 multi-line quoted fields are not supported — values with embedded newlines
+// will be split across rows. Sufficient for tabular data files produced by spreadsheet exports.
 export function parseCSV(content: string): CsvData {
   const lines = content.split(/\r?\n/);
   const nonEmpty = lines.filter(l => l.trim() !== "");

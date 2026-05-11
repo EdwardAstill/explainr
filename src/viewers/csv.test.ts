@@ -47,7 +47,7 @@ describe("renderCsvViewer", () => {
     expect(html).toContain("data-rows=");
   });
 
-  test("rejects path traversal from src (used in error context)", () => {
+  test("never emits a script src attribute", () => {
     const html = renderCsvViewer("h\n1", "../secret.csv", []);
     expect(html).not.toContain("<script src");
   });
