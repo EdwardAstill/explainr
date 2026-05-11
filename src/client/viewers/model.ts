@@ -1,3 +1,5 @@
+import type * as THREE from "three";
+
 export async function initModelViewers(): Promise<void> {
   const viewers = document.querySelectorAll<HTMLElement>(".model-viewer");
   if (viewers.length === 0) return;
