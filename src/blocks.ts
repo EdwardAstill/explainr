@@ -51,7 +51,13 @@ export interface ParseResult {
 // Constants
 // ---------------------------------------------------------------------------
 
-const VOID_BLOCKS = new Set(["upload", "include"]);
+// Blocks that take no closer: [upload ...] and [include=path].
+export const VOID_BLOCKS = new Set(["upload", "include", "stl", "model", "csv", "audio", "video", "pdf"]);
+
+// All block names the renderer recognises. Anything outside this set is a
+// passthrough container — valid syntax but no special behaviour. rr validate
+// warns on unknown names so typos surface early.
+export const KNOWN_BLOCKS = new Set(["python", "jsx", "upload", "quiz", "raw", "include", "stl", "model", "csv", "audio", "video", "pdf"]);
 
 // Block-line regex: whole line, case-sensitive
 const BLOCK_LINE_RE =
@@ -188,7 +194,9 @@ export function tokenise(source: string): TokeniseResult {
       } else {
         // Open block
         tokens.push({ kind: "open", name: name!, attrs: parsedAttrs, src: null, line: lineNum });
-        // Set inRaw if this is a [raw] block
+        // [raw] is the only block with tokeniser-level special handling: content
+        // lines are passed through verbatim until the matching [/raw] closer,
+        // bypassing all other block-line matching.
         if (name === "raw") {
           inRaw = true;
         }

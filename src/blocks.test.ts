@@ -295,6 +295,25 @@ describe("getAttr and hasAttr", () => {
 });
 
 // ---------------------------------------------------------------------------
+// viewer block names
+// ---------------------------------------------------------------------------
+
+import { KNOWN_BLOCKS, VOID_BLOCKS } from "./blocks";
+
+describe("viewer block names", () => {
+  const VIEWER_NAMES = ["stl", "model", "csv", "audio", "video", "pdf"];
+
+  for (const name of VIEWER_NAMES) {
+    test(`${name} is in KNOWN_BLOCKS`, () => {
+      expect(KNOWN_BLOCKS.has(name)).toBe(true);
+    });
+    test(`${name} is in VOID_BLOCKS`, () => {
+      expect(VOID_BLOCKS.has(name)).toBe(true);
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Extra: parseAttrs unit tests
 // ---------------------------------------------------------------------------
 

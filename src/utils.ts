@@ -21,6 +21,17 @@ export const MIME: Record<string, string> = {
   ".toml": "text/plain",
   ".md": "text/markdown",
   ".txt": "text/plain",
+  ".stl":  "model/stl",
+  ".glb":  "model/gltf-binary",
+  ".gltf": "model/gltf+json",
+  ".mp3":  "audio/mpeg",
+  ".wav":  "audio/wav",
+  ".ogg":  "audio/ogg",
+  ".m4a":  "audio/mp4",
+  ".mp4":  "video/mp4",
+  ".webm": "video/webm",
+  ".ogv":  "video/ogg",
+  ".pdf":  "application/pdf",
 };
 
 export async function pathExists(p: string): Promise<boolean> {
