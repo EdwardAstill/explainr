@@ -1,0 +1,21 @@
+Language,Year,Paradigm,Typing,Popularity Index,Memory Safe
+Python,1991,Multi-paradigm,Dynamic,1,Yes
+JavaScript,1995,Multi-paradigm,Dynamic,2,Partial
+Java,1995,OOP,Static,3,Yes
+C,1972,Procedural,Static,4,No
+C++,1985,Multi-paradigm,Static,5,No
+TypeScript,2012,Multi-paradigm,Static,6,Yes
+Go,2009,Procedural,Static,7,Yes
+Rust,2015,Multi-paradigm,Static,8,Yes
+Kotlin,2011,Multi-paradigm,Static,9,Yes
+Swift,2014,Multi-paradigm,Static,10,Yes
+PHP,1994,Multi-paradigm,Dynamic,11,Partial
+R,1993,Functional,Dynamic,12,Yes
+Ruby,1995,OOP,Dynamic,13,Yes
+Scala,2004,Multi-paradigm,Static,14,Yes
+Dart,2011,OOP,Static,15,Yes
+Lua,1993,Multi-paradigm,Dynamic,16,Partial
+Perl,1987,Multi-paradigm,Dynamic,17,Partial
+Haskell,1990,Functional,Static,18,Yes
+Julia,2012,Multi-paradigm,Dynamic,19,Yes
+Clojure,2007,Functional,Dynamic,20,Yes

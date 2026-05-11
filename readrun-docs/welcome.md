@@ -8,6 +8,10 @@ readrun turns folders of Markdown into interactive websites. You're looking at o
 
 **[Deployment](./docs/deployment.md)** — CLI usage, static builds, and platform-specific deployment (GitHub Pages, Vercel, Netlify).
 
+## File viewers
+
+**[File Viewers](./docs/file-viewers.md)** — embed 3D models, CSV tables, audio, video, and PDFs inline with `[stl=]`, `[model=]`, `[csv=]`, `[audio=]`, `[video=]`, `[pdf=]`.
+
 ## Examples
 
 **[Python Basics](./notes/lecture-1.md)** — a sample lesson with runnable code blocks. Click "Run" to execute Python directly in your browser.

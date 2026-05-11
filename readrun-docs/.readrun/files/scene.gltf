@@ -1,0 +1,42 @@
+{
+  "asset": { "version": "2.0", "generator": "readrun demo" },
+  "scene": 0,
+  "scenes": [{ "nodes": [0] }],
+  "nodes": [{ "mesh": 0 }],
+  "meshes": [{
+    "primitives": [{
+      "attributes": { "POSITION": 0, "NORMAL": 1 },
+      "indices": 2,
+      "material": 0
+    }]
+  }],
+  "materials": [{
+    "pbrMetallicRoughness": {
+      "baseColorFactor": [0.4, 0.6, 0.9, 1.0],
+      "metallicFactor": 0.1,
+      "roughnessFactor": 0.7
+    },
+    "name": "blue"
+  }],
+  "accessors": [
+    {
+      "bufferView": 0, "componentType": 5126, "count": 8, "type": "VEC3",
+      "max": [1.0, 1.0, 1.0], "min": [-1.0, -1.0, -1.0]
+    },
+    {
+      "bufferView": 1, "componentType": 5126, "count": 8, "type": "VEC3"
+    },
+    {
+      "bufferView": 2, "componentType": 5123, "count": 36, "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    { "buffer": 0, "byteOffset": 0,   "byteLength": 96 },
+    { "buffer": 0, "byteOffset": 96,  "byteLength": 96 },
+    { "buffer": 0, "byteOffset": 192, "byteLength": 72 }
+  ],
+  "buffers": [{
+    "byteLength": 264,
+    "uri": "data:application/octet-stream;base64,AACAvwAAgL8AAIC/AACAvwAAgL8AAIAwAACAvwAAIDgAAIC/AAAgjgAAgD8AAIC/AAAgjgAAgD8AAIAwAACAvwAAgD8AAIAwAACAvwAAgD8AAICvAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AACAPwAAAAAAAACAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAIAAcAAQAIAAIACQAIAAMABAAJAAUABAAGAAkABwAGAAoACQAGAAUACwAKAAUABAALAAQABwALAAcACgALAAoABgALAAYABQAL"
+  }]
+}
