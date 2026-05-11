@@ -10,7 +10,7 @@ describe("renderAudioViewer", () => {
   });
 
   test("loop attr forwarded", () => {
-    const html = renderAudioViewer("talk.mp3", [{ key: "loop", value: "true" }]);
+    const html = renderAudioViewer("talk.mp3", [{ key: "loop", value: true }]);
     expect(html).toContain("loop");
   });
 
@@ -35,7 +35,7 @@ describe("renderVideoViewer", () => {
   });
 
   test("muted attr forwarded", () => {
-    const html = renderVideoViewer("demo.mp4", [{ key: "muted", value: "true" }]);
+    const html = renderVideoViewer("demo.mp4", [{ key: "muted", value: true }]);
     expect(html).toContain("muted");
   });
 

@@ -11,8 +11,8 @@ export function renderAudioViewer(src: string, attrs: BlockAttr[]): string {
   const err = rejectPath(src, "audio");
   if (err) return err;
 
-  const loop = attrs.some(a => a.key === "loop" && a.value === "true");
-  const autoplay = attrs.some(a => a.key === "autoplay" && a.value === "true");
+  const loop = attrs.some(a => a.key === "loop" && (a.value === true || a.value === "true"));
+  const autoplay = attrs.some(a => a.key === "autoplay" && (a.value === true || a.value === "true"));
   const url = `/_readrun/files/${src}`;
 
   const extra = [loop && "loop", autoplay && "autoplay"].filter(Boolean).join(" ");
@@ -25,9 +25,9 @@ export function renderVideoViewer(src: string, attrs: BlockAttr[]): string {
   const err = rejectPath(src, "video");
   if (err) return err;
 
-  const loop = attrs.some(a => a.key === "loop" && a.value === "true");
-  const autoplay = attrs.some(a => a.key === "autoplay" && a.value === "true");
-  const muted = attrs.some(a => a.key === "muted" && a.value === "true");
+  const loop = attrs.some(a => a.key === "loop" && (a.value === true || a.value === "true"));
+  const autoplay = attrs.some(a => a.key === "autoplay" && (a.value === true || a.value === "true"));
+  const muted = attrs.some(a => a.key === "muted" && (a.value === true || a.value === "true"));
   const heightAttr = attrs.find(a => a.key === "height")?.value;
   const url = `/_readrun/files/${src}`;
 
