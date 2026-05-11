@@ -31,7 +31,7 @@ export function renderVideoViewer(src: string, attrs: BlockAttr[]): string {
   const heightAttr = attrs.find(a => a.key === "height")?.value;
   const url = `/_readrun/files/${src}`;
 
-  const style = heightAttr ? ` style="height:${heightAttr}px;width:100%"` : ` style="width:100%"`;
+  const style = typeof heightAttr === "string" ? ` style="height:${heightAttr}px;width:100%"` : ` style="width:100%"`;
   const extra = [loop && "loop", autoplay && "autoplay", muted && "muted"].filter(Boolean).join(" ");
 
   return `<div class="video-viewer-wrap">` +
