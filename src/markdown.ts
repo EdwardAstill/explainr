@@ -2,7 +2,11 @@ import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
 import { join } from "path";
 import { splitFrontmatter } from "./frontmatter";
-import { parse, getAttr, hasAttr } from "./blocks";
+import { parse, getAttr, hasAttr, parseAttrs } from "./blocks";
+import { renderPdfViewer } from "./viewers/pdf";
+import { renderAudioViewer, renderVideoViewer } from "./viewers/media";
+import { renderCsvViewer } from "./viewers/csv";
+import { renderModelViewer } from "./viewers/model";
 import type { Block, TextRun } from "./blocks";
 import { parseQuizBlock } from "./quiz/parseQuizBlock";
 import { renderQuizForClient } from "./quiz/renderQuizForClient";
@@ -257,6 +261,8 @@ const EXT_TO_MIME: Record<string, string> = {
   ".webp": "image/webp",
 };
 
+const VIEWER_BLOCKS = new Set(["stl", "model", "csv", "audio", "video", "pdf"]);
+
 const EXEC_LANG_NAMES = new Set(["python", "jsx"]);
 
 export async function resolveFileReferences(
@@ -285,6 +291,41 @@ export async function resolveFileReferences(
 
     if (IMAGE_EXTENSIONS.has(ext)) {
       replacements.push({ start, end, text: await renderImageRef(path, imagesDir) });
+      continue;
+    }
+
+    if (VIEWER_BLOCKS.has(name)) {
+      const filePath = path.startsWith("/") || path.includes("..")
+        ? null
+        : contentDir ? join(contentDir, ".readrun", "files", path) : null;
+
+      let viewerHtml: string;
+
+      if (name === "csv") {
+        if (!filePath) {
+          viewerHtml = `<p class="viewer-error"><em>[csv] rejects invalid path: ${path}</em></p>`;
+        } else {
+          let content = "";
+          try {
+            content = await Bun.file(filePath).text();
+          } catch {
+            viewerHtml = `<p class="viewer-error"><em>[csv] file not found: ${path}</em></p>`;
+            replacements.push({ start, end, text: viewerHtml });
+            continue;
+          }
+          viewerHtml = renderCsvViewer(content, path, parseAttrs(flagStr));
+        }
+      } else if (name === "stl" || name === "model") {
+        viewerHtml = renderModelViewer(path, name, parseAttrs(flagStr));
+      } else if (name === "audio") {
+        viewerHtml = renderAudioViewer(path, parseAttrs(flagStr));
+      } else if (name === "video") {
+        viewerHtml = renderVideoViewer(path, parseAttrs(flagStr));
+      } else {
+        viewerHtml = renderPdfViewer(path, parseAttrs(flagStr));
+      }
+
+      replacements.push({ start, end, text: viewerHtml });
       continue;
     }
 
