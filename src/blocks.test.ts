@@ -4,6 +4,8 @@ import {
   parseAttrs,
   getAttr,
   hasAttr,
+  KNOWN_BLOCKS,
+  VOID_BLOCKS,
   type Block,
   type TextRun,
 } from "./blocks";
@@ -297,8 +299,6 @@ describe("getAttr and hasAttr", () => {
 // ---------------------------------------------------------------------------
 // viewer block names
 // ---------------------------------------------------------------------------
-
-import { KNOWN_BLOCKS, VOID_BLOCKS } from "./blocks";
 
 describe("viewer block names", () => {
   const VIEWER_NAMES = ["stl", "model", "csv", "audio", "video", "pdf"];
