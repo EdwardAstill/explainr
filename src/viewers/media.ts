@@ -6,7 +6,7 @@ function escAttr(s: string): string {
 
 function rejectPath(path: string, tag: string): string | null {
   if (path.startsWith("/") || path.includes("..")) {
-    return `<p class="viewer-error"><em>[${tag}] rejects absolute or traversal paths: ${path}</em></p>`;
+    return `<p class="viewer-error"><em>[${tag}] rejects absolute or traversal paths: ${escAttr(path)}</em></p>`;
   }
   return null;
 }
@@ -36,7 +36,8 @@ export function renderVideoViewer(src: string, attrs: BlockAttr[]): string {
   const url = `/_readrun/files/${escAttr(src)}`;
 
   const heightPx = typeof heightAttr === "string" ? parseInt(heightAttr, 10) : NaN;
-  const style = !isNaN(heightPx) ? ` style="height:${heightPx}px;width:100%"` : ` style="width:100%"`;
+  const clampedH = !isNaN(heightPx) ? Math.max(100, Math.min(1200, heightPx)) : NaN;
+  const style = !isNaN(clampedH) ? ` style="height:${clampedH}px;width:100%"` : ` style="width:100%"`;
   const extra = [loop && "loop", autoplay && "autoplay", muted && "muted"].filter(Boolean).join(" ");
 
   return `<div class="video-viewer-wrap">` +

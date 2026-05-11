@@ -11,6 +11,8 @@ export async function initModelViewers(): Promise<void> {
   const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js");
 
   for (const viewer of viewers) {
+    if (viewer.dataset.modelMounted) continue;
+    viewer.dataset.modelMounted = "1";
     await initOne(viewer, THREE, STLLoader, GLTFLoader, OrbitControls);
   }
 }

@@ -12,7 +12,7 @@ function clampHeight(raw: string | true | undefined, def: number, min: number, m
 
 function rejectPath(path: string): string | null {
   if (path.startsWith("/") || path.includes("..")) {
-    return `<p class="viewer-error"><em>[pdf] rejects absolute or traversal paths: ${path}</em></p>`;
+    return `<p class="viewer-error"><em>[pdf] rejects absolute or traversal paths: ${escAttr(path)}</em></p>`;
   }
   return null;
 }

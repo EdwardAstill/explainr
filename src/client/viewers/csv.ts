@@ -1,9 +1,10 @@
 export function sortRows(rows: string[][], col: number, dir: "asc" | "desc"): string[][] {
-  const numeric = rows.every(r => !isNaN(parseFloat(r[col] ?? "")));
+  const isNum = (v: string) => v !== "" && !isNaN(Number(v));
+  const numeric = rows.every(r => isNum(r[col] ?? ""));
   return [...rows].sort((a, b) => {
     const av = a[col] ?? "";
     const bv = b[col] ?? "";
-    const cmp = numeric ? parseFloat(av) - parseFloat(bv) : av.localeCompare(bv);
+    const cmp = numeric ? Number(av) - Number(bv) : av.localeCompare(bv);
     return dir === "asc" ? cmp : -cmp;
   });
 }

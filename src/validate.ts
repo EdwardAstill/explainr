@@ -197,7 +197,8 @@ export async function validateFolder(folderPath: string): Promise<ValidationResu
   for (const { name, path: refPath, line, file } of allViewerRefs) {
     if (refPath.startsWith("/") || refPath.includes("..")) continue;
 
-    const ext = refPath.slice(refPath.lastIndexOf(".")).toLowerCase();
+    const dotIdx = refPath.lastIndexOf(".");
+    const ext = dotIdx === -1 ? "" : refPath.slice(dotIdx).toLowerCase();
     const allowed = VIEWER_EXTENSIONS[name];
     if (allowed && !allowed.includes(ext)) {
       errors.push({ file, line,

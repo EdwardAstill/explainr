@@ -303,7 +303,7 @@ export async function resolveFileReferences(
 
       if (name === "csv") {
         if (!filePath) {
-          viewerHtml = `<p class="viewer-error"><em>[csv] rejects invalid path: ${path}</em></p>`;
+          viewerHtml = `<p class="viewer-error"><em>[csv] rejects invalid path: ${path.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</em></p>`;
         } else {
           let content = "";
           try {
