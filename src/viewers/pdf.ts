@@ -1,5 +1,9 @@
 import type { BlockAttr } from "../blocks";
 
+function escAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function clampHeight(raw: string | true | undefined, def: number, min: number, max: number): number {
   if (typeof raw !== "string") return def;
   const n = parseInt(raw, 10);
@@ -19,12 +23,12 @@ export function renderPdfViewer(src: string, attrs: BlockAttr[]): string {
 
   const heightAttr = attrs.find(a => a.key === "height")?.value;
   const height = clampHeight(heightAttr, 600, 300, 1200);
-  const url = `/_readrun/files/${src}`;
+  const url = `/_readrun/files/${escAttr(src)}`;
 
   return `<div class="pdf-viewer-wrap" style="height:${height}px">` +
     `<iframe class="pdf-viewer" src="${url}" ` +
     `sandbox="allow-same-origin" ` +
     `style="width:100%;height:100%;border:none" ` +
-    `title="${src}"></iframe>` +
+    `title="${escAttr(src)}"></iframe>` +
     `</div>`;
 }

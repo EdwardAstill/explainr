@@ -33,4 +33,10 @@ describe("renderPdfViewer", () => {
     expect(html).toContain("rejects");
     expect(html).not.toContain("<iframe");
   });
+
+  test("rejects absolute path", () => {
+    const html = renderPdfViewer("/etc/passwd.pdf", []);
+    expect(html).toContain("rejects");
+    expect(html).not.toContain("<iframe");
+  });
 });

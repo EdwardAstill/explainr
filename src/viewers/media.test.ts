@@ -19,6 +19,12 @@ describe("renderAudioViewer", () => {
     expect(html).toContain("rejects");
     expect(html).not.toContain("<audio");
   });
+
+  test("rejects absolute path", () => {
+    const html = renderAudioViewer("/etc/passwd.mp3", []);
+    expect(html).toContain("rejects");
+    expect(html).not.toContain("<audio");
+  });
 });
 
 describe("renderVideoViewer", () => {
