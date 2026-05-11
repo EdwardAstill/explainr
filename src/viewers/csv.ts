@@ -57,16 +57,14 @@ export function renderCsvViewer(content: string, _filename: string, attrs: Block
   const height = typeof heightAttr === "string" ? Math.max(200, Math.min(1000, parseInt(heightAttr, 10) || 400)) : 400;
 
   const id = `csv-${Math.random().toString(36).slice(2, 8)}`;
+  // Replace </script inside JSON so the browser doesn't misparse the script block end.
+  // The closing </script> tag itself is always used — it is safe because the payload above is already escaped.
   const json = JSON.stringify(data).replace(/<\/script/gi, "<\\/script");
-  // Use escaped closing tag only when data itself contained </script to avoid
-  // injecting the literal string into the document. Browsers accept <\/script>
-  // as an end-of-script boundary in this edge case.
-  const closeTag = json.includes("<\\/script") ? "<\\/script>" : "</script>";
 
   return `<div class="csv-viewer" data-csv-id="${id}" data-rows="${maxRows}" data-filter="${filter}" style="height:${height}px">` +
     `<div class="csv-toolbar">${filter ? `<input class="csv-filter" type="text" placeholder="Filter rows…" aria-label="Filter rows">` : ""}</div>` +
     `<div class="csv-table-wrap"><table class="csv-table"></table></div>` +
     `<div class="csv-pagination"></div>` +
     `</div>` +
-    `\n<script type="application/json" id="csv-data-${id}">${json}${closeTag}`;
+    `\n<script type="application/json" id="csv-data-${id}">${json}</script>`;
 }

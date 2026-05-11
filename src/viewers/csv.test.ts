@@ -53,9 +53,10 @@ describe("renderCsvViewer", () => {
   });
 
   test("escapes </script in JSON content", () => {
-    const html = renderCsvViewer('col\n</script>', "x.csv", []);
-    expect(html).not.toContain("</script>");
+    const html = renderCsvViewer("col\n</script>", "x.csv", []);
+    // Payload has </script escaped to <\/script; only one </script> exists — the closing tag
     expect(html).toContain("<\\/script");
+    expect((html.match(/<\/script>/g) ?? []).length).toBe(1);
   });
 
   test("default rows attr is 100", () => {
