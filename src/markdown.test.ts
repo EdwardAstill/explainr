@@ -107,4 +107,13 @@ describe("resolveFileReferences — viewer blocks", () => {
     expect(result).toContain('class="csv-viewer"');
     expect(result).toContain('"headers":["name","value"]');
   });
+
+  test("[csv=../etc/passwd] produces viewer-error, not crash", async () => {
+    const contentDir = await makeContentDir({});
+    const scriptsDir = join(contentDir, ".readrun", "scripts");
+    const imagesDir = join(contentDir, ".readrun", "images");
+    const result = await resolveFileReferences("[csv=../etc/passwd]", scriptsDir, imagesDir, contentDir);
+    expect(result).toContain("viewer-error");
+    expect(result).not.toContain('class="csv-viewer"');
+  });
 });
