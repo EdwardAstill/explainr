@@ -10,3 +10,5 @@ import "./quiz";
 import "./site-search";
 import "./focus";
 import "./table-scroll";
+import "./viewers/csv";
+import "./viewers/model";
