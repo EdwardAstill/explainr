@@ -6,6 +6,8 @@ import { defineCommand, runMain } from "citty";
 import pkg from "../package.json" with { type: "json" };
 import { addRecent } from "./config";
 import { detectRepoName } from "./utils";
+import { ensureDeps } from "./ensure-deps";
+import { buildWidgetsLogging, buildWidgets } from "./widgets-build";
 import type { Platform } from "./build";
 
 function openBrowser(url: string) {
@@ -88,6 +90,7 @@ const serveCmd = defineCommand({
     }
 
     await addRecent(contentDir);
+    await buildWidgetsLogging(contentDir);
     const opts = httpOpts(args);
     const { startServer } = await import("./server");
     const handle = await startServer({ contentDir, port: opts.port, host: opts.host });
@@ -137,6 +140,7 @@ const watchCmd = defineCommand({
     }
 
     await addRecent(contentDir);
+    await buildWidgetsLogging(contentDir);
     const opts = httpOpts(args);
     const { startWatchServer } = await import("./watch");
     const handle = await startWatchServer({ contentDir, port: opts.port, host: opts.host });
@@ -240,6 +244,7 @@ const buildCmd = defineCommand({
       if (repoName) basePath = "/" + repoName;
     }
 
+    await buildWidgetsLogging(contentDir);
     const { build } = await import("./build");
     await build({ contentDir, outDir, platform, basePath });
   },
@@ -449,6 +454,7 @@ const demoCmd = defineCommand({
       process.exit(1);
     }
     await addRecent(demoDir);
+    await buildWidgetsLogging(demoDir);
     const opts = httpOpts(args);
     const { startServer } = await import("./server");
     const handle = await startServer({ contentDir: demoDir, port: opts.port, host: opts.host });
@@ -461,6 +467,32 @@ const menuCmd = defineCommand({
   async run() {
     const { runMenu } = await import("./menu");
     await runMenu();
+  },
+});
+
+const buildWidgetsCmd = defineCommand({
+  meta: { name: "build-widgets", description: "Bundle every .tsx widget in <path>/.readrun/widgets/ to .readrun/scripts/<name>.jsx." },
+  args: {
+    path: { type: "positional", required: false, description: "Content folder (default: cwd)" },
+  },
+  async run({ args }) {
+    const contentDir = resolvePath(args.path);
+    try { statSync(contentDir); } catch {
+      console.error(`Folder not found: ${contentDir}`);
+      process.exit(1);
+    }
+    try {
+      const { built, scriptsDir } = await buildWidgets(contentDir);
+      if (built.length === 0) {
+        console.log(`No widgets found under ${contentDir}/.readrun/widgets/`);
+      } else {
+        console.log(`Bundled ${built.length} widget(s) → ${scriptsDir}/`);
+        for (const name of built) console.log(`  ${name}.jsx`);
+      }
+    } catch (err: any) {
+      console.error(err?.message ?? String(err));
+      process.exit(1);
+    }
   },
 });
 
@@ -485,8 +517,8 @@ const reinstallCmd = defineCommand({
 
 const KNOWN = new Set([
   "serve", "demo", "menu", "dashboard", "watch", "init", "validate", "build",
-  "preview", "new", "today", "share", "clean", "doctor", "guide", "reinstall",
-  "help", "--help", "-h", "--version", "-v",
+  "build-widgets", "preview", "new", "today", "share", "clean", "doctor",
+  "guide", "reinstall", "help", "--help", "-h", "--version", "-v",
 ]);
 
 const first = process.argv[2];
@@ -520,6 +552,7 @@ const main = defineCommand({
     init: initCmd,
     validate: validateCmd,
     build: buildCmd,
+    "build-widgets": buildWidgetsCmd,
     preview: serveStaticCmd,
     new: newCmd,
     today: todayCmd,
@@ -534,6 +567,7 @@ const main = defineCommand({
     if ((args._ as string[]).length === 0) {
       const contentDir = process.cwd();
       await addRecent(contentDir);
+      await buildWidgetsLogging(contentDir);
       const { startServer } = await import("./server");
       const handle = await startServer({ contentDir, port: 3001, host: "localhost" });
       await finishHttp({ url: `http://${handle.host}:${handle.port}`, noOpen: false });
@@ -541,4 +575,5 @@ const main = defineCommand({
   },
 });
 
+await ensureDeps();
 await runMain(main);

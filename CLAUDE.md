@@ -1,4 +1,19 @@
 
+## `@readrun/widgets` toolkit
+
+readrun ships the figura React component library in-repo at `src/figura/`.
+The public import name is `@readrun/widgets` (with subpaths `/primitives`,
+`/plot`, `/diagram`, `/interaction`, `/draw`, `/math`). When writing or
+editing widgets, do not look for a separate `figura` package — it does not
+exist as an external dep. The bundler in `src/figura/bundler.ts` resolves
+`@readrun/widgets/*` via an esbuild plugin. Widget *sources* live in
+`<content>/.readrun/widgets/*.tsx`; bundled outputs land in
+`<content>/.readrun/scripts/*.jsx` and are mounted by readrun's existing JSX
+runtime. Don't author widgets inside `src/figura/widgets/` — that path
+intentionally does not exist.
+
+---
+
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`

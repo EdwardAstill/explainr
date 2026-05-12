@@ -24,6 +24,14 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+
+    // @readrun/widgets virtual module name → src/figura/*.
+    // The bundler resolves these at build time; this mapping is for IDE/LSP.
+    "baseUrl": ".",
+    "paths": {
+      "@readrun/widgets": ["src/figura/index.ts"],
+      "@readrun/widgets/*": ["src/figura/*"]
+    }
   }
 }

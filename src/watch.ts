@@ -2,6 +2,7 @@ import { watch } from "fs";
 import { join, extname } from "path";
 import { startServer, type ServerHandle } from "./server";
 import { invalidateSiteIndex } from "./siteIndex";
+import { buildWidgetsLogging } from "./widgets-build";
 
 export function shouldInvalidateOnFile(filename: string): boolean {
   if (filename.endsWith("~") || filename.startsWith(".#") || filename.endsWith(".swp")) return false;
@@ -39,6 +40,8 @@ export async function startWatchServer(opts: WatchOptions): Promise<ServerHandle
     }, debounceMs);
   };
 
+  await buildWidgetsLogging(opts.contentDir);
+
   const watchers: { close: () => void }[] = [];
   const toWatch = [
     opts.contentDir,
@@ -59,6 +62,24 @@ export async function startWatchServer(opts: WatchOptions): Promise<ServerHandle
     } catch {
       // Directory may not exist yet (e.g. no .readrun/); skip silently
     }
+  }
+
+  // Separate watcher for widget sources — rebuild on .tsx change, then reload.
+  const widgetsDir = join(opts.contentDir, ".readrun", "widgets");
+  try {
+    let widgetTimer: ReturnType<typeof setTimeout> | null = null;
+    const ww = watch(widgetsDir, { recursive: true }, (_event, filename) => {
+      if (!filename || !filename.endsWith(".tsx")) return;
+      if (widgetTimer) clearTimeout(widgetTimer);
+      widgetTimer = setTimeout(async () => {
+        widgetTimer = null;
+        await buildWidgetsLogging(opts.contentDir);
+        fire();
+      }, debounceMs);
+    });
+    watchers.push(ww);
+  } catch {
+    // No widgets dir — skip silently
   }
 
   console.log(`Watching ${opts.contentDir} — edits trigger a page reload.`);
